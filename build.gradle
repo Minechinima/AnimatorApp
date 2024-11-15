@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    //TODO setup dependencies correctly for multi-project, for now I'll put them in each subproject
+    // see multi-project setup with reusable declarations https://docs.gradle.org/current/samples/sample_building_java_applications_multi_project.html
+}
+
+test {
+    useJUnitPlatform()
+}
