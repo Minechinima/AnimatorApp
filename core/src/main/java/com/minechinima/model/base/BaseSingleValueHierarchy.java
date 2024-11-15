@@ -67,7 +67,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     }
 
     @Override
-    protected void _fromData(BaseType<?> data) {
+    public void fromData(BaseType<?> data) {
         try {
             this.set(this.valueFromData(data));
         } catch (BaseTypeCannotBeParsed e) {

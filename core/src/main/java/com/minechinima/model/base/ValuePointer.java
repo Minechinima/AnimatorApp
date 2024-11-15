@@ -149,12 +149,12 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
         this.cachedUniquePath = value.getValue().isEmpty() ? null : value.getValue();
 
         if (this.cachedUniquePath != null) {
-            this.referenceFrame.loadChildByUniquePath(this.cachedUniquePath, (child) -> {
-                if (!this.type.isAssignableFrom(child.getClass())) return;
-                try {
-                    this.set((T) child);
-                } catch (ClassCastException e) { }
-            });
+            //TODO
+            BaseStructure target = this.referenceFrame.getChildByUniquePath(this.cachedUniquePath);
+
+            if (target != null && this.type.isAssignableFrom(target.getClass())) {
+                this.set((T) target);
+            }
         }
     }
 

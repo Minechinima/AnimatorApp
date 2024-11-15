@@ -343,7 +343,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     }
 
     @Override
-    protected void _fromData(BaseType<?> data) {
+    public void fromData(BaseType<?> data) {
         ListType list;
         if ((list = data.asListType()) == null) return;
         this.clear();

@@ -62,7 +62,7 @@ final class DummyBaseValueHierarchy extends BaseValueHierarchy<BaseStructure> {
     }
 
     @Override
-    public void _fromData(BaseType data) {
+    public void fromData(BaseType data) {
 
     }
 }

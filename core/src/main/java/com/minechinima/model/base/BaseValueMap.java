@@ -209,7 +209,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
     protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
 
     @Override
-    protected void _fromData(BaseType<?> data) {
+    public void fromData(BaseType<?> data) {
         MapType mapType;
         if ((mapType = data.asMapType()) == null) return;
 

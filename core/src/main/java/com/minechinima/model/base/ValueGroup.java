@@ -78,7 +78,7 @@ public abstract class ValueGroup extends BaseValueHierarchy<BaseStructure> {
 
     @Override
     @MustBeInvokedByOverriders
-    protected void _fromData(BaseType<?> data) {
+    public void fromData(BaseType<?> data) {
         MapType type;
         if ((type = data.asMapType()) == null) return;
         for (Map.Entry<String, BaseType<?>> entry : type) {

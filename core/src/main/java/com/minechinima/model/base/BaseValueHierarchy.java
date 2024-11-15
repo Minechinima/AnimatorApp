@@ -7,11 +7,9 @@ import com.minechinima.model.utils.ID;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
-import com.minechinima.model.utils.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * Template class for all BaseStructure elements that can have children that are part of the tree structure.
@@ -22,8 +20,6 @@ import java.util.function.Consumer;
  */
 public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure {
     private final ValuePath.Format format;
-    private boolean isDeserialising;
-    private final List<Runnable> executeAfterFromData = new ArrayList<>();
 
     public BaseValueHierarchy(String id, ValuePath.Format pathFormat) {
         super(id);
@@ -163,26 +159,6 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
 
         relativePath = useUnique ? relativePath.getCleanedUniquePath() : relativePath.getCleanedValuePath();
         return relativePath.getSize() > 0;
-    }
-
-    /**
-     * This method searches for a child with the unique relative path and executes the consumer when it is found.
-     * The search process will only start after {@link #fromData(BaseType)} is finished, if this method is called from that context.
-     * @param uniqueRelativePath
-     * @param consumer Will only be executed when the child is found. The consumer is executed at the end of {@link #fromData(BaseType)}
-     *                 to ensure that the searched child is already loaded or directly when this method is not called within the context of
-     *                 {@link #fromData(BaseType)}.
-     */
-    public void loadChildByUniquePath(final String uniqueRelativePath, Consumer<BaseStructure> consumer) {
-        if (this.isDeserialising) {//TODO removes this.... it's dumb
-            this.executeAfterFromData.add(() -> {
-                BaseStructure child = this.getChildByUniquePath(uniqueRelativePath);
-                if (child != null) consumer.accept(child);
-            });
-        } else {
-            BaseStructure child = this.getChildByUniquePath(uniqueRelativePath);
-            if (child != null) consumer.accept(child);
-        }
     }
 
     @Nullable
@@ -349,19 +325,4 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
 
         return children;
     }
-
-    @Override
-    public final void fromData(BaseType<?> data) {
-        this.isDeserialising = true;
-        this._fromData(data);
-        this.isDeserialising = false;
-        this.executeAfterFromData.forEach(Runnable::run);
-        this.executeAfterFromData.clear();
-    }
-
-    /**
-     * Call {@link #fromData(BaseType)} to deserialize!
-     * @param data
-     */
-    protected abstract void _fromData(BaseType<?> data);
 }
