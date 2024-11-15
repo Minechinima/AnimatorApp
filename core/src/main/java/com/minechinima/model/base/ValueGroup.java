@@ -18,9 +18,7 @@ import java.util.*;
  *    This again is the same property of the system: Storing references to treenodes is dangerous, as you must always expect that the treenode
  *    could be removed from the tree which must result in a clean up of memory!
  */
-public abstract class ValueGroup extends BaseValueHierarchy<BaseStructure> {
-    private final List<BaseStructure> children = new ArrayList<>();
-
+public abstract class ValueGroup extends BaseImmutableValueHierarchy<BaseStructure> {
     public ValueGroup(String id) {
         super(id, ValuePath.Format.PATH);
     }
@@ -29,47 +27,12 @@ public abstract class ValueGroup extends BaseValueHierarchy<BaseStructure> {
         super(id, uuid, ValuePath.Format.PATH);
     }
 
-    /**
-     * This is final to ensure no subclasses violate the contract of children having this as parent. This could cause
-     * bugs with path collisions algorithms, etc.
-     */
-    @Override
-    public final List<BaseStructure> getChildren() {
-        return new ArrayList<>(this.children);
-    }
-
-    @Override
-    public boolean isDirectChild(BaseStructure child) {
-        return this.children.contains(child);
-    }
-
-    /**
-     * Only adds the child if it has not been added before.
-     */
-    protected void add(BaseStructure... children) {
-        for (BaseStructure child : children) {
-            if (this.children.contains(child)) continue;
-
-            if (child instanceof IDMutable mutable && this.isUUIDPresent(mutable.getUUID())) {
-                throw new IllegalArgumentException("One of the BaseStructures to be inserted has a UUID " +
-                        "that already exists in the children.");
-            }
-
-            this.children.add(child);
-            try {
-                child.setParent(this);
-            } catch (SetParentNotAllowed e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     @Override
     @MustBeInvokedByOverriders
     public MapType toData() {
         Map<String, BaseType<?>> map = new HashMap<>();
 
-        for (BaseStructure child : this.children) {
+        for (BaseStructure child : this.getChildren()) {
             map.put(child.getIdentifier(), child.toData());
         }
 
@@ -83,7 +46,7 @@ public abstract class ValueGroup extends BaseValueHierarchy<BaseStructure> {
         if ((type = data.asMapType()) == null) return;
         for (Map.Entry<String, BaseType<?>> entry : type) {
             /* only existing attributes can be serialised, so search for them here */
-            for (BaseStructure child : this.children) {
+            for (BaseStructure child : this.getChildren()) {
                 if (child.getIdentifier().equals(entry.getKey())) {
                     child.fromData(entry.getValue());
                     break;

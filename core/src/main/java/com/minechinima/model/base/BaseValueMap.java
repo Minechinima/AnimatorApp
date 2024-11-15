@@ -10,6 +10,7 @@ import com.minechinima.model.events.changes.ValueRemoveEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.UUIDUtils;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +22,7 @@ import java.util.*;
  * <br>The order of the children does not matter.
  * @param <T> the type of the children.
  */
-public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHierarchy<T>
+public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableValueHierarchy<T>
         implements IBaseValueCollection<T>, IValueMap<T> {
     private final Set<T> children = Collections.newSetFromMap(new IdentityHashMap<>());
 
@@ -74,7 +75,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
     }
 
     @Nullable
-    public T get(String id) {
+    public final T get(String id) {
         for (T child : this.children) {
             if (child.getIdentifier().equals(id)) {
                 return child;
@@ -85,7 +86,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
     }
 
     @Nullable
-    public T get(UUID uuid) {
+    public final T get(UUID uuid) {
         for (T child : this.children) {
             if (child instanceof IDMutable mutable
                     && mutable.getUUID().equals(uuid)) {
@@ -110,6 +111,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
      * @throws NullPointerException if the value is null
      */
     @Override
+    @MustBeInvokedByOverriders
     public boolean add(@NotNull T value) {
         this.throwExceptionsInvalidElement(value);
 
@@ -130,17 +132,22 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
         return true;
     }
 
+    @Override
+    public final boolean addChild(T child) {
+        return this.add(child);
+    }
+
     /* REMOVING OPERATIONS */
 
     @Nullable
-    public T remove(UUID uuid) {
+    public final T remove(UUID uuid) {
         T child = this.get(uuid);
         if (child != null) this.remove(child);
         return child;
     }
 
     @Nullable
-    public T remove(String id) {
+    public final T remove(String id) {
         T child = this.get(id);
         if (child != null) this.remove(child);
         return child;
@@ -155,6 +162,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
      * @return true if the element was contained in the map.
      */
     @Override
+    @MustBeInvokedByOverriders
     public boolean remove(T child) {
         if (!this.children.contains(child)) return false;
 
@@ -171,7 +179,12 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseValueHie
     }
 
     @Override
-    public boolean clear() {
+    public final boolean removeChild(T child) {
+        return this.remove(child);
+    }
+
+    @Override
+    public final boolean clear() {
         List<T> oldChildren = new ArrayList<>(this.children);
 
         for (T child : oldChildren) {

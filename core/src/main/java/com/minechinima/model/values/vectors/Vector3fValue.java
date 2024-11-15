@@ -17,7 +17,7 @@ public class Vector3fValue extends ValueGroup {
 
     protected Vector3fValue(String id, UUID uuid) {
         super(id, uuid);
-        this.add(this.x, this.y, this.z);
+        this.addChildren(this.x, this.y, this.z);
     }
 
     public Vector3f asVector3f() {

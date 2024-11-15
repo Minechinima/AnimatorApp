@@ -25,7 +25,7 @@ public class DummyValueGroup extends ValueGroup implements IDMutable {
     }
 
     public void add(BaseStructure... children) {
-        super.add(children);
+        super.addChildren(children);
     }
 
     @Override

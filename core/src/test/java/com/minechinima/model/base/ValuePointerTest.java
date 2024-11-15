@@ -1,16 +1,12 @@
 package com.minechinima.model.base;
 
-import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
-import com.minechinima.model.dataoperations.datainterfaces.ListElement;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
 
 public class ValuePointerTest {
     @Test
@@ -37,7 +33,7 @@ public class ValuePointerTest {
     public void testPointerClearedAfterRemovedFromTree() {
         ValueGroup root = new ValueGroup("root") {};
         DummyMutableIDValue pointerTarget = new DummyMutableIDValue("target");
-        root.add(pointerTarget);
+        root.addChildren(pointerTarget);
         ValuePointer<DummyMutableIDValue> pointer = new ValuePointer<>("", DummyMutableIDValue.class, root);
         pointer.set(pointerTarget);
         pointerTarget.clearNodeFromMemory();
@@ -47,7 +43,7 @@ public class ValuePointerTest {
     public void testFromDataTargetIDMutable() {
         ValueGroup root = new ValueGroup("root") {};
         DummyMutableIDValue pointerTarget = new DummyMutableIDValue("target");
-        root.add(pointerTarget);
+        root.addChildren(pointerTarget);
         ValuePointer<DummyMutableIDValue> pointer = new ValuePointer<>("", DummyMutableIDValue.class, root);
         pointer.fromData(new StringType(pointerTarget.getRelativePath(root).toUniquePath()));
         Assertions.assertEquals(pointerTarget, pointer.get());
@@ -57,7 +53,7 @@ public class ValuePointerTest {
     public void testFromDataTargetNormalIdentifier() {
         ValueGroup root = new ValueGroup("root") {};
         DummyBaseStructure pointerTarget = new DummyBaseStructure("target");
-        root.add(pointerTarget);
+        root.addChildren(pointerTarget);
         ValuePointer<DummyBaseStructure> pointer = new ValuePointer<>("", DummyBaseStructure.class, root);
         pointer.fromData(new StringType(pointerTarget.getRelativePath(root).toUniquePath()));
         Assertions.assertEquals(pointerTarget, pointer.get());

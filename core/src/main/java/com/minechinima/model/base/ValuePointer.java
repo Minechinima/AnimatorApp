@@ -94,7 +94,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
              *    and whether the node where it could be removed
              *    is a parent of this i.e. closed system again. what about if the valuepointer is removed from tree and added in again?
              */
-            if (!(frame.getParent() instanceof ValueGroup)) {
+            if (!(frame.getParent() instanceof BaseImmutableValueHierarchy<?>)) {
                 /*
                  * If the reference frame could be removed at runtime, it is still okay if this pointer
                  * is a child of that frame, as then it is a closed system.

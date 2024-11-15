@@ -9,11 +9,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @TestOnly
-final class DummyBaseValueHierarchy extends BaseValueHierarchy<BaseStructure> {
+final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<BaseStructure> {
     public final List<BaseStructure> children = new ArrayList<>();
 
     DummyBaseValueHierarchy(String id, ValuePath.Format format) {
         super(id, format);
+    }
+
+    @Override
+    public boolean addChild(BaseStructure child) {
+        this.add(child);
+        return this.children.contains(child);
+    }
+
+    @Override
+    public boolean removeChild(BaseStructure child) {
+        return this.children.remove(child);
     }
 
     /**

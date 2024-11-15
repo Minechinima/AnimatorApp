@@ -18,7 +18,7 @@ import java.util.*;
  * and should not be overridden.
  * @param <T>
  */
-public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure {
+public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
     private final ValuePath.Format format;
 
     public BaseValueHierarchy(String id, ValuePath.Format pathFormat) {

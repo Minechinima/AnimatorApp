@@ -24,7 +24,7 @@ import java.util.*;
  * Common list index operations.
  * @param <T>
  */
-public abstract class BaseValueOrderedCollection<T extends BaseStructure> extends BaseValueHierarchy<T>
+public abstract class BaseValueOrderedCollection<T extends BaseStructure> extends BaseMutableValueHierarchy<T>
         implements Iterable<T>, IBaseValueCollection<T>, IValueList<T> {
     /**
      * Never contains the same reference equal object twice.
@@ -144,6 +144,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         return this.addListElement(index, new ListElement<>(UUID.randomUUID(), element));
     }
 
+    @Override
+    public final boolean addChild(T child) {
+        return this.add(child);
+    }
+
     /**
      * @throws IndexOutOfBoundsException
      * @throws NullPointerException when the value is null
@@ -230,6 +235,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         int i = this.indexOf(o);
         if (i >= 0) this.remove(i);
         return i >= 0;
+    }
+
+    @Override
+    public final boolean removeChild(T child) {
+        return this.remove(child);
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.*;
  * Class that holds a single value that is part of the hierarchy.
  * @param <T>
  */
-public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseValueHierarchy<T> implements IValue<T> {
+public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T> {
     private T value;
 
     public BaseSingleValueHierarchy(String id) {
@@ -28,6 +28,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         return this.value;
     }
 
+    @Override
     public void set(T value) {
         if (this.value == value) return;
         BaseType<?> valueBefore = this.valueToData();
@@ -57,12 +58,28 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     }
 
     @Override
-    public boolean isDirectChild(BaseStructure child) {
+    public final boolean removeChild(T child) {
+        if (child == null || this.value != child) return false;
+
+        this.set(null);
+        return this.value == null;
+    }
+
+    @Override
+    public final boolean addChild(T child) {
+        if (child == null || this.value != null) return false;
+
+        this.set(child);
+        return this.value == child;
+    }
+
+    @Override
+    public final boolean isDirectChild(BaseStructure child) {
         return child != null && this.value != null && this.value == child;
     }
 
     @Override
-    public Set<T> getChildren() {
+    public final Set<T> getChildren() {
         return Set.of(this.value);
     }
 
