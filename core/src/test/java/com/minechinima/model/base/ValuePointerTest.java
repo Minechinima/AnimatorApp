@@ -31,9 +31,9 @@ public class ValuePointerTest {
 
     @Test
     public void testPointerClearedAfterRemovedFromTree() {
-        ValueGroup root = new ValueGroup("root") {};
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         DummyMutableIDValue pointerTarget = new DummyMutableIDValue("target");
-        root.addChildren(pointerTarget);
+        root.add(pointerTarget);
         ValuePointer<DummyMutableIDValue> pointer = new ValuePointer<>("", DummyMutableIDValue.class, root);
         pointer.set(pointerTarget);
         pointerTarget.clearNodeFromMemory();
@@ -41,9 +41,9 @@ public class ValuePointerTest {
     }
     @Test
     public void testFromDataTargetIDMutable() {
-        ValueGroup root = new ValueGroup("root") {};
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         DummyMutableIDValue pointerTarget = new DummyMutableIDValue("target");
-        root.addChildren(pointerTarget);
+        root.add(pointerTarget);
         ValuePointer<DummyMutableIDValue> pointer = new ValuePointer<>("", DummyMutableIDValue.class, root);
         pointer.fromData(new StringType(pointerTarget.getRelativePath(root).toUniquePath()));
         Assertions.assertEquals(pointerTarget, pointer.get());
@@ -51,9 +51,9 @@ public class ValuePointerTest {
 
     @Test
     public void testFromDataTargetNormalIdentifier() {
-        ValueGroup root = new ValueGroup("root") {};
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         DummyBaseStructure pointerTarget = new DummyBaseStructure("target");
-        root.addChildren(pointerTarget);
+        root.add(pointerTarget);
         ValuePointer<DummyBaseStructure> pointer = new ValuePointer<>("", DummyBaseStructure.class, root);
         pointer.fromData(new StringType(pointerTarget.getRelativePath(root).toUniquePath()));
         Assertions.assertEquals(pointerTarget, pointer.get());
@@ -61,7 +61,7 @@ public class ValuePointerTest {
 
     @Test
     public void testSetTargetUnreachable() {
-        ValueGroup root = new ValueGroup("root") {};
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         DummyBaseStructure pointerTarget = new DummyBaseStructure("target");
         ValuePointer<DummyBaseStructure> pointer = new ValuePointer<>("", DummyBaseStructure.class, root);
         pointer.set(pointerTarget);
@@ -70,7 +70,7 @@ public class ValuePointerTest {
 
     @Test
     public void testCachedPathAfterFromDataUnreachable() {
-        ValueGroup root = new ValueGroup("root") {};
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         ValuePointer<DummyBaseStructure> pointer = new ValuePointer<>("", DummyBaseStructure.class, root);
         pointer.fromData(new StringType("test"));
         Assertions.assertEquals("test", pointer.getCachedUniquePath());

@@ -80,7 +80,7 @@ public class BaseValueUndos {
 
     //TODO
     public void testUndoMerge() throws UserException {
-        DummyValueGroup root = new DummyValueGroup("root");
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         DoubleValue test = new DoubleValue("v");
 
         root.add(test);

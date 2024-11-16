@@ -132,7 +132,7 @@ public class BaseValueListTest {
 
     @Test
     public void testPaths() {
-        DummyValueGroup map = new DummyValueGroup("root");
+        DummyBaseValueHierarchy map = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         BaseValueList<DoubleValue> list = this.getAnonymousDoubleList("list");
         map.add(list);
 
@@ -158,7 +158,7 @@ public class BaseValueListTest {
 
     @Test
     public void testPathCollisions() {
-        DummyValueGroup map = new DummyValueGroup("root");
+        DummyBaseValueHierarchy map = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         BaseValueList<DoubleValue> list = this.getAnonymousDoubleList("");
         BaseValueList<DoubleValue> list2 = this.getAnonymousDoubleList("");
         map.add(list, list2);

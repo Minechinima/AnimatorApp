@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @TestOnly
-final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<BaseStructure> {
+public final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<BaseStructure> {
     public final List<BaseStructure> children = new ArrayList<>();
 
-    DummyBaseValueHierarchy(String id, ValuePath.Format format) {
+    public DummyBaseValueHierarchy(String id, ValuePath.Format format) {
         super(id, format);
     }
 
@@ -51,7 +51,7 @@ final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<BaseStruct
     /**
      * Only adds the child if it has not been added before.
      */
-    protected DummyBaseValueHierarchy add(BaseStructure... children) {
+    public DummyBaseValueHierarchy add(BaseStructure... children) {
         for (BaseStructure child : children) {
             if (this.children.contains(child)) return this;
 
