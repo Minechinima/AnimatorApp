@@ -12,11 +12,6 @@ import java.util.*;
 /**
  * This is the template class for classes that intend to register their class attributes as values for the value tree.
  * <b>The class attributes where the datatype is BaseStructure should be declared final, as they are registered to the tree.</b>
- * <b>Important Design Rule: ValueGroups never change their tree structure after being constructed!
- * The tree structure of ValueGroups needs to be predictable and stay the same throughout the lifetime of the object.</b>
- * //TODO how do we ensure pointer namespaces are elements that can't be removed from the tree?
- *    This again is the same property of the system: Storing references to treenodes is dangerous, as you must always expect that the treenode
- *    could be removed from the tree which must result in a clean up of memory!
  */
 public abstract class ValueGroup extends BaseImmutableValueHierarchy<BaseStructure> {
     public ValueGroup(String id) {
@@ -25,33 +20,5 @@ public abstract class ValueGroup extends BaseImmutableValueHierarchy<BaseStructu
 
     protected ValueGroup(String id, UUID uuid) {
         super(id, uuid, ValuePath.Format.PATH);
-    }
-
-    @Override
-    @MustBeInvokedByOverriders
-    public MapType toData() {
-        Map<String, BaseType<?>> map = new HashMap<>();
-
-        for (BaseStructure child : this.getChildren()) {
-            map.put(child.getIdentifier(), child.toData());
-        }
-
-        return new MapType(map);
-    }
-
-    @Override
-    @MustBeInvokedByOverriders
-    public void fromData(BaseType<?> data) {
-        MapType type;
-        if ((type = data.asMapType()) == null) return;
-        for (Map.Entry<String, BaseType<?>> entry : type) {
-            /* only existing attributes can be serialised, so search for them here */
-            for (BaseStructure child : this.getChildren()) {
-                if (child.getIdentifier().equals(entry.getKey())) {
-                    child.fromData(entry.getValue());
-                    break;
-                }
-            }
-        }
     }
 }

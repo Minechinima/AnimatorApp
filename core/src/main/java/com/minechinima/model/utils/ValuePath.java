@@ -44,7 +44,7 @@ public class ValuePath implements ICopy<ValuePath> {
         return this.size;
     }
 
-    //TODO in setParent and setID - maybe in the throwExceptionsonInvalidID check if the paths are equal e.g. no point is in the path when it is IDMutable or so
+    //TODO possibly performance optimizations of this algorithm
     protected void parse(String path) throws PathParsingException {
         final PathSegment prevStart = this.start;
         final PathSegment prevEnd = this.end;

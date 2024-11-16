@@ -107,7 +107,8 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
     }
 
     @Override
-    final void throwExceptionForIllegalParentChange(BaseValueHierarchy<?> oldParent, BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
+    final void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {
+        //TODO
         try {
             this.throwExceptionForIllegalReferenceFrame(this.referenceFrame);
         } catch (Exception e) {

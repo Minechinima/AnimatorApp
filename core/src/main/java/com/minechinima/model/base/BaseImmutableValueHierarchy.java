@@ -1,17 +1,33 @@
 package com.minechinima.model.base;
 
+import com.minechinima.data.types.BaseType;
+import com.minechinima.data.types.MapType;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
+import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
 /**
- * A base for all hierarchies that are static and cannot change children after init.
+ * A base for all hierarchies that are static and cannot change children after init.<br><br>
+ * {@link IDMutable} is not allowed as direct child.
  * @param <T>
  */
 public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStructure> extends BaseValueHierarchy<T> {
-    private final Set<T> children = Collections.newSetFromMap(new IdentityHashMap<>());
+    /**
+     * The actual children of this tree hierarchy.
+     * The String key is for serialization.
+     * This allows for empty identifiers of grouping nodes.
+     */
+    private final Map<String, T> children = new HashMap<>();
+    /**
+     * A buffer of children (ideally added during construction of the instance)
+     * to allow initializing them once into the hierarchy.
+     */
+    private final Map<String, T> buffer = new HashMap<>();
+    private boolean initializedChildren = false;
 
     public BaseImmutableValueHierarchy(String id, ValuePath.Format pathFormat) {
         super(id, pathFormat);
@@ -22,12 +38,68 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
     }
 
     /**
+     * Add the given children into a buffer. The buffer can be flushed into the children <b>once</b> with {@link #initChildren()}.
+     * This should be done outside the constructor, after "<i>new CLASS()</i>" is finished.
+     * @param name a unique name to identify the child independent of the child's identifier.
+     *             This allows the child to have an empty identifier but still be found by the serialization algorithms.
+     * @param child the child to add.
+     */
+    protected final void addChild(String name, T child) {
+        if (this.initializedChildren) {
+            throw new UnsupportedOperationException("The children are already initialized.");
+        }
+
+        /*
+         * UUID is final in BaseStructure. The parsing would need to happen in the constructor to deserialize properly.
+         * However, deserialization only makes sense after construction of the object so all children are added.
+         * Also, this enforces the concept of an immutable hierarchy???
+         */
+        if (child instanceof IDMutable) {
+            throw new UnsupportedOperationException("Adding IDMutable to an ImmutableHierarchy is not supported and can have unwanted side effects.");
+        }
+
+        if (this.buffer.containsKey(name)) {
+            throw new IllegalArgumentException("The key was already registered for the children.");
+        }
+
+        if (this.buffer.containsValue(child)) {
+            throw new IllegalArgumentException("The value was already registered for the children. Duplicates are not allowed.");
+        }
+
+        this.buffer.put(name, child);
+    }
+
+    /**
+     * Adds the children, that have been buffered during object creation, to the tree.
+     */
+    public final void initChildren() {
+        if (this.initializedChildren) {
+            throw new UnsupportedOperationException("The children are already initialized.");
+        }
+
+        for (Map.Entry<String,T> child : this.buffer.entrySet()) {
+            this.children.put(child.getKey(), child.getValue());
+            try {
+                child.getValue().setParent(this);
+            } catch (SetParentNotAllowed e) {
+                this.children.remove(child.getKey());
+                this.initializedChildren = true;
+                this.buffer.clear();
+                throw new RuntimeException(e);
+            }
+        }
+
+        this.buffer.clear();
+        this.initializedChildren = true;
+    }
+
+    /**
      * @return a copy of the children Set.
      * @implNote  this is final to ensure that the children are always immutable
      */
     @Override
     public final Set<T> getChildren() {
-        return new HashSet<>(this.children);
+        return new HashSet<>(this.children.values());
     }
 
     /**
@@ -37,24 +109,31 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
      */
     @Override
     public final boolean isDirectChild(BaseStructure child) {
-        return this.children.contains(child);
+        return this.children.containsValue(child);
     }
 
-    protected final void addChildren(T... children) {
-        for (T child : children) {
-            if (this.children.contains(child)) continue;
+    @Override
+    public final MapType toData() {
+        Map<String, BaseType<?>> map = new HashMap<>();
 
-            if (child instanceof IDMutable mutable && this.isUUIDPresent(mutable.getUUID())) {
-                throw new IllegalArgumentException("One of the BaseStructures to be inserted has a UUID " +
-                        "that already exists in the children.");
-            }
+        for (Map.Entry<String,T> child : this.children.entrySet()) {
+            /*
+             * we don't need to store identifier, the children are already initialized.
+             */
+            map.put(child.getKey(), child.getValue().toData());
+        }
 
-            this.children.add(child);
-            try {
-                child.setParent(this);
-            } catch (SetParentNotAllowed e) {
-                throw new RuntimeException(e);
-            }
+        return new MapType(map);
+    }
+
+    @Override
+    public final void fromData(BaseType<?> data) {
+        MapType type;
+        if ((type = data.asMapType()) == null) return;
+        for (Map.Entry<String, BaseType<?>> entry : type) {
+            T child;
+            if ((child = this.children.get(entry.getKey())) == null) continue;
+            child.fromData(entry.getValue());
         }
     }
 }

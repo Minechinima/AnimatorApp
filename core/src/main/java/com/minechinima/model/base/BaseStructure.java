@@ -159,7 +159,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      *                                            to check if it is allowed. In the try-catch-block you should remove the child from the
      *                                            children again if this operation is not supported.</li>
      *                                            <li>If there are wonky illegal states that shouldn't be possible.</li>
-     *                                            <li>Implementation of {@link #throwExceptionForIllegalParentChange(BaseValueHierarchy, BaseValueHierarchy)}</li>
+     *                                            <li>Implementation of {@link #throwExceptionForIllegalParentChange}</li>
      *                                            <li>If this is IDMutable and the UUID of this is not unique anymore with the neighbors.</li>
      *                                        </ul>
      */
@@ -206,7 +206,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
              * so the tree state stays untouched if setParent is not allowed.
              */
             try {
-                this.throwExceptionForIllegalParentChange(originalParent, parent);
+                this.throwExceptionForIllegalParentChange();
 
                 /* test if id is allowed with the new parent e.g. path formatting etc. */
                 this.throwExceptionForInvalidIDState(this.id);
@@ -309,7 +309,6 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * <br><br>
      * <b>This method is called after {@link #parent} has changed
      * and the check for the tree state with parent-child linkage is correct. This means you can use all methods that rely on a finished tree state.</b>
-     * @param newParent
      * @throws SetParentNotAllowed if setting the parent to the given argument is illegal and endangers structural integrity.
      * This will be called in {@link #setParent(BaseValueHierarchy)},
      * to allow subclasses to indirectly influence the success of that operation without overriding it.
@@ -320,7 +319,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * This here is for the base data tree integrity. If your app data thinks it could create something that creates invalid
      * tree integrity, you are wrong, that would simply be invalid application data you need to validate before setting.
      */
-    void throwExceptionForIllegalParentChange(BaseValueHierarchy<?> oldParent, BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {}
+    void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {}
 
     @Nullable
     public final BaseValueHierarchy<?> getParent() {
