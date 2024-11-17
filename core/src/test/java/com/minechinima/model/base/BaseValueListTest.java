@@ -117,8 +117,9 @@ public class BaseValueListTest {
         Assertions.assertEquals(v3, root1.getChildByValuePath("[0]"));
         Assertions.assertEquals(v4, root1.getChildByValuePath("[1].test"));
 
-        list1.setParentNull();
-        list2.setParentNull();
+        //TODO
+        //list1.setParentNull();
+        //list2.setParentNull();
         root2.add(list1, list2);
 
         Assertions.assertEquals(list1, root2.getChildByValuePath(list1.getRelativePath(root2).toValuePath()));

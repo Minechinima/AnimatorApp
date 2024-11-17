@@ -43,8 +43,13 @@ public final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<Bas
 
     protected void remove(BaseStructure child) {
         if (this.children.contains(child)) {
-            child.setParentNull();
             this.children.remove(child);
+            try {
+                child.setParent(null);
+            } catch (SetParentNotAllowed e) {
+                this.children.add(child);
+                throw new RuntimeException(e);
+            }
         }
     }
 
