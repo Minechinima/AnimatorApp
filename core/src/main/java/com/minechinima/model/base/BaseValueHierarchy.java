@@ -1,6 +1,5 @@
 package com.minechinima.model.base;
 
-import com.minechinima.data.types.BaseType;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.utils.ID;
@@ -34,7 +33,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
     /**
      * Determines how the child id is appended to the path.
      */
-    public ValuePath.Format getPathFormat() {
+    public final ValuePath.Format getPathFormat() {
         return this.format;
     }
 
@@ -93,12 +92,12 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      */
     protected final void throwExceptionsInvalidElement(T elementToBeAdded) {
         if (elementToBeAdded == null) {
-            throw new NullPointerException("This Collection does not permit null values.");
+            throw new NullPointerException("A BaseValueHierarchy does not permit null values.");
         }
 
         for (T element : this.getChildren()) {
             if (element == elementToBeAdded) {
-                throw new IllegalArgumentException("This Collection does not permit reference equal duplicates.");
+                throw new IllegalArgumentException("A BaseValueHierarchy does not permit reference equal duplicates.");
             }
         }
     }
@@ -127,35 +126,39 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
     public abstract boolean isDirectChild(BaseStructure child);
 
     /**
-     * @return false if the child would be skipped by the path search algorithm using a value path, or if available the unique path,
-     * or if this does not contain the specified child.
+     * Checks if the given node could be retrieved with a unique path from this hierarchy.
+     * The node could be a direct child or any child in the subtree.
+     * @return false if the child would be skipped by the path search algorithm using a value path or, if available, the unique path.
      * @implNote final as it is part of the path system specification
      */
-    public final boolean isChildAddressableWithUniquePath(T child) {
-        return this.isChildAddressableWithPath(child, true);
+    public final boolean isNodeAddressableWithUniquePath(BaseStructure child) {
+        return this.isNodeAddressableWithPath(child, true);
     }
 
     /**
-     * @return false if the child would be skipped by the path search algorithm using a solely the value path,
-     * or if this does not contain the specified child.
+     * Checks if the given node could be retrieved with a value path from this hierarchy.
+     * The node could be a direct child or any child in the subtree.
+     * @return false if the child would be skipped by the path search algorithm using only the value path.
      * @implNote final as it is part of the path system specification
      */
-    public final boolean isChildAddressableWithValuePath(T child) {
+    public final boolean isNodeAddressableWithValuePath(BaseStructure child) {
         //TODO test
-        return this.isChildAddressableWithPath(child, false);
+        return this.isNodeAddressableWithPath(child, false);
     }
 
     /**
      * @return false if the child would be skipped by the path search algorithm or if this does not contain
      * the specified child.
      */
-    private boolean isChildAddressableWithPath(T child, boolean useUnique) {
-        if (!this.isDirectChild(child)) return false;
+    private boolean isNodeAddressableWithPath(BaseStructure child, boolean useUnique) {
         BaseValueHierarchy<?> parent = child.getParent();
-        if (parent == null) throw new IllegalStateException("child does not have parent");
+        ValuePath relativePath = child.getRelativePath(this);
 
-        ValuePath relativePath = child.getRelativePath(parent);
-        if (relativePath == null) throw new IllegalStateException("relative path to parent could not be built.");
+        if (parent == null && relativePath != null) {
+            throw new IllegalStateException("The given child has no parent but a relative path could be built to this node.");
+        } else if (relativePath == null) {
+            return false;
+        }
 
         relativePath = useUnique ? relativePath.getCleanedUniquePath() : relativePath.getCleanedValuePath();
         return relativePath.getSize() > 0;
@@ -163,6 +166,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
 
     @Nullable
     public final BaseStructure getChildByValuePath(String relativePath) {
+        //TODO rename child to node when it is any child of the subtree
         if (relativePath.isEmpty()) return null;
         try {
             return this.getChildByValuePath(new ValuePath(relativePath));
