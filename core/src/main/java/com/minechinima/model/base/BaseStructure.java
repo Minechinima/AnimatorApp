@@ -197,7 +197,14 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
                 }
             }
 
+            /*
+             * Automatically call the clear references method in setParent when the parent is changed to null.
+             * This is very important so a node cannot be accidentally removed from tree without cleaning up
+             * and causing memory leaks.
+             * The tree is a closed memory system: wanting to remove from the tree is synonymous with deleting it from memory.
+             */
             if (parent == null && originalParent != null) {
+                //TODO what if clearing a pointer / reference cannot be undone as it was internal but the tree operation is undone as it failed somewhere?
                 this.clearNodeFromMemory();
             }
 
@@ -663,10 +670,20 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
             throw new IllegalArgumentException("Cannot trigger event where the trigger is not this.");
         }
 
-        /* log changes before triggering events. Events might result in new changes, so first record the source change */
-        if (event instanceof ChangeEvent<?> changeEvent) {
-            this.logChangeEvent(changeEvent);
+        try {
+            /* log changes before triggering events. Events might result in new changes, so first record the source change */
+            if (event instanceof ChangeEvent<?> changeEvent) {
+                this.logChangeEvent(changeEvent);
+            }
+        } catch (Exception e) {
+            /*
+             * if there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
+             * App needs to crash!
+             */
+            //TODO Error classes
+            throw new Error("An exception happened during logging the change. This is a critical bug!", e);
         }
+
 
         /* use identity based set because one listener is only triggered once for one event */
         Set<IEventListener<? super T>> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -712,6 +729,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * e.g. setting parent to null for a while.
      */
     protected final void clearNodeFromMemory() {
+        //TODO maybe private and rename to afterSetParentNull?
         /* only trigger event once on the element that this method is called */
         this.triggerEvent(new RemoveFromTreeEvent(this));
         this.afterRemoveFromTreeIteration();
