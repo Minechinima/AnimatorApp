@@ -64,7 +64,13 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
 
     @Override
     public boolean contains(T o) {
-        return this.children.contains(o);
+        if (!this.children.contains(o)) return false;
+
+        if (!this.listUUIDMapping.containsValue(o)) {
+            throw new IllegalStateException("Child is contained but no UUID mapping.");
+        }
+
+        return true;
     }
 
     @Override
@@ -90,7 +96,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
 
     @Nullable
     public final T getByListUUID(UUID uuid) {
-        return this.listUUIDMapping.get(uuid);
+        T child = this.listUUIDMapping.get(uuid);
+        if (child != null && !this.children.contains(child)) {
+            throw new IllegalStateException("Child is mapped to a UUID but is not in the children");
+        }
+        return child;
     }
 
     /**
@@ -175,8 +185,14 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
             return false;
         }
 
-        BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index);
+        /* map the uuid to simulate a full tree state and correctly check whether child can be added */
         this.listUUIDMapping.put(element.uuid(), element.value());
+        try {
+            BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index);
+        } catch (Exception e) {
+            this.listUUIDMapping.remove(element.uuid());
+            throw e;
+        }
 
         this.triggerEvent(new ListAddEvent(this, element.value()));
         return true;
