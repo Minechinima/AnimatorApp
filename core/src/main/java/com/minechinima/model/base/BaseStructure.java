@@ -215,6 +215,8 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
             /* call this here so BaseStructure implementation can also prohibit changing parent to null */
             this.throwExceptionForIllegalParentChange();
         } catch (SetParentNotAllowed e) {
+            this.parent = originalParent;
+            this.id = originalIdentifier;
             throw e;
         } catch (Exception e) {
             this.parent = originalParent;
