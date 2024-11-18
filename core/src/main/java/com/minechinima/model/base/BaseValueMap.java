@@ -8,6 +8,7 @@ import com.minechinima.model.dataoperations.datainterfaces.IValueMap;
 import com.minechinima.model.events.changes.ValueAddEvent;
 import com.minechinima.model.events.changes.ValueRemoveEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
+import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.UUIDUtils;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -113,14 +114,13 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @Override
     @MustBeInvokedByOverriders
     public boolean add(@NotNull T value) {
-        this.throwExceptionsInvalidElement(value);
+        this.throwExceptionForIllegalChild(value);
 
         if (value instanceof IDMutable insertMutable && this.isUUIDPresent(insertMutable.getUUID())) {
             return false;
         }
 
         this.children.add(value);
-
         try {
             value.setParent(this);
         } catch (Exception e) {
@@ -159,22 +159,22 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
      *     <li>{@link ValueRemoveEvent}</li>
      * </ul>
      * @param child
-     * @return true if the element was contained in the map.
+     * @return true if the element was contained in the map and successfully removed.
      */
     @Override
     @MustBeInvokedByOverriders
     public boolean remove(T child) {
         if (!this.children.contains(child)) return false;
 
-        /*
-         * First execute this to clear memory and pointers. If any exception happens here, we abort.
-         * Order is important for undo too: first remove needs to be undone and then pointers can be set again
-         */
-        child.clearNodeFromMemory();
         this.children.remove(child);
-        child.setParentNull();
-        this.triggerEvent(new ValueRemoveEvent(this, child));
+        try {
+            child.setParent(null);
+        } catch (SetParentNotAllowed e) {
+            this.children.add(child);
+            throw new UnsupportedOperationException(e);
+        }
 
+        this.triggerEvent(new ValueRemoveEvent(this, child));
         return true;
     }
 

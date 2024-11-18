@@ -24,6 +24,16 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         super(id, uuid, ValuePath.Format.PATH);
     }
 
+    @Override
+    public final Set<T> getChildren() {
+        return this.value == null ? Set.of() : Set.of(this.value);
+    }
+
+    @Override
+    public final boolean isDirectChild(BaseStructure child) {
+        return child != null && this.value != null && this.value == child;
+    }
+
     public final T get() {
         return this.value;
     }
@@ -31,28 +41,34 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     @Override
     public void set(T value) {
         if (this.value == value) return;
-        BaseType<?> valueBefore = this.valueToData();
         final T prevValue = this.value;
-        this.value = value;
+        final BaseType<?> valueBefore;
+        final BaseType<?> valueAfter;
 
+        /* first operation: try removing from tree */
         try {
-            this.value.setParent(this);
+            this.value = null;
+            /* execute this here in case it was overridden badly and causes an exception */
+            valueBefore = this.valueToData(prevValue);
+            valueAfter = this.valueToData(value);
+            /* serialization worked -> allows triggering change event later. Now proceed with tree modifying */
+            prevValue.setParent(null);
         } catch (SetParentNotAllowed e) {
             this.value = prevValue;
-            throw new RuntimeException(e);
+            throw new UnsupportedOperationException(e);
         }
 
-        BaseType<?> valueAfter;
-        /* safety first, if something terminates here, we cannot log the change. */
+        /* now try adding the child */
         try {
-            valueAfter = this.valueToData();
-            if (prevValue != null) prevValue.clearNodeFromMemory();
-        } catch (Exception e) {
-            this.value.setParentNull();
-            this.value = prevValue;
-            throw new RuntimeException(e);
+            this.value = value;
+            this.value.setParent(this);
+        } catch (SetParentNotAllowed e) {
+            this.value = null;
+            //TODO what to do with null in serialization?
+            /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
+            this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
+            throw new UnsupportedOperationException(e);
         }
-        if (prevValue != null) prevValue.setParentNull();
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
     }
@@ -74,16 +90,6 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     }
 
     @Override
-    public final boolean isDirectChild(BaseStructure child) {
-        return child != null && this.value != null && this.value == child;
-    }
-
-    @Override
-    public final Set<T> getChildren() {
-        return Set.of(this.value);
-    }
-
-    @Override
     public void fromData(BaseType<?> data) {
         try {
             this.set(this.valueFromData(data));
@@ -94,6 +100,6 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public BaseType<?> toData() {
-        return this.valueToData();
+        return this.valueToData(this.value);
     }
 }

@@ -6,8 +6,8 @@ import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
 import com.minechinima.model.dataoperations.datainterfaces.ListElement;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
+import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.data.types.*;
 import com.minechinima.model.dataoperations.datainterfaces.IValueList;
 import com.minechinima.model.events.changes.ListAddEvent;
 import com.minechinima.model.events.changes.ListIndexChangeEvent;
@@ -166,11 +166,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
             return false;
         }
 
-        this.throwExceptionsInvalidElement(element.value());
+        this.throwExceptionForIllegalChild(element.value());
         this.children.add(index, element);
         try {
             element.value().setParent(this);
-        } catch (Exception e) {
+        } catch (SetParentNotAllowed e) {
             this.children.remove(element);
             throw new RuntimeException(e);
         }
@@ -186,26 +186,30 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      */
     @Override
     public final boolean add(@NotNull T value) {
-        this.throwExceptionsInvalidElement(value);
+        this.throwExceptionForIllegalChild(value);
         return this.add(this.children.size(), value);
     }
 
     /**
      *
      * @param index
-     * @return the element previously at the specified index. Never null.
+     * @return the element previously at the specified index. Might be null when the parent could not be set to null.
      * @throws IndexOutOfBoundsException
      * @throws RuntimeException any exception can occur when trying to clear the node from memory.
      */
-    @NotNull
+    @Nullable
     @MustBeInvokedByOverriders
     public T remove(int index) {
         if (index >= this.children.size() || index < 0) throw new IndexOutOfBoundsException();
         ListElement<T> value = this.children.get(index);
 
-        value.value().clearNodeFromMemory();
         this.children.remove(index);
-        value.value().setParentNull();
+        try {
+            value.value().setParent(null);
+        } catch (SetParentNotAllowed e) {
+            this.children.add(index, value);
+            throw new UnsupportedOperationException(e);
+        }
 
         this.triggerEvent(new ListRemoveEvent(this, index, value));
         return value.value();

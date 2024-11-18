@@ -81,7 +81,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * @return collection of children.
      * Never contains null elements or duplicates (reference equal).
      * The specification of how the elements are ordered is open for the subclasses to define.
-     * @see BaseValueHierarchy#throwExceptionsInvalidElement(BaseStructure)
+     * @see BaseValueHierarchy#throwExceptionForIllegalChild(BaseStructure)
      */
     public abstract Collection<T> getChildren();
 
@@ -90,7 +90,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * @throws NullPointerException when the element to be added is null
      * @throws IllegalArgumentException when the same reference equal element is already in the children.
      */
-    protected final void throwExceptionsInvalidElement(T elementToBeAdded) {
+    protected final void throwExceptionForIllegalChild(T elementToBeAdded) {
         if (elementToBeAdded == null) {
             throw new NullPointerException("A BaseValueHierarchy does not permit null values.");
         }
