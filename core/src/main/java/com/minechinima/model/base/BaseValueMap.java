@@ -3,6 +3,8 @@ package com.minechinima.model.base;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
+import com.minechinima.model.base.utils.IBaseValueCollection;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
 import com.minechinima.model.dataoperations.datainterfaces.IValueMap;
 import com.minechinima.model.events.changes.ValueAddEvent;
@@ -114,20 +116,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @Override
     @MustBeInvokedByOverriders
     public boolean add(@NotNull T value) {
-        this.throwExceptionForIllegalChild(value);
-
-        if (value instanceof IDMutable insertMutable && this.isUUIDPresent(insertMutable.getUUID())) {
-            return false;
-        }
-
-        this.children.add(value);
-        try {
-            value.setParent(this);
-        } catch (Exception e) {
-            this.children.remove(value);
-            throw new RuntimeException(e);
-        }
-
+        BaseOperationsUtils.addChildOrThrow(value, this, this.children);
         this.triggerEvent(new ValueAddEvent(this, value));
         return true;
     }
@@ -165,15 +154,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @MustBeInvokedByOverriders
     public boolean remove(T child) {
         if (!this.children.contains(child)) return false;
-
-        this.children.remove(child);
-        try {
-            child.setParent(null);
-        } catch (SetParentNotAllowed e) {
-            this.children.add(child);
-            throw new UnsupportedOperationException(e);
-        }
-
+        BaseOperationsUtils.removeChildOrThrow(child, this.children);
         this.triggerEvent(new ValueRemoveEvent(this, child));
         return true;
     }

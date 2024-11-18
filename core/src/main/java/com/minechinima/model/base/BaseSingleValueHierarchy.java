@@ -1,6 +1,7 @@
 package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.dataoperations.datainterfaces.IValue;
 import com.minechinima.model.events.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
@@ -42,20 +43,18 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     public void set(T value) {
         if (this.value == value) return;
         final T prevValue = this.value;
-        final BaseType<?> valueBefore;
-        final BaseType<?> valueAfter;
+        final BaseType<?> valueBefore = this.valueToData(prevValue);
+        final BaseType<?> valueAfter = this.valueToData(value);
 
         /* first operation: try removing from tree */
         try {
             this.value = null;
-            /* execute this here in case it was overridden badly and causes an exception */
-            valueBefore = this.valueToData(prevValue);
-            valueAfter = this.valueToData(value);
-            /* serialization worked -> allows triggering change event later. Now proceed with tree modifying */
             prevValue.setParent(null);
         } catch (SetParentNotAllowed e) {
             this.value = prevValue;
             throw new UnsupportedOperationException(e);
+        } catch (Exception e) {
+            throw new Error("", e);
         }
 
         /* now try adding the child */

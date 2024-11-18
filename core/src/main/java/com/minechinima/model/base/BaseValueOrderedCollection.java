@@ -1,9 +1,13 @@
 package com.minechinima.model.base;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.ListType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
+import com.minechinima.model.base.utils.IBaseValueCollection;
 import com.minechinima.model.dataoperations.datainterfaces.ListElement;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
@@ -26,11 +30,11 @@ import java.util.*;
  */
 public abstract class BaseValueOrderedCollection<T extends BaseStructure> extends BaseMutableValueHierarchy<T>
         implements Iterable<T>, IBaseValueCollection<T>, IValueList<T> {
+    private final List<T> children = new ArrayList<>();
     /**
-     * Never contains the same reference equal object twice.
-     * Every object gets a new UUID so an instance can be retrieved no matter what it's index is.
+     * Map the children to a UUID. This allows addressing children independent of the mutable list index.
      */
-    private final List<ListElement<T>> children = new ArrayList<>();
+    private final BiMap<UUID, T> listUUIDMapping = HashBiMap.create();
 
     public BaseValueOrderedCollection(String id, ValuePath.Format pathFormat) {
         super(id, pathFormat);
@@ -42,10 +46,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
 
     @Override
     public final List<T> getChildren() {
-        List<T> list = new ArrayList<>();
-        this.children.forEach(pair -> list.add(pair.value()));
-        return list;
+        return List.copyOf(this.children);
     }
+
+    @NotNull
+    protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed;
 
     @Override
     public int size() {
@@ -59,12 +64,17 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
 
     @Override
     public boolean contains(T o) {
-        return this.indexOf(o) >= 0;
+        return this.children.contains(o);
+    }
+
+    @Override
+    public final boolean containsListUUID(UUID uuid) {
+        return this.listUUIDMapping.containsKey(uuid);
     }
 
     @Override
     public boolean isDirectChild(BaseStructure child) {
-        return this.indexOf(child) >= 0;
+        return this.children.contains(child);
     }
 
     @NotNull
@@ -75,16 +85,12 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
 
     @NotNull
     public final T get(int index) throws IndexOutOfBoundsException {
-        return this.children.get(index).value();
+        return this.children.get(index);
     }
 
     @Nullable
     public final T getByListUUID(UUID uuid) {
-        for (ListElement<T> e : this.children) {
-            if (e.uuid().equals(uuid)) return e.value();
-        }
-
-        return null;
+        return this.listUUIDMapping.get(uuid);
     }
 
     /**
@@ -100,7 +106,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         if (element == null) throw new NullPointerException();
         if (index >= this.children.size() || index < 0) throw new IndexOutOfBoundsException();
 
-        T prev = this.children.get(index).value();
+        T prev = this.children.get(index);
         if (this.remove(index) != prev) throw new IllegalStateException("wtf...");
         this.add(index, element);
 
@@ -112,24 +118,27 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      * @param index
      * @param newIndex
      */
-    public final void move(int index, int newIndex) {
+    @MustBeInvokedByOverriders
+    public void move(int index, int newIndex) {
         if (index == newIndex) return;
-        if (index >= this.children.size() || index < 0 || newIndex < 0) throw new IndexOutOfBoundsException();
+        if (index >= this.children.size() || index < 0
+                || newIndex + 1 > this.children.size() || newIndex < 0) throw new IndexOutOfBoundsException();
 
-        this.moveByListUUID(this.children.get(index).uuid(), newIndex);
+        UUID uuid = this.listUUIDOfIndex(index);
+        if (uuid == null) throw new IllegalStateException("No UUID mapping for a valid index.");
+
+        T child = this.children.get(index);
+        if (child == null) throw new IllegalStateException("A child is null.");
+
+        if (!this.children.remove(child)) throw new UnsupportedOperationException("Could not remove the child");
+        this.children.add(newIndex, child);
+        this.triggerEvent(new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child)));
     }
 
+    @Override
     public final void moveByListUUID(UUID uuid, int newIndex) {
         int index = this.indexOfListUUID(uuid);
-        if (index == newIndex || index < 0) return;
-        if (index >= this.children.size() || newIndex < 0) throw new IndexOutOfBoundsException();
-
-        newIndex = Math.min(this.children.size() - 1, newIndex);
-
-        ListElement<T> pair = this.children.get(index);
-        this.children.remove(pair);
-        this.children.add(newIndex, pair);
-        this.triggerEvent(new ListIndexChangeEvent(this, index, newIndex + 1, pair));
+        this.move(index, newIndex);
     }
 
     /**
@@ -166,14 +175,8 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
             return false;
         }
 
-        this.throwExceptionForIllegalChild(element.value());
-        this.children.add(index, element);
-        try {
-            element.value().setParent(this);
-        } catch (SetParentNotAllowed e) {
-            this.children.remove(element);
-            throw new RuntimeException(e);
-        }
+        BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index);
+        this.listUUIDMapping.put(element.uuid(), element.value());
 
         this.triggerEvent(new ListAddEvent(this, element.value()));
         return true;
@@ -186,7 +189,6 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      */
     @Override
     public final boolean add(@NotNull T value) {
-        this.throwExceptionForIllegalChild(value);
         return this.add(this.children.size(), value);
     }
 
@@ -201,18 +203,19 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     @MustBeInvokedByOverriders
     public T remove(int index) {
         if (index >= this.children.size() || index < 0) throw new IndexOutOfBoundsException();
-        ListElement<T> value = this.children.get(index);
+        /*
+         * Put the removal code in here, so it is more robust by first removing the actual child from the children
+         * that is used for the tree.
+         */
+        T child = this.children.get(index);
+        UUID uuid = this.listUUIDOf(child);
+        if (uuid == null) throw new NullPointerException();
 
-        this.children.remove(index);
-        try {
-            value.value().setParent(null);
-        } catch (SetParentNotAllowed e) {
-            this.children.add(index, value);
-            throw new UnsupportedOperationException(e);
-        }
+        BaseOperationsUtils.removeChildOrThrow(child, this.children);
+        this.listUUIDMapping.inverse().remove(child);
 
-        this.triggerEvent(new ListRemoveEvent(this, index, value));
-        return value.value();
+        this.triggerEvent(new ListRemoveEvent(this, index, new ListElement<>(uuid, child)));
+        return child;
     }
 
     /**
@@ -250,7 +253,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      * @throws RuntimeException any exception can occur if the parent of the removed element cannot be cleared.
      */
     @Override
-    public boolean clear() {
+    public final boolean clear() {
         List<T> oldChildren = this.getChildren();
 
         for (T child : oldChildren) {
@@ -265,63 +268,49 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      * @return the index of the given element. -1 if it was not found.
      */
     public final int indexOf(BaseStructure o) {
-        return this.indexOfRange(o, 0, this.children.size());
+        if (o == null) return -1;
+        return this.children.indexOf(o);
     }
 
     public final int indexOfListUUID(UUID uuid) {
-        return this.indexOfRange(uuid, 0, this.children.size());
-    }
+        if (uuid == null) return -1;
 
-    @Override
-    public final boolean containsListUUID(UUID uuid) {
-        return this.indexOfListUUID(uuid) >= 0;
+        T child = this.listUUIDMapping.get(uuid);
+        if (child == null && this.listUUIDMapping.containsKey(uuid)) {
+            throw new IllegalStateException("A UUID was found in the list but the mapped child is not present in the children");
+        }
+        int i = this.children.indexOf(child);
+
+        if (i < 0) {
+            throw new IllegalStateException("Could not find the index of a mapped child.");
+        }
+
+        return i;
     }
 
     @Nullable
     public final UUID listUUIDOfIndex(int index) {
         if (index < 0 || index >= this.children.size()) return null;
-        return this.children.get(index).uuid();
+        UUID uuid = this.listUUIDMapping.inverse().get(this.children.get(index));
+        if (uuid == null) {
+            throw new IllegalStateException("A child was assigned to the index but the UUID mapping is missing.");
+        }
+        return uuid;
     }
 
     @Nullable
     public final UUID listUUIDOf(T o) {
-        int i = this.indexOf(o);
-        if (i >= 0) return this.children.get(i).uuid();
-        return null;
-    }
+        if (o == null) return null;
 
-    final int indexOfRange(BaseStructure o, int start, int end) {
-        if (o == null) {
-            for (int i = start; i < end; i++) {
-                if (this.children.get(i).value() == null) {
-                    return i;
-                }
-            }
-        } else {
-            for (int i = start; i < end; i++) {
-                if (o == this.children.get(i).value()) {
-                    return i;
-                }
-            }
+        if (!this.children.contains(o)) {
+            return null;
         }
-        return -1;
-    }
 
-    final int indexOfRange(UUID uuid, int start, int end) {
+        UUID uuid = this.listUUIDMapping.inverse().get(o);
         if (uuid == null) {
-            for (int i = start; i < end; i++) {
-                if (this.children.get(i).uuid() == null) {
-                    return i;
-                }
-            }
-        } else {
-            for (int i = start; i < end; i++) {
-                if (uuid.equals(this.children.get(i).uuid())) {
-                    return i;
-                }
-            }
+            throw new IllegalStateException("A child was assigned to the index but the UUID mapping is missing.");
         }
-        return -1;
+        return uuid;
     }
 
     public ListElement<T> listElementFromData(MapType child) throws BaseTypeCannotBeParsed {
@@ -344,14 +333,14 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         return UUIDUtils.putUUID(map, "uuid", element.uuid());
     }
 
-    @NotNull
-    protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed;
-
     @Override
     public ListType toData() {
         List<BaseType<?>> list = new ArrayList<>();
-        for (ListElement<T> child : this.children) {
-            list.add(this.listElementToData(child));
+        for (T child : this.children) {
+            UUID uuid = this.listUUIDMapping.inverse().get(child);
+            /* dont crash here, just save the correct children, allows cleanup via serialization */
+            if (uuid == null) continue;
+            list.add(this.listElementToData(new ListElement<>(uuid, child)));
         }
         return new ListType(list);
     }

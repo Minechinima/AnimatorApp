@@ -1,9 +1,11 @@
 package com.minechinima.model.base;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.MapType;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
-import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
 
 import java.util.*;
@@ -19,12 +21,12 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
      * The String key is for serialization.
      * This allows for empty identifiers of grouping nodes.
      */
-    private final Map<String, T> children = new HashMap<>();
+    private final Set<T> children = Collections.newSetFromMap(new IdentityHashMap<>());
     /**
      * A buffer of children (ideally added during construction of the instance)
      * to allow initializing them once into the hierarchy.
      */
-    private final Map<String, T> buffer = new HashMap<>();
+    private final BiMap<String, T> mappingBuffer = HashBiMap.create();
     private boolean initializedChildren = false;
 
     public BaseImmutableValueHierarchy(String id, ValuePath.Format pathFormat) {
@@ -41,7 +43,7 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
      */
     @Override
     public final Set<T> getChildren() {
-        return new HashSet<>(this.children.values());
+        return new HashSet<>(this.children);
     }
 
     /**
@@ -51,7 +53,7 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
      */
     @Override
     public final boolean isDirectChild(BaseStructure child) {
-        return this.children.containsValue(child);
+        return this.children.contains(child);
     }
 
     /**
@@ -66,7 +68,9 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
             throw new UnsupportedOperationException("The children are already initialized.");
         }
 
-        this.throwExceptionForIllegalChild(child);
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Empty names are not allowed");
+        }
 
         /*
          * UUID is final in BaseStructure.
@@ -78,15 +82,15 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
             throw new UnsupportedOperationException("Adding IDMutable to an ImmutableHierarchy is not supported and can have unwanted side effects.");
         }
 
-        if (this.buffer.containsKey(name)) {
+        if (this.mappingBuffer.containsKey(name)) {
             throw new IllegalArgumentException("The key was already registered for the children.");
         }
 
-        if (this.buffer.containsValue(child)) {
+        if (this.mappingBuffer.containsValue(child)) {
             throw new IllegalArgumentException("The value was already registered for the children. Duplicates are not allowed.");
         }
 
-        this.buffer.put(name, child);
+        this.mappingBuffer.put(name, child);
     }
 
     /**
@@ -97,31 +101,23 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
             throw new UnsupportedOperationException("The children are already initialized.");
         }
 
-        for (Map.Entry<String,T> child : this.buffer.entrySet()) {
-            this.children.put(child.getKey(), child.getValue());
-            try {
-                child.getValue().setParent(this);
-            } catch (SetParentNotAllowed e) {
-                this.children.remove(child.getKey());
-                this.initializedChildren = true;
-                this.buffer.clear();
-                throw new RuntimeException(e);
-            }
-        }
-
-        this.buffer.clear();
         this.initializedChildren = true;
+
+        for (Map.Entry<String, T> mapping : this.mappingBuffer.entrySet()) {
+            BaseOperationsUtils.addChildOrThrow(mapping.getValue(), this, this.children);
+        }
     }
 
     @Override
     public final MapType toData() {
         Map<String, BaseType<?>> map = new HashMap<>();
 
-        for (Map.Entry<String,T> child : this.children.entrySet()) {
+        for (T child : this.children) {
             /*
              * we don't need to store identifier, the children are already initialized.
              */
-            map.put(child.getKey(), child.getValue().toData());
+            String serializationKey = this.mappingBuffer.inverse().get(child);
+            map.put(serializationKey, child.toData());
         }
 
         return new MapType(map);
@@ -133,7 +129,10 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
         if ((type = data.asMapType()) == null) return;
         for (Map.Entry<String, BaseType<?>> entry : type) {
             T child;
-            if ((child = this.children.get(entry.getKey())) == null) continue;
+            if ((child = this.mappingBuffer.get(entry.getKey())) == null
+                || !this.children.contains(child)) {
+                continue;
+            }
             child.fromData(entry.getValue());
         }
     }
