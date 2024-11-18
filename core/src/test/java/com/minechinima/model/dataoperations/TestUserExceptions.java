@@ -1,10 +1,8 @@
 package com.minechinima.model.dataoperations;
 
+import com.minechinima.model.base.*;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.base.BaseValueHierarchy;
-import com.minechinima.model.base.DummyValueGroup;
-import com.minechinima.model.base.ValuePointer;
+import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -13,8 +11,8 @@ public class TestUserExceptions {
 
     @Test
     public void test() {
-        DummyValueGroup root = new DummyValueGroup("root");
-        DummyValueGroup owner = new DummyValueGroup("test");
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseValueHierarchy owner = new DummyBaseValueHierarchy("test", ValuePath.Format.PATH);
         PointerTest test = new PointerTest("ptr", owner, root);
         root.add(owner);
         owner.add(test);
@@ -25,16 +23,16 @@ public class TestUserExceptions {
         Assertions.assertThrows(UserException.class, () -> op.undo(test));
     }
 
-    public static class PointerTest extends ValuePointer<DummyValueGroup> {
-        private DummyValueGroup owner;
-        public PointerTest(String id, DummyValueGroup owner, @NotNull BaseValueHierarchy<? extends BaseStructure> relative) {
-            super(id, DummyValueGroup.class, relative);
+    public static class PointerTest extends ValuePointer<DummyBaseValueHierarchy> {
+        private DummyBaseValueHierarchy owner;
+        public PointerTest(String id, DummyBaseValueHierarchy owner, @NotNull BaseValueHierarchy<? extends BaseStructure> relative) {
+            super(id, DummyBaseValueHierarchy.class, relative);
             this.owner = owner;
         }
 
         @Override
         public boolean canSet(Object newValue) throws UserException {
-            if (!(newValue instanceof DummyValueGroup dummy)) {
+            if (!(newValue instanceof DummyBaseValueHierarchy dummy)) {
                 return false;
             }
 

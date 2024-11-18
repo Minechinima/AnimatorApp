@@ -117,8 +117,9 @@ public class BaseValueListTest {
         Assertions.assertEquals(v3, root1.getChildByValuePath("[0]"));
         Assertions.assertEquals(v4, root1.getChildByValuePath("[1].test"));
 
-        list1.setParentNull();
-        list2.setParentNull();
+        //TODO
+        //list1.setParentNull();
+        //list2.setParentNull();
         root2.add(list1, list2);
 
         Assertions.assertEquals(list1, root2.getChildByValuePath(list1.getRelativePath(root2).toValuePath()));
@@ -132,7 +133,7 @@ public class BaseValueListTest {
 
     @Test
     public void testPaths() {
-        DummyValueGroup map = new DummyValueGroup("root");
+        DummyBaseValueHierarchy map = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         BaseValueList<DoubleValue> list = this.getAnonymousDoubleList("list");
         map.add(list);
 
@@ -158,7 +159,7 @@ public class BaseValueListTest {
 
     @Test
     public void testPathCollisions() {
-        DummyValueGroup map = new DummyValueGroup("root");
+        DummyBaseValueHierarchy map = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         BaseValueList<DoubleValue> list = this.getAnonymousDoubleList("");
         BaseValueList<DoubleValue> list2 = this.getAnonymousDoubleList("");
         map.add(list, list2);

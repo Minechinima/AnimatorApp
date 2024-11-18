@@ -123,23 +123,18 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
     }
 
     /**
-     * This does not throw exceptions like {@link #setParent(BaseValueHierarchy)} and the operations are kept to
-     * a minimum.
-     * RuntimeExceptions will not happen.
-     * VERY SAFE TO USE :3.
-     */
-    @NoExceptions
-    public final void setParentNull() {
-        //TODO this could theoretically abused without removing this from children. METHOD ENDANGERS TREE INTEGRITY
-        this.parent = null;
-    }
-
-    /**
      * This method sets the parent.
      * When necessary, it resolves path collisions and changes the ID of this if possible.
      * <br><br>
+     * <b>If the parent is set to null the node is automatically cleared from memory, meaning pointers are cleared!</b>
+     * <br><br>
+     * <b>The only possible exceptions that can come from this is {@link SetParentNotAllowed}, no RuntimeExceptions.</b>
+     * <br><br>
      * Possible events triggered:
-     * <ul><li>{@link IdentifierChangeEvent}</li></ul>
+     * <ul>
+     *     <li>{@link IdentifierChangeEvent}</li>
+     *     <li>{@link ParentChangeEvent}</li>
+     * </ul>
      * @param parent can be null if the element, e.g. when it is supposed to be removed from the tree.
      * @throws SetParentNotAllowed if setting the parent is not allowed due to conflicts or other exceptions.
      *                                        This will leave this element and the children elements unchanged.
@@ -159,11 +154,19 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      *                                            to check if it is allowed. In the try-catch-block you should remove the child from the
      *                                            children again if this operation is not supported.</li>
      *                                            <li>If there are wonky illegal states that shouldn't be possible.</li>
-     *                                            <li>Implementation of {@link #throwExceptionForIllegalParentChange(BaseValueHierarchy, BaseValueHierarchy)}</li>
+     *                                            <li>Implementation of {@link #throwExceptionForIllegalParentChange}</li>
      *                                            <li>If this is IDMutable and the UUID of this is not unique anymore with the neighbors.</li>
+     *                                            <li>If something went wrong during {@link #clearNodeFromMemory()}</li>
      *                                        </ul>
      */
     public final void setParent(@Nullable final BaseValueHierarchy<?> parent) throws SetParentNotAllowed {
+        /*
+         * declare ALL values of the tree state that might be changed during setParent here at the top
+         * to safely revert them if ANY error happens.
+         */
+        final BaseValueHierarchy<?> originalParent = this.parent;
+        final String originalIdentifier = this.id;
+
         /* check for loop in parents to avoid recursion and stackoverflow */
         for (BaseValueHierarchy<? extends BaseStructure> testParent = parent; testParent != null;
              testParent = ((BaseStructure) testParent).parent) {
@@ -172,33 +175,56 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
             }
         }
 
-        /*
-         * Check if the tree state is correct.
-         * This node must be a child of the new parent and be removed as child of the old parent.
+        /* getChildren() and clearNodeFromMemory() MAY cause exceptions,
+         * The only exception that should come from this method is SetParentNotAllowed.
+         * This is important, so a caller, which catches SetParentNotAllowed and restores the original tree state,
+         * can never cause an unfinished tree state when a different unexpected exception comes from here.
          */
-        if (this.parent != parent) {
-            if (this.parent != null && this.parent.getChildren().contains(this)) {
-                throw new SetParentNotAllowed("Setting the parent of a BaseStructure to another element," +
-                        "while it is still contained in the children of the previous parent, is prohibited to ensure tree integrity.");
+        try {
+            /*
+             * Check if the tree state is correct.
+             * This node must be a child of the new parent and be removed as child of the old parent.
+             */
+            if (this.parent != parent) {
+                if (this.parent != null && this.parent.getChildren().contains(this)) {
+                    throw new SetParentNotAllowed("Setting the parent of a BaseStructure to another element," +
+                            "while it is still contained in the children of the previous parent, is prohibited to ensure tree integrity.");
+                }
+
+                if (parent != null && !parent.getChildren().contains(this)) {
+                    throw new SetParentNotAllowed("The new parent needs to have this in its children so the setParent() method can fully simulate" +
+                            "a new tree state and check if setting the parent is allowed.");
+                }
             }
 
-            if (parent != null && !parent.getChildren().contains(this)) {
-                throw new SetParentNotAllowed("The new parent needs to have this in its children so the setParent() method can fully simulate" +
-                        "a new tree state and check if setting the parent is allowed.");
+            /*
+             * Automatically call the clear references method in setParent when the parent is changed to null.
+             * This is very important so a node cannot be accidentally removed from tree without cleaning up
+             * and causing memory leaks.
+             * The tree is a closed memory system: wanting to remove from the tree is synonymous with deleting it from memory.
+             */
+            if (parent == null && originalParent != null) {
+                //TODO what if clearing a pointer / reference cannot be undone as it was internal but the tree operation is undone as it failed somewhere?
+                this.clearNodeFromMemory();
             }
+
+            /*
+             * set parent here to fully simulate a changed tree structure so all methods of the tree work correctly.
+             */
+            this.parent = parent;
+            /* call this here so BaseStructure implementation can also prohibit changing parent to null */
+            this.throwExceptionForIllegalParentChange();
+        } catch (SetParentNotAllowed e) {
+            this.parent = originalParent;
+            this.id = originalIdentifier;
+            throw e;
+        } catch (Exception e) {
+            this.parent = originalParent;
+            this.id = originalIdentifier;
+            throw new SetParentNotAllowed(e);
         }
 
-        /*
-         * declare ALL values of the tree state that might be changed during setParent here at the top
-         * to safely revert them if ANY error happens.
-         */
-        final BaseValueHierarchy<?> originalParent = this.parent;
-        final String originalIdentifier = this.id;
-
-        /*
-         * set parent here to fully simulate a changed tree structure so all methods of the tree work correctly.
-         */
-        this.parent = parent;
+        /* The safety checks performed here are only relevant when the node is inserted into the tree, not removed. */
         if (parent != null) {
             /*
              * Everything here is in a try-catch statement to ensure
@@ -206,8 +232,6 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
              * so the tree state stays untouched if setParent is not allowed.
              */
             try {
-                this.throwExceptionForIllegalParentChange(originalParent, parent);
-
                 /* test if id is allowed with the new parent e.g. path formatting etc. */
                 this.throwExceptionForInvalidIDState(this.id);
 
@@ -309,7 +333,6 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * <br><br>
      * <b>This method is called after {@link #parent} has changed
      * and the check for the tree state with parent-child linkage is correct. This means you can use all methods that rely on a finished tree state.</b>
-     * @param newParent
      * @throws SetParentNotAllowed if setting the parent to the given argument is illegal and endangers structural integrity.
      * This will be called in {@link #setParent(BaseValueHierarchy)},
      * to allow subclasses to indirectly influence the success of that operation without overriding it.
@@ -320,7 +343,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * This here is for the base data tree integrity. If your app data thinks it could create something that creates invalid
      * tree integrity, you are wrong, that would simply be invalid application data you need to validate before setting.
      */
-    void throwExceptionForIllegalParentChange(BaseValueHierarchy<?> oldParent, BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {}
+    void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {}
 
     @Nullable
     public final BaseValueHierarchy<?> getParent() {
@@ -366,6 +389,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
     }
 
     /**
+     * Appends all path segments together.
      * @param relative
      * @return null if the relative element was not found in the parents or if it is this.
      *         <br><br>
@@ -648,10 +672,20 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
             throw new IllegalArgumentException("Cannot trigger event where the trigger is not this.");
         }
 
-        /* log changes before triggering events. Events might result in new changes, so first record the source change */
-        if (event instanceof ChangeEvent<?> changeEvent) {
-            this.logChangeEvent(changeEvent);
+        try {
+            /* log changes before triggering events. Events might result in new changes, so first record the source change */
+            if (event instanceof ChangeEvent<?> changeEvent) {
+                this.logChangeEvent(changeEvent);
+            }
+        } catch (Exception e) {
+            /*
+             * if there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
+             * App needs to crash!
+             */
+            //TODO Error classes
+            throw new Error("An exception happened during logging the change. This is a critical bug!", e);
         }
+
 
         /* use identity based set because one listener is only triggered once for one event */
         Set<IEventListener<? super T>> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -697,6 +731,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * e.g. setting parent to null for a while.
      */
     protected final void clearNodeFromMemory() {
+        //TODO maybe private and rename to afterSetParentNull?
         /* only trigger event once on the element that this method is called */
         this.triggerEvent(new RemoveFromTreeEvent(this));
         this.afterRemoveFromTreeIteration();

@@ -1,6 +1,7 @@
 package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.dataoperations.datainterfaces.IValue;
 import com.minechinima.model.events.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
@@ -13,7 +14,7 @@ import java.util.*;
  * Class that holds a single value that is part of the hierarchy.
  * @param <T>
  */
-public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseValueHierarchy<T> implements IValue<T> {
+public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T> {
     private T value;
 
     public BaseSingleValueHierarchy(String id) {
@@ -24,50 +25,83 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         super(id, uuid, ValuePath.Format.PATH);
     }
 
+    @Override
+    public final Set<T> getChildren() {
+        return this.value == null ? Set.of() : Set.of(this.value);
+    }
+
+    @Override
+    public final boolean isDirectChild(BaseStructure child) {
+        return child != null && this.value != null && this.value == child;
+    }
+
     public final T get() {
         return this.value;
     }
 
+    @Override
     public void set(T value) {
         if (this.value == value) return;
-        BaseType<?> valueBefore = this.valueToData();
         final T prevValue = this.value;
-        this.value = value;
+        final BaseType<?> valueBefore = this.valueToData();
+        final BaseType<?> valueAfter;
 
+        /*
+         * Perform valueAfter serialization in case it causes an exception, so we can recover.
+         * Do it in a separate try-catch as the set parent operation must throw Error
+         */
         try {
-            this.value.setParent(this);
+            this.value = value;
+            valueAfter = this.valueToData();
+        } catch (Exception e) {
+            this.value = prevValue;
+            throw e;
+        }
+
+        /* first operation: try removing from tree */
+        try {
+            this.value = null;
+            prevValue.setParent(null);
         } catch (SetParentNotAllowed e) {
             this.value = prevValue;
-            throw new RuntimeException(e);
+            throw new UnsupportedOperationException(e);
+        } catch (Exception e) {
+            throw new Error("", e);
         }
 
-        BaseType<?> valueAfter;
-        /* safety first, if something terminates here, we cannot log the change. */
+        /* now try adding the child */
         try {
-            valueAfter = this.valueToData();
-            if (prevValue != null) prevValue.clearNodeFromMemory();
-        } catch (Exception e) {
-            this.value.setParentNull();
-            this.value = prevValue;
-            throw new RuntimeException(e);
+            this.value = value;
+            this.value.setParent(this);
+        } catch (SetParentNotAllowed e) {
+            this.value = null;
+            //TODO what to do with null in serialization?
+            /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
+            this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
+            throw new UnsupportedOperationException(e);
         }
-        if (prevValue != null) prevValue.setParentNull();
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
     }
 
     @Override
-    public boolean isDirectChild(BaseStructure child) {
-        return child != null && this.value != null && this.value == child;
+    public final boolean removeChild(T child) {
+        if (child == null || this.value != child) return false;
+
+        this.set(null);
+        return this.value == null;
     }
 
     @Override
-    public Set<T> getChildren() {
-        return Set.of(this.value);
+    public final boolean addChild(T child) {
+        if (child == null || this.value != null) return false;
+
+        this.set(child);
+        return this.value == child;
     }
 
     @Override
-    protected void _fromData(BaseType<?> data) {
+    public void fromData(BaseType<?> data) {
         try {
             this.set(this.valueFromData(data));
         } catch (BaseTypeCannotBeParsed e) {

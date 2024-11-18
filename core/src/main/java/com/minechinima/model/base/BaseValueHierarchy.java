@@ -1,17 +1,14 @@
 package com.minechinima.model.base;
 
-import com.minechinima.data.types.BaseType;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.utils.ID;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
-import com.minechinima.model.utils.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * Template class for all BaseStructure elements that can have children that are part of the tree structure.
@@ -20,10 +17,8 @@ import java.util.function.Consumer;
  * and should not be overridden.
  * @param <T>
  */
-public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure {
+public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
     private final ValuePath.Format format;
-    private boolean isDeserialising;
-    private final List<Runnable> executeAfterFromData = new ArrayList<>();
 
     public BaseValueHierarchy(String id, ValuePath.Format pathFormat) {
         super(id);
@@ -38,7 +33,7 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
     /**
      * Determines how the child id is appended to the path.
      */
-    public ValuePath.Format getPathFormat() {
+    public final ValuePath.Format getPathFormat() {
         return this.format;
     }
 
@@ -86,26 +81,8 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
      * @return collection of children.
      * Never contains null elements or duplicates (reference equal).
      * The specification of how the elements are ordered is open for the subclasses to define.
-     * @see BaseValueHierarchy#throwExceptionsInvalidElement(BaseStructure)
      */
     public abstract Collection<T> getChildren();
-
-    /**
-     * @param elementToBeAdded
-     * @throws NullPointerException when the element to be added is null
-     * @throws IllegalArgumentException when the same reference equal element is already in the children.
-     */
-    protected final void throwExceptionsInvalidElement(T elementToBeAdded) {
-        if (elementToBeAdded == null) {
-            throw new NullPointerException("This Collection does not permit null values.");
-        }
-
-        for (T element : this.getChildren()) {
-            if (element == elementToBeAdded) {
-                throw new IllegalArgumentException("This Collection does not permit reference equal duplicates.");
-            }
-        }
-    }
 
     /**
      * @param uuid
@@ -131,62 +108,47 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
     public abstract boolean isDirectChild(BaseStructure child);
 
     /**
-     * @return false if the child would be skipped by the path search algorithm using a value path, or if available the unique path,
-     * or if this does not contain the specified child.
+     * Checks if the given node could be retrieved with a unique path from this hierarchy.
+     * The node could be a direct child or any child in the subtree.
+     * @return false if the child would be skipped by the path search algorithm using a value path or, if available, the unique path.
      * @implNote final as it is part of the path system specification
      */
-    public final boolean isChildAddressableWithUniquePath(T child) {
-        return this.isChildAddressableWithPath(child, true);
+    public final boolean isNodeAddressableWithUniquePath(BaseStructure child) {
+        return this.isNodeAddressableWithPath(child, true);
     }
 
     /**
-     * @return false if the child would be skipped by the path search algorithm using a solely the value path,
-     * or if this does not contain the specified child.
+     * Checks if the given node could be retrieved with a value path from this hierarchy.
+     * The node could be a direct child or any child in the subtree.
+     * @return false if the child would be skipped by the path search algorithm using only the value path.
      * @implNote final as it is part of the path system specification
      */
-    public final boolean isChildAddressableWithValuePath(T child) {
+    public final boolean isNodeAddressableWithValuePath(BaseStructure child) {
         //TODO test
-        return this.isChildAddressableWithPath(child, false);
+        return this.isNodeAddressableWithPath(child, false);
     }
 
     /**
      * @return false if the child would be skipped by the path search algorithm or if this does not contain
      * the specified child.
      */
-    private boolean isChildAddressableWithPath(T child, boolean useUnique) {
-        if (!this.isDirectChild(child)) return false;
+    private boolean isNodeAddressableWithPath(BaseStructure child, boolean useUnique) {
         BaseValueHierarchy<?> parent = child.getParent();
-        if (parent == null) throw new IllegalStateException("child does not have parent");
+        ValuePath relativePath = child.getRelativePath(this);
 
-        ValuePath relativePath = child.getRelativePath(parent);
-        if (relativePath == null) throw new IllegalStateException("relative path to parent could not be built.");
+        if (parent == null && relativePath != null) {
+            throw new IllegalStateException("The given child has no parent but a relative path could be built to this node.");
+        } else if (relativePath == null) {
+            return false;
+        }
 
         relativePath = useUnique ? relativePath.getCleanedUniquePath() : relativePath.getCleanedValuePath();
         return relativePath.getSize() > 0;
     }
 
-    /**
-     * This method searches for a child with the unique relative path and executes the consumer when it is found.
-     * The search process will only start after {@link #fromData(BaseType)} is finished, if this method is called from that context.
-     * @param uniqueRelativePath
-     * @param consumer Will only be executed when the child is found. The consumer is executed at the end of {@link #fromData(BaseType)}
-     *                 to ensure that the searched child is already loaded or directly when this method is not called within the context of
-     *                 {@link #fromData(BaseType)}.
-     */
-    public void loadChildByUniquePath(final String uniqueRelativePath, Consumer<BaseStructure> consumer) {
-        if (this.isDeserialising) {//TODO removes this.... it's dumb
-            this.executeAfterFromData.add(() -> {
-                BaseStructure child = this.getChildByUniquePath(uniqueRelativePath);
-                if (child != null) consumer.accept(child);
-            });
-        } else {
-            BaseStructure child = this.getChildByUniquePath(uniqueRelativePath);
-            if (child != null) consumer.accept(child);
-        }
-    }
-
     @Nullable
     public final BaseStructure getChildByValuePath(String relativePath) {
+        //TODO rename child to node when it is any child of the subtree
         if (relativePath.isEmpty()) return null;
         try {
             return this.getChildByValuePath(new ValuePath(relativePath));
@@ -349,19 +311,4 @@ public abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseSt
 
         return children;
     }
-
-    @Override
-    public final void fromData(BaseType<?> data) {
-        this.isDeserialising = true;
-        this._fromData(data);
-        this.isDeserialising = false;
-        this.executeAfterFromData.forEach(Runnable::run);
-        this.executeAfterFromData.clear();
-    }
-
-    /**
-     * Call {@link #fromData(BaseType)} to deserialize!
-     * @param data
-     */
-    protected abstract void _fromData(BaseType<?> data);
 }

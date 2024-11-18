@@ -9,11 +9,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @TestOnly
-final class DummyBaseValueHierarchy extends BaseValueHierarchy<BaseStructure> {
+public final class DummyBaseValueHierarchy extends BaseMutableValueHierarchy<BaseStructure> {
     public final List<BaseStructure> children = new ArrayList<>();
 
-    DummyBaseValueHierarchy(String id, ValuePath.Format format) {
+    public DummyBaseValueHierarchy(String id, ValuePath.Format format) {
         super(id, format);
+    }
+
+    @Override
+    public boolean addChild(BaseStructure child) {
+        this.add(child);
+        return this.children.contains(child);
+    }
+
+    @Override
+    public boolean removeChild(BaseStructure child) {
+        return this.children.remove(child);
     }
 
     /**
@@ -32,15 +43,20 @@ final class DummyBaseValueHierarchy extends BaseValueHierarchy<BaseStructure> {
 
     protected void remove(BaseStructure child) {
         if (this.children.contains(child)) {
-            child.setParentNull();
             this.children.remove(child);
+            try {
+                child.setParent(null);
+            } catch (SetParentNotAllowed e) {
+                this.children.add(child);
+                throw new RuntimeException(e);
+            }
         }
     }
 
     /**
      * Only adds the child if it has not been added before.
      */
-    protected DummyBaseValueHierarchy add(BaseStructure... children) {
+    public DummyBaseValueHierarchy add(BaseStructure... children) {
         for (BaseStructure child : children) {
             if (this.children.contains(child)) return this;
 
@@ -62,7 +78,7 @@ final class DummyBaseValueHierarchy extends BaseValueHierarchy<BaseStructure> {
     }
 
     @Override
-    public void _fromData(BaseType data) {
+    public void fromData(BaseType data) {
 
     }
 }

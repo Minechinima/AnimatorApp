@@ -2,6 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.dataoperations.DummyHistoryManager;
+import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ public class BaseValueListUndos {
     public void removeChildUndo() throws UserException {
         BaseValueList<DoubleValue> list = BaseValueListTest.getAnonymousDoubleList("test");
 
-        DummyValueGroup root = new DummyValueGroup("root");
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         root.add(list);
         list.add(new DoubleValue("", 1D));
         list.add(new DoubleValue("", 2D));
@@ -34,7 +35,7 @@ public class BaseValueListUndos {
     public void removeChildUndoCollab() throws UserException {
         BaseValueList<DoubleValue> list = BaseValueListTest.getAnonymousDoubleList("test");
 
-        DummyValueGroup root = new DummyValueGroup("root");
+        DummyBaseValueHierarchy root = new DummyBaseValueHierarchy("root", ValuePath.Format.PATH);
         root.add(list);
         list.add(new DoubleValue("", 1D));
         list.add(new DoubleValue("", 2D));

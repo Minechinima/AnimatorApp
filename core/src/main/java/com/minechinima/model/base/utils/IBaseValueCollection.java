@@ -1,5 +1,6 @@
-package com.minechinima.model.base;
+package com.minechinima.model.base.utils;
 
+import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.NotNull;
 
 /**

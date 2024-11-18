@@ -18,16 +18,16 @@ public class BaseValueHierarchyTest {
         root.add(h1, v1, v2);
 
         /* unique path */
-        Assertions.assertTrue(root.isChildAddressableWithUniquePath(v1));
-        Assertions.assertTrue(root.isChildAddressableWithUniquePath(v2));
+        Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v1));
+        Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v2));
 
-        Assertions.assertFalse(root.isChildAddressableWithUniquePath(h1));
+        Assertions.assertFalse(root.isNodeAddressableWithUniquePath(h1));
 
         /* value path */
-        Assertions.assertTrue(root.isChildAddressableWithValuePath(v1));
+        Assertions.assertTrue(root.isNodeAddressableWithValuePath(v1));
 
-        Assertions.assertFalse(root.isChildAddressableWithValuePath(h1));
-        Assertions.assertFalse(root.isChildAddressableWithValuePath(v2));
+        Assertions.assertFalse(root.isNodeAddressableWithValuePath(h1));
+        Assertions.assertFalse(root.isNodeAddressableWithValuePath(v2));
     }
 
     @Test

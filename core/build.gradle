@@ -24,6 +24,8 @@ dependencies {
     shadow(implementation("io.github.spair:imgui-java-natives-macos:${project.imgui_version}"))
 
     implementation "org.joml:joml:${project.joml_version}"
+
+    implementation "com.google.guava:guava:11.0.2"
 }
 
 test {
