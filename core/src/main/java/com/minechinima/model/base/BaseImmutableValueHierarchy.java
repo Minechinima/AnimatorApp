@@ -5,9 +5,7 @@ import com.minechinima.data.types.MapType;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
 /**
@@ -38,6 +36,25 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
     }
 
     /**
+     * @return a copy of the children Set.
+     * @implNote  this is final to ensure that the children are always immutable
+     */
+    @Override
+    public final Set<T> getChildren() {
+        return new HashSet<>(this.children.values());
+    }
+
+    /**
+     * @param child
+     * @return true if this child is contained in the children of this.
+     * @implNote this is final to ensure that the children are always immutable
+     */
+    @Override
+    public final boolean isDirectChild(BaseStructure child) {
+        return this.children.containsValue(child);
+    }
+
+    /**
      * Add the given children into a buffer. The buffer can be flushed into the children <b>once</b> with {@link #initChildren()}.
      * This should be done outside the constructor, after "<i>new CLASS()</i>" is finished.
      * @param name a unique name to identify the child independent of the child's identifier.
@@ -49,8 +66,11 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
             throw new UnsupportedOperationException("The children are already initialized.");
         }
 
+        this.throwExceptionForIllegalChild(child);
+
         /*
-         * UUID is final in BaseStructure. The parsing would need to happen in the constructor to deserialize properly.
+         * UUID is final in BaseStructure.
+         * The parsing and setting of UUID would need to happen in the constructor to deserialize properly.
          * However, deserialization only makes sense after construction of the object so all children are added.
          * Also, this enforces the concept of an immutable hierarchy???
          */
@@ -91,25 +111,6 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
 
         this.buffer.clear();
         this.initializedChildren = true;
-    }
-
-    /**
-     * @return a copy of the children Set.
-     * @implNote  this is final to ensure that the children are always immutable
-     */
-    @Override
-    public final Set<T> getChildren() {
-        return new HashSet<>(this.children.values());
-    }
-
-    /**
-     * @param child
-     * @return true if this child is contained in the children of this.
-     * @implNote this is final to ensure that the children are always immutable
-     */
-    @Override
-    public final boolean isDirectChild(BaseStructure child) {
-        return this.children.containsValue(child);
     }
 
     @Override
