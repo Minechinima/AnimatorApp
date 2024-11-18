@@ -43,8 +43,20 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     public void set(T value) {
         if (this.value == value) return;
         final T prevValue = this.value;
-        final BaseType<?> valueBefore = this.valueToData(prevValue);
-        final BaseType<?> valueAfter = this.valueToData(value);
+        final BaseType<?> valueBefore = this.valueToData();
+        final BaseType<?> valueAfter;
+
+        /*
+         * Perform valueAfter serialization in case it causes an exception, so we can recover.
+         * Do it in a separate try-catch as the set parent operation must throw Error
+         */
+        try {
+            this.value = value;
+            valueAfter = this.valueToData();
+        } catch (Exception e) {
+            this.value = prevValue;
+            throw e;
+        }
 
         /* first operation: try removing from tree */
         try {
@@ -99,6 +111,6 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public BaseType<?> toData() {
-        return this.valueToData(this.value);
+        return this.valueToData();
     }
 }

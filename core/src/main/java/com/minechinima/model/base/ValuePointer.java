@@ -2,6 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.dataoperations.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
@@ -22,10 +23,17 @@ import java.util.function.Consumer;
  * The pointer uses unique paths to uniquely address a target independent of possible identifier changes.<br>
  * This value is not going to serialize and store the target itself, it only points to it with a path.
  * @param <T>
- * @implNote This is in base package to override {@link #throwExceptionForIllegalParentChange(BaseValueHierarchy, BaseValueHierarchy)}
  */
 //TODO idea to solve issue of not loading the pointer target: make this an own class with final methods. Write own getter that tries to load everytime it is called.
-public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implements IPointer<T> {
+//TODO ideas for validating pointer reference frame:
+// * when a parent changes, it will go through ALL its children and call a method like "validateTreeStructure" which can let the setParent operation fail
+// - Cons: can become performance intensive, a tree can have a lot of subtrees
+// + Pro: allows to validate during building of the tree structure - makes it more clear and debugging easier
+// * only validate once this pointers set or get is called and cache the validation result or throw exception.
+// - Cons: would allow invalid pointers to be in the tree as long as no one touches them.
+// + Pro: more efficient
+@Deprecated
+public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IPointer<T>, IValue<T> {
     /**
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.
      */
@@ -188,7 +196,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
                 throw new RuntimeException(e);
             }
             
-            super.set(null);
+            //super.set(null);
             /* pointer successfully cleared - let pointer target know */
             if (this.get() == null) {
                 this.cachedUniquePath = null;
@@ -219,7 +227,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
         }
 
         T prev = this.get();
-        super.set(value);
+        //super.set(value);
         if (this.get() != prev) {
             this.cachedUniquePath = path.toUniquePath();
         }
@@ -229,6 +237,10 @@ public class ValuePointer<T extends BaseStructure> extends BaseValue<T> implemen
         }
 
         this.get().addPointer(this);
+    }
+
+    public T get() {
+        return null;
     }
 
     @Override
