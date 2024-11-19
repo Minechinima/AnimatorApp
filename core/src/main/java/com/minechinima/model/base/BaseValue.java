@@ -2,7 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.dataoperations.datainterfaces.IValue;
-import com.minechinima.model.events.changes.ValueChangeEvent;
+import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 //TODO add some mechanism for final attribute so a value can be completely final and never change - locked attribute is a UI specific thing, see Blender

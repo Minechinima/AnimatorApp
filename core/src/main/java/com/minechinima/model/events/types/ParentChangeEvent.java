@@ -1,4 +1,4 @@
-package com.minechinima.model.events;
+package com.minechinima.model.events.types;
 
 import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.Nullable;
@@ -22,5 +22,13 @@ public class ParentChangeEvent extends Event {
         if (this.oldParent == this.newParent) {
             throw new IllegalStateException("A ParentChange event was triggered where both parents are equal.");
         }
+    }
+
+    public BaseStructure getOldParent() {
+        return oldParent;
+    }
+
+    public BaseStructure getNewParent() {
+        return newParent;
     }
 }

@@ -13,6 +13,7 @@ import java.util.Stack;
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
+    //TODO remove
     private final BaseValueHierarchy<?> observed;
 
     public HistoryManager(BaseValueHierarchy<?> observed) {

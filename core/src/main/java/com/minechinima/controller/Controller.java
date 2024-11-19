@@ -90,7 +90,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        app.getDataRoot().addLogger(this.currentTransaction.getLog());
+        app.getDataTree().getRoot().addLogger(this.currentTransaction.getLog());
 
         try {
             run.run();
@@ -98,7 +98,7 @@ public class Controller {
             this.currentTransaction.abortedState();
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
-            app.getDataRoot().removeLogger(transaction.getLog());
+            app.getDataTree().getRoot().removeLogger(transaction.getLog());
             this.revertTransaction(transaction);
 
             if (e instanceof UserException userException) {
@@ -108,7 +108,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
         }
 
-        app.getDataRoot().removeLogger(this.currentTransaction.getLog());
+        app.getDataTree().getRoot().removeLogger(this.currentTransaction.getLog());
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
@@ -140,7 +140,7 @@ public class Controller {
      * @throws RuntimeException probably best to let the app crash when reverting a transaction fails for some reason.
      */
     protected void revertTransaction(Transaction transaction) {
-        BaseValueHierarchy<?> root = app.getDataRoot();
+        BaseValueHierarchy<?> root = app.getDataTree().getRoot();
         Stack<DataOperationLog.RelativeEntry> log = transaction.getLog().getLogRelativeTo(root);
         while (!log.isEmpty()) {
             DataOperationLog.RelativeEntry step = log.pop();

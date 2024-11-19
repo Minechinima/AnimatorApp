@@ -1,4 +1,4 @@
-package com.minechinima.model.events.changes;
+package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.dataoperations.IdentifierChange;

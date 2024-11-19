@@ -3,15 +3,18 @@ package com.minechinima.model.base;
 import com.minechinima.data.IDataSerializable;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.dataoperations.DataOperationLog;
-import com.minechinima.model.events.*;
+import com.minechinima.model.events.bus.EventBus;
+import com.minechinima.model.events.types.AddToTreeEvent;
+import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.ParentChangeEvent;
+import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.utils.*;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
-import com.minechinima.model.events.changes.ChangeEvent;
-import com.minechinima.model.events.changes.IdentifierChangeEvent;
+import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,12 +22,14 @@ import java.util.*;
 
 /**
  * The base for all nodes in the data tree.
- * Nodes that are not subclasses of {@link BaseValueHierarchy} are considered leafs of the tree.<br>
- * This class contains the core methods handling tree stuff and memory management.
+ * Nodes that are not subclasses of {@link BaseValueHierarchy} are considered leafs of the tree.
+ * <br><br>
+ * Scope of this and all subclasses:
+ * This class only contains core methods and attributes relevant for the tree state.
  * <br><br>
  * A lot of methods are final in this class. This has important safety reasons and should never be changed!
  */
-public abstract class BaseStructure implements IPointerTarget, IDataSerializable<BaseType<?>> {
+public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     /**
      * The String identifier used for building paths to retrieve nodes.
      * <br><br>
@@ -46,40 +51,24 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
     @Nullable
     private BaseValueHierarchy<? extends BaseStructure> parent;
     /**
-     * A list of pointer observers that point to this node.
-     * When we delete this node from the tree, we need to free the pointers.
+     * The bus for dispatching events that happen on this node.
      */
-    private final Set<IPointer<? extends IPointerTarget>> pointers = Collections.newSetFromMap(new IdentityHashMap<>());
-    /**
-     * Event Listeners that listen exclusively to events triggered by this instance.
-     * <br>
-     * <i>Backup the Set with IdentityHashMap so multiple reference equal EventListeners are not registered for the same event.</i><br>
-     * The effective generic type safety should be:<br>
-     * &lt;J extends Event&gt; Map&lt;Class&lt;J&gt;, Set&lt;IEventListener&lt;? super J&gt;&gt;
-     */
-    private final Map<Class<? extends Event>, Set<IEventListener<?>>> eventListeners = new HashMap<>();
-    /**
-     * Event Listeners that listen to any event happening in the children of this element.
-     * <br>
-     * <i>Backup the Set with IdentityHashMap so multiple reference equal EventListeners are not registered for the same event.</i><br>
-     * The effective generic type safety should be:<br>
-     * &lt;J extends Event&gt; Map&lt;Class&lt;J&gt;, Set&lt;IChildEventListener&lt;? super J&gt;&gt;
-     */
-    private final Map<Class<? extends Event>, Set<IChildEventListener<?>>> childEventListeners = new HashMap<>();
-    /**
-     * This is for reference / memory management. Anything that creates a non-persistent internal reference to elements in the
-     * BaseStructure tree needs to clean up that reference when the referenced BaseStructure is removed from the tree, so GC can work.
-     * <br><br>
-     * This list has all the tree elements that reference this.
-     * <br>
-     * Reference management creates a bi-directional link. This means that elements in this list will have this BaseStructure in their list.
-     */
-    private final Set<BaseStructure> referencesToThis = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final EventBusImpl bus = new EventBusImpl(this);
     /**
      * A collection of loggers where change operations on this node or children are logged.
      * @see ChangeEvent
      */
     private final Set<DataOperationLog> loggers = Collections.newSetFromMap(new IdentityHashMap<>());
+    /**
+     * This set contains all pointers, that are part of the same tree, that point to this node.
+     * <br><br>
+     * Only using ValuePointer allows better tracking pointers and relations inside the database.
+     * In theory, this could allow a feature to automatically delete central data blocks in the tree
+     * when no one uses them anymore.
+     * <br><br>
+     * The referenceManagement is for internal runtime references, which is different to this kind of link.
+     */
+    private final Set<ValuePointer> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * @param id
@@ -122,6 +111,10 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
         }
     }
 
+    public final EventBus getEventBus() {
+        return this.bus;
+    }
+
     /**
      * This method sets the parent.
      * When necessary, it resolves path collisions and changes the ID of this if possible.
@@ -156,10 +149,11 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      *                                            <li>If there are wonky illegal states that shouldn't be possible.</li>
      *                                            <li>Implementation of {@link #throwExceptionForIllegalParentChange}</li>
      *                                            <li>If this is IDMutable and the UUID of this is not unique anymore with the neighbors.</li>
-     *                                            <li>If something went wrong during {@link #clearNodeFromMemory()}</li>
+     *                                            <li>If something went wrong during {@link #beforeSetParentNull()}</li>
      *                                        </ul>
      */
     public final void setParent(@Nullable final BaseValueHierarchy<?> parent) throws SetParentNotAllowed {
+        if (this.parent == parent) return;
         /*
          * declare ALL values of the tree state that might be changed during setParent here at the top
          * to safely revert them if ANY error happens.
@@ -204,8 +198,7 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
              * The tree is a closed memory system: wanting to remove from the tree is synonymous with deleting it from memory.
              */
             if (parent == null && originalParent != null) {
-                //TODO what if clearing a pointer / reference cannot be undone as it was internal but the tree operation is undone as it failed somewhere?
-                this.clearNodeFromMemory();
+                this.beforeSetParentNull();
             }
 
             /*
@@ -306,6 +299,17 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
                         throw new SetParentNotAllowed("Cannot set parent as children will have path collisions.");
                     }
                 }
+
+                /* changing the root means we added this node to a new tree */
+                if (originalParent == null || (this.parent != null && originalParent.getRoot() != this.parent.getRoot())) {
+                    this.triggerEvent(new AddToTreeEvent(this));
+                }
+
+                //TODO what about this event? Only trigger for non nulls? Do we need this event even?
+                /* if this point is reached there was no exception and the operation is successful */
+                if (this.parent != originalParent) {
+                    this.triggerEvent(new ParentChangeEvent(this, originalParent, this.parent));
+                }
             } catch (SetParentNotAllowed e) {
                 this.parent = originalParent;
                 this.id = originalIdentifier;
@@ -319,11 +323,6 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
                  */
                 throw new SetParentNotAllowed(e);
             }
-        }
-
-        /* if this point is reached there was no exception and the operation is successful */
-        if (this.parent != originalParent) {
-            this.triggerEvent(new ParentChangeEvent(this, originalParent, this.parent));
         }
     }
 
@@ -570,84 +569,6 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
 
 
     /* EVENT STUFF */
-
-
-    public <T extends Event> void addListener(Class<T> eventType, IEventListener<? super T> listener) {
-        if (!this.eventListeners.containsKey(eventType)) {
-            this.eventListeners.put(eventType, Collections.newSetFromMap(new IdentityHashMap<>()));
-        }
-
-        this.eventListeners.get(eventType).add(listener);
-
-        if (listener instanceof BaseStructure struct) {
-            struct.referencedFrom(this);
-        }
-    }
-
-    public void removeListener(Class<? extends Event> eventType, IEventListener listener) {
-        if (!this.eventListeners.containsKey(eventType)) return;
-
-        this.eventListeners.get(eventType).remove(listener);
-    }
-
-    public void removeListener(IEventListener listener) {
-        for (Set<IEventListener<?>> listeners : this.eventListeners.values()) {
-            listeners.remove(listener);
-        }
-    }
-
-    public <T extends Event> void addChildListener(Class<T> eventType, IChildEventListener<? super T> listener) {
-        //TODO refactor event system to not rely on funny class reflection, maybe ids, strings for event names
-        // TODO idea a registry for all events, avoid nested for loops, improve performance, avoid too much reflection.
-        //  - dependency injection of the registry.
-        //  In the registry you could already pre compile
-        //  what events are assignable to what types so you only need a simple lookup with the runtime of 1
-        //  maybe a bus system where you can only register stuff that implements memory management interfaces (abstract those for basestucture)
-        //  and then annotations are used to precompile what the class listens to, like forge?
-        if (!this.childEventListeners.containsKey(eventType)) {
-            this.childEventListeners.put(eventType, Collections.newSetFromMap(new IdentityHashMap<>()));
-        }
-
-        this.childEventListeners.get(eventType).add(listener);
-
-        if (listener instanceof BaseStructure struct) {
-            struct.referencedFrom(this);
-        }
-    }
-
-    public void removeChildListener(Class<? extends Event> eventType, IChildEventListener listener) {
-        if (!this.childEventListeners.containsKey(eventType)) return;
-
-        this.childEventListeners.get(eventType).remove(listener);
-    }
-
-    public void removeChildListener(IChildEventListener listener) {
-        for (Set<IChildEventListener<?>> listeners : this.childEventListeners.values()) {
-            listeners.remove(listener);
-        }
-    }
-
-    private final <T extends Event> void triggerChildEvent(T event) {
-        /* use identity based set because one listener is only triggered once for one event */
-        Set<IChildEventListener<? super T>> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
-
-        for (Class<? extends Event> eventClass : this.childEventListeners.keySet()) {
-            if (eventClass.isAssignableFrom(event.getClass())) {
-                for (IChildEventListener<?> toAdd : this.childEventListeners.get(eventClass)) {
-                    listeners.add((IChildEventListener<? super T>) toAdd);
-                }
-            }
-        }
-
-        for (IChildEventListener<? super T> listener : listeners) {
-            listener.onChildEvent(event);
-        }
-
-        if (this.parent != null) {
-            ((BaseStructure) this.parent).triggerChildEvent(event);
-        }
-    }
-
     /**
      * Records the change event to all the loggers registered in this node and all the parent nodes.
      * @param event
@@ -662,6 +583,13 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
         }
     }
 
+    private final <T extends Event> void triggerChildEvent(T event) {
+        this.bus._dispatchEventFromChildNode(event);
+        if (this.parent != null) {
+            ((BaseStructure) this.parent).triggerChildEvent(event);
+        }
+    }
+
     /**
      * Triggers an event on this element and passes and event to the parents
      * @param event
@@ -673,38 +601,22 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
         }
 
         try {
-            /* log changes before triggering events. Events might result in new changes, so first record the source change */
+            /*
+             * Log changes before triggering events.
+             * Events might result in new changes, so first record the source change for correct chronological order.
+             */
             if (event instanceof ChangeEvent<?> changeEvent) {
                 this.logChangeEvent(changeEvent);
             }
         } catch (Exception e) {
             /*
-             * if there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
-             * App needs to crash!
+             * If there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
+             * The App needs to crash, so we can quickly fix the underlying issue!
              */
-            //TODO Error classes
             throw new Error("An exception happened during logging the change. This is a critical bug!", e);
         }
 
-
-        /* use identity based set because one listener is only triggered once for one event */
-        Set<IEventListener<? super T>> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
-
-        for (Class<? extends Event> eventClass : this.eventListeners.keySet()) {
-            /*
-             * Check if the event class for the listeners is equal or a superclass of the specified event.
-             * Meaning the event listener will satisfy the bound <? super T> for T being the specified event class.
-             */
-            if (eventClass.isAssignableFrom(event.getClass())) {
-                for (IEventListener<?> toAdd : this.eventListeners.get(eventClass)) {
-                    listeners.add((IEventListener<? super T>) toAdd);
-                }
-            }
-        }
-
-        for (IEventListener<? super T> listener : listeners) {
-            listener.onEvent(event);
-        }
+        this.bus._dispatchEventOnThis(event);
 
         /*
          * Dieser Code wurde in der Gemeinschaft mit Marlon gesegnet (3.10.2024 23:22 Areon Pictures Discord).
@@ -730,91 +642,38 @@ public abstract class BaseStructure implements IPointerTarget, IDataSerializable
      * Call this after an element is removed from tree. Do not call after temporarily removing an element from tree,
      * e.g. setting parent to null for a while.
      */
-    protected final void clearNodeFromMemory() {
-        //TODO maybe private and rename to afterSetParentNull?
+    protected final void beforeSetParentNull() {
         /* only trigger event once on the element that this method is called */
         this.triggerEvent(new RemoveFromTreeEvent(this));
         this.afterRemoveFromTreeIteration();
     }
 
     private void afterRemoveFromTreeIteration() {
-        this.freePointers();
-
-        for (BaseStructure referencesThis : this.referencesToThis) {
-            referencesThis.clearReferencesTo(this);
-        }
-
-        this.referencesToThis.clear();
-        this.eventListeners.clear();
-        this.childEventListeners.clear();
-
+        //TODO go through ValuePointers and clear them
+        this.pointersToThis.clear();
         if (this instanceof BaseValueHierarchy<?> hierarchy) {
             hierarchy.getChildren().forEach(BaseStructure::afterRemoveFromTreeIteration);
         }
     }
 
     /**
-     * Call this when the specified reference is removed from the tree and it should be cleared from memory.
-     * <br><br>
-     * Go through every internal variable that could contain the specified BaseStructure instance and remove it.
-     * <br><br>
-     * <b>Important when extending:</b>
-     * If the subclass has some kind of variable that could contain a BaseStructure reference
-     * it needs to override this method to clear the reference if found and also call the super method!
-     * <br><br>
-     * This mechanism should be applied to internal references that are not persistently stored i.e.
-     * when the specified referenced BaseStructure is deleted from the tree we want GC to delete it completely.
-     * <br>Example: when you put a BaseStructure into a BaseValue element, it will be serialized and stored.
-     * This is independent of the tree state of that BaseStructure reference and should not be garbage collected when
-     * deleted from its tree.
-     * @param reference
+     * @implNote package-private so only ValuePointer can add itself as a pointer to a tree node.
      */
-    @MustBeInvokedByOverriders
-    protected void clearReferencesTo(BaseStructure reference) {
-        for (Set<IChildEventListener<?>> listeners : this.childEventListeners.values()) {
-            listeners.remove(reference);
+    final void addPointer(ValuePointer<?> pointer) {
+        /* TODO slowly I am wondering if I do too many safety checks...
+            theoretically ValuePointer handles this, but assuming this here would mean spreading implementation knowledge*/
+        if (!pointer.getType().isAssignableFrom(this.getClass())) {
+            throw new UnsupportedOperationException("Cannot add a pointer link when the type of the pointer does not match this class.");
         }
 
-        for (Set<IEventListener<?>> listeners : this.eventListeners.values()) {
-            listeners.remove(reference);
-        }
-
-        this.pointers.remove(reference);
-        this.referencesToThis.remove(reference);
+        this.pointersToThis.add(pointer);
     }
 
     /**
-     * This is for reference management. It will add a link between both classes.
-     * @param from
+     * A pointer needs to call this when it does not point to this anymore.
+     * @implNote package-private so only ValuePointer can remove itself as a pointer to a tree node.
      */
-    protected final void referencedFrom(BaseStructure from) {
-        this.referencesToThis.add(from);
-        from.referencesToThis.add(this);
-    }
-
-    @Override
-    public final void freePointers() {
-        /* freePointer method will remove itself from this pointers list when it succesfully cleared */
-        for (IPointer<?> pointer : new ArrayList<>(this.pointers)) {
-            pointer.setNullPointer();
-        }
-    }
-
-    @Override
-    public final void addPointer(IPointer<? extends IPointerTarget> pointer) {
-        this.pointers.add(pointer);
-
-        if (pointer instanceof BaseStructure struct) {
-            struct.referencedFrom(this);
-        }
-    }
-
-    @Override
-    public final void removePointer(IPointer<? extends IPointerTarget> pointer) {
-        this.pointers.remove(pointer);
-        //TODO the pointer link is removed but in referencemanagement there is still a link between both classes
-        //how to distinguish between a referencemanagement link that was only created for pointers and should be cleared here
-        //and a referencemanagement link that was also created for other references.
-        //Not very serious atm, because referencemanagement clears it anyways when one of the instances is removed from tree
+    final void removePointer(ValuePointer<?> pointer) {
+        this.pointersToThis.remove(pointer);
     }
 }

@@ -1,4 +1,4 @@
-package com.minechinima.model.events;
+package com.minechinima.model.events.types;
 
 import com.minechinima.model.base.BaseStructure;
 
