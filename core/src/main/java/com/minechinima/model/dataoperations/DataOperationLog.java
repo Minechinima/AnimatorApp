@@ -1,7 +1,7 @@
 package com.minechinima.model.dataoperations;
 
+import com.minechinima.model.dataoperations.operations.IDataOperation;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.utils.ICopy;
 import org.jetbrains.annotations.NotNull;
@@ -10,48 +10,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**
- * Only logs data operations. Nothing more fancy.
+ * A log of data operations.
+ * The only purpose of this class is to provide the log and close it to stop recording new log entries.
  */
 public class DataOperationLog {
     /**
      * @implNote Do not expose the valuepath instances
      */
     private final Stack<Entry> log = new Stack<>();
+    /**
+     * A cache of all logged data operation instances to avoid logging one instance multiple times.
+     */
+    private final Set<IDataOperation<?>> cache = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean end;
-
-    /**
-     * End the log. After calling this, no more changes can be recorded.
-     */
-    public void endLog() {
-        this.end = true;
-    }
-
-    /**
-     * @return true if this log is closed and cannot record anymore.
-     */
-    public boolean isEnded() {
-        return this.end;
-    }
-
-    /**
-     * @param context
-     * @param dataOperation
-     * @throws IllegalStateException
-     */
-    public void recordDataOperation(BaseStructure context, IDataOperation dataOperation) {
-        if (this.end) return;
-
-        if (!this.log.empty() && this.log.peek().operation.merge(dataOperation)) {
-            return;
-        }
-
-        /*
-         * Just plainly record any changes, no matter whether that node is actually addressable in the tree.
-         * If the node is not addressable and triggers a change, that is rather an indication of a wrongly built
-         * tree structure.
-         */
-        this.log.push(new Entry(context.getFullPath(), dataOperation));
-    }
+    private final Set<DataOperationLogging> loggers = new HashSet<>();
 
     /**
      * @return copy of the log.
@@ -91,6 +63,69 @@ public class DataOperationLog {
         return copy;
     }
 
+    /**
+     * End the log. After calling this, no more changes can be recorded.
+     */
+    public final void freeze() {
+        this.end = true;
+        for (DataOperationLogging logger : this.loggers) {
+            logger.removeLog(this);
+        }
+        this.cache.clear();
+    }
+
+    /**
+     * @return true if this log is closed and cannot record anymore.
+     */
+    public boolean isEnded() {
+        return this.end;
+    }
+
+    /**
+     * @param logger
+     * @implNote Package-private so only {@link DataOperationLogging} can add itself to the log.
+     * This should only happen when there is a link between a log and a logger.
+     */
+    final void addLogger(DataOperationLogging logger) {
+        this.loggers.add(logger);
+    }
+
+    /**
+     * Pushes the given data operation with the given full path into the stack.
+     * @param fullPath the full path to the node where the operation was executed
+     * @param dataOperation
+     * @throws IllegalArgumentException
+     * @implNote Package-private so only the logger {@link DataOperationLogging} can log changes.
+     * The goal is to make this more secure that no other external system could inject log entries that were not triggered
+     * by the source.
+     * This also removes the logging/recording from the public interface of this log class, making it cleaner.
+     */
+    void pushDataOperation(ValuePath fullPath, IDataOperation<?> dataOperation) {
+        if (this.end) return;
+
+        /*
+         * We can't recover and fix this ourselves.
+         * Is the order correct, do we ignore it, do we merge it?
+         * This hints at a bad logging registration.
+         */
+        if (this.cache.contains(dataOperation)) {
+            throw new IllegalArgumentException("Tried to log a data operation instance (reference equal) that was already logged.");
+        }
+
+        this.cache.add(dataOperation);
+
+        if (!this.log.empty() && this.log.peek().operation.merge(dataOperation)) {
+            return;
+        }
+
+        /*
+         * Just plainly record any changes, no matter whether that node is actually addressable in the tree.
+         * If the node is not addressable and triggers a change, that is rather an indication of a wrongly built
+         * tree structure.
+         */
+        this.log.push(new Entry(fullPath, dataOperation));
+    }
+
     protected static abstract class AbstractEntry {
         protected final long timetamp;
         /**
@@ -98,9 +133,9 @@ public class DataOperationLog {
          * Always copy it.
          */
         protected final ValuePath path;
-        protected final IDataOperation operation;
+        protected final IDataOperation<?> operation;
 
-        public AbstractEntry(long timetamp, ValuePath path, IDataOperation operation) {
+        public AbstractEntry(long timetamp, ValuePath path, IDataOperation<?> operation) {
             this.timetamp = timetamp;
             this.path = path == null ? null : path.copy();
             this.operation = operation;
@@ -110,17 +145,17 @@ public class DataOperationLog {
             return this.timetamp;
         }
 
-        public IDataOperation getOperation() {
+        public IDataOperation<?> getOperation() {
             return this.operation;
         }
     }
 
     public static class Entry extends AbstractEntry implements ICopy<Entry> {
-        public Entry(@NotNull ValuePath path, IDataOperation operation) {
+        public Entry(@NotNull ValuePath path, IDataOperation<?> operation) {
             this(System.currentTimeMillis(), path, operation);
         }
 
-        private Entry(long timetamp, ValuePath path, IDataOperation operation) {
+        private Entry(long timetamp, ValuePath path, IDataOperation<?> operation) {
             super(timetamp, path, operation);
         }
 
@@ -139,15 +174,15 @@ public class DataOperationLog {
     }
 
     public static class RelativeEntry extends AbstractEntry implements ICopy<RelativeEntry> {
-        public RelativeEntry(@Nullable ValuePath path, IDataOperation operation) {
+        public RelativeEntry(@Nullable ValuePath path, IDataOperation<?> operation) {
             this(System.currentTimeMillis(), path, operation);
         }
 
-        public RelativeEntry(IDataOperation operation) {
+        public RelativeEntry(IDataOperation<?> operation) {
             this(System.currentTimeMillis(), null, operation);
         }
 
-        private RelativeEntry(long timetamp, @Nullable ValuePath path, IDataOperation operation) {
+        private RelativeEntry(long timetamp, @Nullable ValuePath path, IDataOperation<?> operation) {
             super(timetamp, path, operation);
         }
 

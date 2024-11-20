@@ -32,7 +32,7 @@ public class ListValueInsert implements IDataOperation<IValueList<?>> {
     }
 
     @Override
-    public boolean merge(IDataOperation<IValueList<?>> next) {
+    public boolean merge(IDataOperation<?> next) {
         return false;
     }
 }

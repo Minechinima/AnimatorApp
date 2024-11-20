@@ -4,7 +4,7 @@ import com.minechinima.app.IGenericApplication;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.dataoperations.DataOperationLog;
-import com.minechinima.model.dataoperations.IDataOperation;
+import com.minechinima.model.dataoperations.operations.IDataOperation;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.Pair;

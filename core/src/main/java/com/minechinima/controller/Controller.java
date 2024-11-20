@@ -91,7 +91,7 @@ public class Controller {
         }
 
         app.getDataTree().getReferenceManager().cacheClearedReferences();
-        app.getDataTree().getRoot().addLogger(this.currentTransaction.getLog());
+        app.getDataTree().getRoot().getLogging().registerLog(this.currentTransaction.getLog());
 
         try {
             run.run();
@@ -99,7 +99,8 @@ public class Controller {
             this.currentTransaction.abortedState();
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
-            app.getDataTree().getRoot().removeLogger(transaction.getLog());
+
+            app.getDataTree().getRoot().getLogging().unregisterLog(transaction.getLog());
             app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
             try {
                 this.revertTransaction(transaction);
@@ -115,7 +116,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
         }
 
-        app.getDataTree().getRoot().removeLogger(this.currentTransaction.getLog());
+        app.getDataTree().getRoot().getLogging().unregisterLog(this.currentTransaction.getLog());
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
