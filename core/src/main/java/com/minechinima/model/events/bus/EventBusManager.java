@@ -60,7 +60,8 @@ public class EventBusManager extends BaseStructureReferences {
 
         this.subscribers.put(bus, new IdentityHashMap<>());
         bus.setManager(this);
-        this.afterAddReference(bus.getOwner());
+        //TODO add reference management implementations
+        //this.afterAddReference(bus.getOwner());
     }
 
     /**
@@ -122,6 +123,7 @@ public class EventBusManager extends BaseStructureReferences {
      */
     final void _removeEventBus(EventBus bus) {
         this.subscribers.remove(bus);
+        //TODO the basestructure might still be in the subscribers
         this.afterRemoveReference(bus.getOwner());
     }
 
@@ -143,6 +145,11 @@ public class EventBusManager extends BaseStructureReferences {
                 eventMethodHandler.handleEvent(subscriber.getKey(), origin, event);
             });
         }
+    }
+
+    @Override
+    protected void prepareClearAllReferences() {
+
     }
 
     @Override

@@ -10,6 +10,12 @@ public class SimpleReference<T extends BaseStructure> extends BaseStructureRefer
         super(manager);
     }
 
+    @Override
+    protected void prepareClearAllReferences() {
+        this.cache = this.value;
+        this.value = null;
+    }
+
     public T get() {
         return this.value;
     }
