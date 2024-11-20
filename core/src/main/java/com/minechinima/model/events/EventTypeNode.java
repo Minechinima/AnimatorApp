@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public class EventTypeNode<T extends Event> {
     /**
-     * Parent event type node must contain an event type that is a super class.
+     * Subclasses of this event type.
      */
     protected final Set<EventTypeNode<? extends T>> immediateSubTypes = new HashSet<>();
     protected final Class<T> eventType;
@@ -26,15 +26,16 @@ public class EventTypeNode<T extends Event> {
     }
 
     /**
-     * Goes through the event types and super event types and collects all listeners that are inside the filter
-     * @param filter
+     * Collect all sub event types of the given event type.
+     * @param type
+     * @return a set of all event classes that are subclasses of the specified event class, including the type itself.
      */
-    public Set<Class<? extends T>> collectSubEventTypesOf(Class<? extends Event> type) {
-        Set<Class<? extends T>> collectedSubTypes = new HashSet<>();
+    public <J extends Event> Set<Class<? extends J>> collectSubEventTypesOf(Class<J> type) {
+        Set<Class<? extends J>> collectedSubTypes = new HashSet<>();
 
         //TODO optimize
         if (type.equals(this.eventType) || type.isAssignableFrom(this.eventType)) {
-            collectedSubTypes.add(this.eventType);
+            collectedSubTypes.add((Class<? extends J>) this.eventType);
         }
 
         for (EventTypeNode<? extends T> subType : this.immediateSubTypes) {

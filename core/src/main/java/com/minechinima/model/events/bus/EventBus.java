@@ -7,19 +7,32 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The base EventBus class for a {@link BaseStructure} node to dispatch events through.
+ * An EventBus always belongs to one {@link BaseStructure} node.
  * <br><br>
- * This acts as a bridge between the package-private definitions in this package
+ * The only purpose of this bus it dispatch events through, no management of listeners or anything else.
+ * <br><br>
+ * This acts as a bridge between the secure package-private definitions in this package
  * and the implementations that want to dispatch events.
  * <br><br>
- * You need to extend this class and open the {@link #dispatchEventFromChildNode(Event)} and {@link #dispatchEventOnThis(Event)}
- * methods. Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
+ * You need to extend this class
+ * and open the {@link #dispatchEventFromChildNode(Event)} and {@link #dispatchEventOnThis(Event)}
+ * methods.
+ * Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
  */
 public abstract class EventBus {
+    /**
+     * The EventBusManager that manages this EventBus. The manager is what receives the events,
+     * as it manages the listeners.
+     * <br><br>
+     * @implNote Do not expose this attribute.
+     */
     @Nullable
     private EventBusManager manager;
     /**
      * Important to define what the owner of the eventbus is, so no one else
      * can dispatch events through it.
+     * <br><br>
+     * An EventBus is always a 1:1 relationship for a node.
      */
     private final BaseStructure owner;
 
@@ -49,9 +62,12 @@ public abstract class EventBus {
      * Dispatch an event that happened on this node.
      * @param event
      * @throws IllegalArgumentException if the event trigger is not a child node of this bus owner.
+     * @implNote protected so only subclasses can call it and control the access modifier further, to secure what can
+     * dispatch events through it.
      */
     protected final void dispatchEventOnThis(Event event) {
         if (this.manager == null) return;
+
         if (event.getTrigger() != this.owner) {
             throw new IllegalArgumentException("Cannot dispatch an event with a different trigger node than the bus owner.");
         }
@@ -62,6 +78,8 @@ public abstract class EventBus {
      * Dispatch an event that happened in the child nodes of this EventBus owner.
      * @param event
      * @throws IllegalArgumentException if the event trigger is not a child node of this bus owner.
+     * @implNote protected so only subclasses can call it and control the access modifier further, to secure what can
+     * dispatch events through it.
      */
     protected final void dispatchEventFromChildNode(Event event) {
         if (this.manager == null) return;

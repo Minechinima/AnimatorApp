@@ -65,7 +65,6 @@ public class EventBusManager extends BaseStructureReferences {
     /**
      * Subscribe an object to an EventBus. The Object must declare methods with annotations that want to receive events.
      * @param subscriber
-     * @implNote Put the subscribe method here, so it is more centralized and clear that you need to register the bus first.
      */
     public final void subscribe(EventBus bus, Object subscriber) {
         Map<Object, Set<EventMethodHandler>> handlers;
@@ -96,7 +95,7 @@ public class EventBusManager extends BaseStructureReferences {
                                 "but the method argument is not a subclass or the same as Event.class");
                     }
 
-                    Class<? extends Event> eventType = (Class<? extends Event>) parameterTypes[0];
+                    Class<Event> eventType = (Class<Event>) parameterTypes[0];
                     SubscribeEvent.Type listenType = annotation.type();
 
                     Set<Class<? extends Event>> eventsListened = this.rootType.collectSubEventTypesOf(eventType);

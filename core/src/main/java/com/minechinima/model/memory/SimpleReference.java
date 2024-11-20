@@ -18,7 +18,7 @@ public class SimpleReference<T extends BaseStructure> extends BaseStructureRefer
         T prevValue = this.value;
         this.value = value;
         if (prevValue != null && value != prevValue) {
-            this.afterRemoveReference(this.value);
+            this.afterRemoveReference(prevValue);
         }
 
         if (value != null) {

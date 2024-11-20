@@ -32,6 +32,11 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         return this.eventBusManager;
     }
 
+    //TODO is it a good idea to spread access throughout the app to the manager. all BaseStructureReferences class will have that reference
+    public ReferenceManager getReferenceManager() {
+        return this.referenceManager;
+    }
+
     public T getRoot() {
         return root;
     }

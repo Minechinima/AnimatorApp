@@ -68,7 +68,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * <br><br>
      * The referenceManagement is for internal runtime references, which is different to this kind of link.
      */
-    private final Set<ValuePointer> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<ValuePointer<?>> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * @param id
@@ -336,7 +336,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * This will be called in {@link #setParent(BaseValueHierarchy)},
      * to allow subclasses to indirectly influence the success of that operation without overriding it.
      * @throws RuntimeException this method is allowed to throw any runtime exception, as it will be handled in {@link #setParent(BaseValueHierarchy)}
-     * @implNote This is default to ensure ONLY core data modules can override this. It is a core method needed for
+     * @implNote This is package-private to ensure ONLY core data modules can override this. It is a core method needed for
      * the structural safety of the tree. Opening access to application data inheriting these base classes makes no sense
      * and could result in overusing/abusing it. There are other methods available for application data to ensure valid data.
      * This here is for the base data tree integrity. If your app data thinks it could create something that creates invalid
@@ -559,6 +559,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         return new ID(this.id, this.uuid);
     }
 
+    /**
+     * Goes through the parents until no parent is available anymore. This parent is considered the root.
+     * @return the root from this node, or this node if there is no parent anymore.
+     */
     @NoExceptions
     public BaseValueHierarchy<?> getRoot() {
         if (this.parent != null) return this.parent.getRoot();
@@ -664,6 +668,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             theoretically ValuePointer handles this, but assuming this here would mean spreading implementation knowledge*/
         if (!pointer.getType().isAssignableFrom(this.getClass())) {
             throw new UnsupportedOperationException("Cannot add a pointer link when the type of the pointer does not match this class.");
+        }
+
+        if (pointer.getRoot() != this.getRoot()) {
+            throw new IllegalArgumentException("Tried adding a pointer that is not part of the same data tree.");
         }
 
         this.pointersToThis.add(pointer);

@@ -30,6 +30,14 @@ public class ReferenceManager {
         this.clearReferencesTo(event.getTrigger());
     }
 
+    /**
+     * Method for {@link BaseStructureReferences} to add itself when a reference is created.
+     * @param referencedNode
+     * @param reference
+     * @implNote package private so only {@link BaseStructureReferences} can call it.
+     * The Goal is to make this more secure, so only {@link BaseStructureReferences}
+     * can manage it and no external system could break it.
+     */
     final void registerReference(BaseStructure referencedNode, BaseStructureReferences reference) {
         if (!reference.containsReference(referencedNode)) {
             throw new ContractViolatedException("Tried registering a reference to a node that is not referenced by the holder.");
@@ -51,8 +59,9 @@ public class ReferenceManager {
      * Method for {@link BaseStructureReferences} to remove itself from the references when the reference is cleared.
      * @param referencedNode
      * @param reference
-     * @implNote package private so only {@link BaseStructureReferences} can call it. Goal is to make this more secure,
-     * so references are not removed from anyone else than the actual referencer.
+     * @implNote package private so only {@link BaseStructureReferences} can call it.
+     * The Goal is to make this more secure, so only {@link BaseStructureReferences}
+     * can manage it and no external system could break it.
      */
     final void removeReference(BaseStructure referencedNode, BaseStructureReferences reference) {
         if (reference.containsReference(referencedNode)) {
