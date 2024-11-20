@@ -32,10 +32,6 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         return this.eventBusManager;
     }
 
-    public ReferenceManager getReferenceManager() {
-        return this.referenceManager;
-    }
-
     public T getRoot() {
         return root;
     }

@@ -42,7 +42,7 @@ public abstract class BaseStructureReferences {
      * undo the clearing with {@link #undoClearReferences()}</b>
      * @param reference
      */
-    public abstract void prepareClearReferences(BaseStructure reference);
+    protected abstract void prepareClearReferences(BaseStructure reference);
 
     /**
      * Fully remove the reference.
@@ -53,12 +53,12 @@ public abstract class BaseStructureReferences {
      * This also allows adding more logic to the final clearing,
      * giving more flexibility to a subclass when it is part of a more complex context.
      */
-    public abstract void finalizeClearReferences();
+    protected abstract void finalizeClearReferences();
 
     /**
      * This can be called after {@link #prepareClearReferences(BaseStructure)} to reapply the reference.
      */
-    public abstract void undoClearReferences();
+    protected abstract void undoClearReferences();
     /**
      * <b>Important:</b> This needs to check ALL variables (even temporary caches) if there is a reference.<br>
      * If this contract is broken, it is your fault if memory leaks happen.

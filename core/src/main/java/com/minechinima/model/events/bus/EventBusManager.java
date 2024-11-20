@@ -146,17 +146,17 @@ public class EventBusManager extends BaseStructureReferences {
     }
 
     @Override
-    public void prepareClearReferences(BaseStructure reference) {
+    protected void prepareClearReferences(BaseStructure reference) {
 
     }
 
     @Override
-    public void finalizeClearReferences() {
+    protected void finalizeClearReferences() {
 
     }
 
     @Override
-    public void undoClearReferences() {
+    protected void undoClearReferences() {
 
     }
 
