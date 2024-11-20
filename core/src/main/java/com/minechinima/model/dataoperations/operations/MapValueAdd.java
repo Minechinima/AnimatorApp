@@ -1,4 +1,4 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.dataoperations.operations;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.dataoperations.datainterfaces.IValueMap;

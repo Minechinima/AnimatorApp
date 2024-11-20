@@ -1,8 +1,8 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.IDataOperation;
 import com.minechinima.model.events.types.Event;
+import com.minechinima.model.dataoperations.operations.IDataOperation;
 
 /**
  * This is a change event when the value tree state changes in some way that can be undone.

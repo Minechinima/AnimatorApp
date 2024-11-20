@@ -1,7 +1,7 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.IdentifierChange;
+import com.minechinima.model.dataoperations.operations.IdentifierChange;
 
 public class IdentifierChangeEvent extends ChangeEvent<IdentifierChange> {
     private final String idAfter;

@@ -1,4 +1,4 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.dataoperations.operations;
 
 import com.minechinima.model.dataoperations.datainterfaces.IValueList;
 import com.minechinima.model.exceptions.UserException;

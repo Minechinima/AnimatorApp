@@ -2,7 +2,7 @@ package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueOrderedCollection;
-import com.minechinima.model.dataoperations.ListValueRemove;
+import com.minechinima.model.dataoperations.operations.ListValueRemove;
 import com.minechinima.model.dataoperations.datainterfaces.ListElement;
 
 public class ListRemoveEvent extends ChangeEvent<ListValueRemove> {
