@@ -1,5 +1,6 @@
 package com.minechinima.model.events.bus;
 
+import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeNode;
@@ -32,9 +33,9 @@ public class EventBusManager extends BaseStructureReferences {
     private final Set<Class<? extends Event>> availableEventTypes;
     private final BaseHierarchyRoot dataTree;
 
-    public EventBusManager(BaseHierarchyRoot dataTree, ReferenceManager manager, EventTypeRegistry registry) {
-        super(manager);
-        this.dataTree = dataTree;
+    public EventBusManager(DataTreeManager<?> treeManager, EventTypeRegistry registry) {
+        super(treeManager.getReferenceManager());
+        this.dataTree = treeManager.getRoot();
         this.rootType = registry.compileEventHierarchy();
         this.availableEventTypes = Set.copyOf(registry.getAvailableEvents());
     }

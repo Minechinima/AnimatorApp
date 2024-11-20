@@ -8,3 +8,5 @@ Builds on X core concepts
 Programming in that layer should follow the paradigm "Never trust user input" 
 but in this case, the "user input" are the variables of the program. Always perform safety checks to ensure that
 the state your code works on is valid and what is expected.
+- Any exception in the logging code to record operations will terminate the program. This is important, because logging
+is a core aspect of the app. If it has issues / programmer bugs, these need to be noticed and the underlying cause fixed!
