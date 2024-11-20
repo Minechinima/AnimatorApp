@@ -73,6 +73,34 @@ public class ReferenceManager {
         references.remove(reference);
     }
 
+    /**
+     * Fully remove the reference from this.
+     * This is useful when you destroy the data structure that references nodes.
+     * @param reference
+     * @implNote package private so only {@link BaseStructureReferences} can call it.
+     */
+    final void removeReference(BaseStructureReferences reference) {
+        Set<BaseStructure> referencedBy = this.getNodesReferencedBy(reference);
+        if (referencedBy.isEmpty()) return;
+
+        for (BaseStructure referencedNode : referencedBy) {
+            if (reference.containsReference(referencedNode)) {
+                throw new MemoryLeakError("Tried removing a reference to a node that is still referenced.");
+            }
+
+            this.references.get(referencedNode).remove(reference);
+        }
+    }
+
+    private Set<BaseStructure> getNodesReferencedBy(BaseStructureReferences referencer) {
+        Set<BaseStructure> referenced = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Map.Entry<BaseStructure, Set<BaseStructureReferences>> entry : this.references.entrySet()) {
+            if (entry.getValue().contains(referencer)) referenced.add(entry.getKey());
+        }
+
+        return referenced;
+    }
+
     private void clearReferencesTo(BaseStructure structure) {
         Set<BaseStructureReferences> references;
         if ((references = this.references.get(structure)) == null) return;
