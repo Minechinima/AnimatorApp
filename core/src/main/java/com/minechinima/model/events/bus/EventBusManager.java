@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This manages all available event buses for a data tree.
+ * This manages all available event buses for a data tree and their subscribers.
  */
 public class EventBusManager extends BaseStructureReferences {
     /* keep the mappings as simple as possible to easily clear references */

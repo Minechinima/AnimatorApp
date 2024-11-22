@@ -90,6 +90,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
+        app.getDataTree().getReferenceManager().cacheClearedReferences();
         app.getDataTree().getRoot().addLogger(this.currentTransaction.getLog());
 
         try {
@@ -99,7 +100,13 @@ public class Controller {
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
             app.getDataTree().getRoot().removeLogger(transaction.getLog());
-            this.revertTransaction(transaction);
+            app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
+            try {
+                this.revertTransaction(transaction);
+            } catch (Exception e2) {
+                /* crash the app as we cannot guarantee data sync / integrity anymore */
+                throw new Error("An unexpected exception happened during reverting a failed transaction.");
+            }
 
             if (e instanceof UserException userException) {
                 return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
@@ -118,6 +125,7 @@ public class Controller {
      */
     public void commitCurrentTransaction() {
         if (this.currentTransaction == null) return;
+        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         this.currentTransaction = null;
     }
@@ -127,6 +135,7 @@ public class Controller {
      */
     public void commitCurrentTransactionToHistory() {
         if (this.currentTransaction == null) return;
+        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         if (app.getHistoryManager() != null) {
             app.getHistoryManager().pushTransaction(this.currentTransaction);

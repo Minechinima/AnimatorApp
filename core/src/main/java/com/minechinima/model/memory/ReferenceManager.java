@@ -1,6 +1,5 @@
 package com.minechinima.model.memory;
 
-import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.bus.SubscribeEvent;
@@ -20,6 +19,8 @@ public class ReferenceManager {
     //TODO we need to record a way to undo the clearing of references, in case controller reverts a transaction because error
     // The references need to be virtually cleared so for a running transaction the app can work with correct states as if the references were removed.
     private final Map<BaseStructure, Set<BaseStructureReferences>> references = new IdentityHashMap<>();
+    private final Map<BaseStructure, Set<BaseStructureReferences>> cachedDeletion = new IdentityHashMap<>();
+    private boolean cacheDeletion = false;
 
     public ReferenceManager(BaseHierarchyRoot root) {
         this.root = root;
@@ -27,7 +28,74 @@ public class ReferenceManager {
 
     @SubscribeEvent(type= SubscribeEvent.Type.EVENTS_IN_CHILDREN)
     private void onNodeRemoveFromTree(RemoveFromTreeEvent event) {
-        this.clearReferencesTo(event.getTrigger());
+        BaseStructure structure = event.getTrigger();
+        Set<BaseStructureReferences> references;
+        if ((references = this.references.get(structure)) == null) return;
+
+        if (this.cacheDeletion) {
+            this.cachedDeletion.put(structure, references);
+        }
+
+        for (BaseStructureReferences reference : references) {
+            try {
+                reference.prepareClearReferences(structure);
+                if (!this.cacheDeletion) {
+                    reference.finalizeClearReferences();
+
+                    if (reference.containsReference(structure)) {
+                        throw new MemoryLeakError("Could not clear the reference.");
+                    }
+                }
+            } catch (Exception e) {
+                throw new MemoryLeakError("An unexpected Exception happened while clearing the reference", e);
+            }
+        }
+    }
+
+    public void cacheClearedReferences() {
+        this.cacheDeletion = true;
+    }
+
+    public void reapplyCachedClearedReferences() {
+        this.cacheDeletion = false;
+
+        for (Map.Entry<BaseStructure, Set<BaseStructureReferences>> ref : this.cachedDeletion.entrySet()) {
+            BaseStructure referenced = ref.getKey();
+            for (BaseStructureReferences reference : ref.getValue()) {
+                try {
+                    reference.undoClearReferences();
+
+                    if (!reference.containsReference(referenced)) {
+                        throw new MemoryLeakError("Could not reapply the reference.");
+                    }
+                } catch (Exception e) {
+                    throw new MemoryLeakError("An unexpected Exception happened while reapplying references.", e);
+                }
+            }
+        }
+
+        this.cachedDeletion.clear();
+    }
+
+    public void finalizeCachedClearedReferences() {
+        this.cacheDeletion = false;
+
+        for (Map.Entry<BaseStructure, Set<BaseStructureReferences>> ref : this.cachedDeletion.entrySet()) {
+            BaseStructure referenced = ref.getKey();
+            for (BaseStructureReferences reference : ref.getValue()) {
+                try {
+                    reference.finalizeClearReferences();
+
+                    if (reference.containsReference(referenced)) {
+                        throw new MemoryLeakError("Could not clear the reference.");
+                    }
+                } catch (Exception e) {
+                    throw new MemoryLeakError("An unexpected Exception happened while clearing the reference", e);
+                }
+            }
+        }
+
+        this.cachedDeletion.clear();
     }
 
     /**
@@ -99,23 +167,5 @@ public class ReferenceManager {
         }
 
         return referenced;
-    }
-
-    private void clearReferencesTo(BaseStructure structure) {
-        Set<BaseStructureReferences> references;
-        if ((references = this.references.get(structure)) == null) return;
-
-        for (BaseStructureReferences reference : references) {
-            try {
-                reference.prepareClearReferences(structure);
-                reference.finalizeClearReferences();
-            } catch (Exception e) {
-                throw new MemoryLeakError("An unexpected Exception happened while clearing the reference", e);
-            }
-
-            if (reference.containsReference(structure)) {
-                throw new MemoryLeakError("Could not clear the reference.");
-            }
-        }
     }
 }
