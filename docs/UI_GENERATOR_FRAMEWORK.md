@@ -1,0 +1,5 @@
+- annotation @InGUI(ENTRYPOINT, UICLASS, TRANSLATION_STRING)
+- ENTRYPOINT
+  - defines the class where the annotated field should be displayed in. Is the "structure" of the UI, it will know what elements to display and what Data to give to them
+- UICLASS
+  - defines HOW the field should be rendered. 
