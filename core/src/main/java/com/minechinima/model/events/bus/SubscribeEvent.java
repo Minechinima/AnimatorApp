@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface SubscribeEvent {
-    Type type() default Type.EVENTS_ON_NODE;
+    Type type() default Type.ON_NODE;
 
     enum Type {
         /**
@@ -21,10 +21,10 @@ public @interface SubscribeEvent {
         /**
          * Listen only to events triggered in the children
          */
-        EVENTS_IN_CHILDREN,
+        IN_CHILDREN,
         /**
          * Listen to events triggered on the node.
          */
-        EVENTS_ON_NODE
+        ON_NODE
     }
 }

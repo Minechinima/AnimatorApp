@@ -2,6 +2,7 @@ package com.minechinima.model.memory;
 
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.events.bus.EventBusManager;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.exceptions.ContractViolatedException;
@@ -26,7 +27,11 @@ public class ReferenceManager {
         this.root = root;
     }
 
-    @SubscribeEvent(type= SubscribeEvent.Type.EVENTS_IN_CHILDREN)
+    public void initEventSubscription(EventBusManager busManager) {
+        busManager.subscribe(this.root.getEventBus(), this);
+    }
+
+    @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
     private void onNodeRemoveFromTree(RemoveFromTreeEvent event) {
         BaseStructure structure = event.getTrigger();
         Set<BaseStructureReferences> references;

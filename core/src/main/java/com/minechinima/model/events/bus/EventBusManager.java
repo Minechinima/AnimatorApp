@@ -1,6 +1,5 @@
 package com.minechinima.model.events.bus;
 
-import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeNode;
@@ -33,9 +32,9 @@ public class EventBusManager extends BaseStructureReferences {
     private final Set<Class<? extends Event>> availableEventTypes;
     private final BaseHierarchyRoot dataTree;
 
-    public EventBusManager(DataTreeManager<?> treeManager, EventTypeRegistry registry) {
-        super(treeManager.getReferenceManager());
-        this.dataTree = treeManager.getRoot();
+    public EventBusManager(ReferenceManager referenceManager, BaseHierarchyRoot root, EventTypeRegistry registry) {
+        super(referenceManager);
+        this.dataTree = root;
         this.rootType = registry.compileEventHierarchy();
         this.availableEventTypes = Set.copyOf(registry.getAvailableEvents());
     }
@@ -82,7 +81,7 @@ public class EventBusManager extends BaseStructureReferences {
         /* go through the class and all its superclasses, collecting all annotated methods and check them */
         Class clazz = subscriber.getClass();
         while (clazz != null) {
-            for (Method method : clazz.getMethods()) {
+            for (Method method : clazz.getDeclaredMethods()) {
                 SubscribeEvent annotation = method.getAnnotation(SubscribeEvent.class);
 
                 if (annotation != null) {
@@ -188,10 +187,10 @@ public class EventBusManager extends BaseStructureReferences {
             switch (this.listenType) {
                 case ALL:
                     break;
-                case EVENTS_ON_NODE:
+                case ON_NODE:
                     if (origin == EventOrigin.CHILDREN) return;
                     break;
-                case EVENTS_IN_CHILDREN:
+                case IN_CHILDREN:
                     if (origin == EventOrigin.NODE) return;
                     break;
             }

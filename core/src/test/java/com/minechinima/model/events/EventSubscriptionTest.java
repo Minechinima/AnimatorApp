@@ -1,8 +1,7 @@
 package com.minechinima.model.events;
 
 import com.minechinima.model.DataTreeManager;
-import com.minechinima.model.base.BaseHierarchyRoot;
-import com.minechinima.model.events.base.dummies.DummyBaseHierarchyRoot;
+import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
@@ -12,9 +11,7 @@ import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.events.types.changes.ValueRemoveEvent;
-import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.FloatValue;
-import com.minechinima.model.values.vectors.Vector3fValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -71,22 +68,22 @@ public class EventSubscriptionTest {
             onEventAll++;
         }
 
-        @SubscribeEvent(type = SubscribeEvent.Type.EVENTS_IN_CHILDREN)
+        @SubscribeEvent(type = SubscribeEvent.Type.IN_CHILDREN)
         public void onEventInChildren(Event event) {
             onEventInChildren++;
         }
 
-        @SubscribeEvent(type = SubscribeEvent.Type.EVENTS_ON_NODE)
+        @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
         public void onEventOnNode(Event event) {
             onEventOnNode++;
         }
 
-        @SubscribeEvent(type = SubscribeEvent.Type.EVENTS_ON_NODE)
+        @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
         public void onValueChangeEventOnNode(ValueChangeEvent event) {
             onValueChangeEventOnNode++;
         }
 
-        @SubscribeEvent(type = SubscribeEvent.Type.EVENTS_ON_NODE)
+        @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
         public void onChangeEventOnNode(ChangeEvent event) {
             onChangeEventOnNode++;
         }

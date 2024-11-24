@@ -1,4 +1,4 @@
-package com.minechinima.model.events.base.dummies;
+package com.minechinima.model.base.dummies;
 
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;

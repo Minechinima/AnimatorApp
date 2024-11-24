@@ -23,9 +23,9 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     public DataTreeManager(@NotNull T root, EventTypeRegistry eventRegistry) {
         this.root = root;
         this.referenceManager = new ReferenceManager(root);
-        this.eventBusManager = new EventBusManager(this, eventRegistry);
+        this.eventBusManager = new EventBusManager(this.referenceManager, this.root, eventRegistry);
+        this.referenceManager.initEventSubscription(this.eventBusManager);
         this.getEventBusManager().subscribe(this.root.getEventBus(), this);
-        this.getEventBusManager().subscribe(this.root.getEventBus(), this.referenceManager);
     }
 
     public EventBusManager getEventBusManager() {
