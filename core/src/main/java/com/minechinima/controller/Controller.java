@@ -17,9 +17,8 @@ public class Controller {
         this.app = app;
     }
 
-    @Nullable
-    public Transaction getCurrentTransaction() {
-        return this.currentTransaction;
+    public boolean isActive() {
+        return this.currentTransaction != null;
     }
 
     /**
@@ -47,14 +46,14 @@ public class Controller {
      * @param run
      * @return
      */
-    public ControllerResult executeNewTransactionToHistory(String actionTitle, ControllerRunnable run) {
+    public ControllerResult executeNewTransactionToHistory(HistoryManager historyManager, String actionTitle, ControllerRunnable run) {
         if (this.currentTransaction != null) {
-            this.commitCurrentTransactionToHistory();
+            this.commitCurrentTransaction(historyManager);
         }
         ControllerResult result = this.startTransaction(actionTitle, run);
 
         if (result.state() == ControllerResult.State.SUCCESS) {
-            this.commitCurrentTransactionToHistory();
+            this.commitCurrentTransaction(historyManager);
         }
 
         return result;
@@ -70,14 +69,7 @@ public class Controller {
         }
 
         this.currentTransaction = new Transaction(actionTitle);
-        return this.continueTransaction(run);
-    }
-
-    public ControllerResult startOrContinueTransaction(String actionTitle, ControllerRunnable run) {
-        if (this.currentTransaction == null) {
-            return this.startTransaction(actionTitle, run);
-        }
-
+        this.app.getDataTree().getRoot().getLogging().registerLog(this.currentTransaction.getLog());
         return this.continueTransaction(run);
     }
 
@@ -91,16 +83,16 @@ public class Controller {
         }
 
         app.getDataTree().getReferenceManager().cacheClearedReferences();
-        app.getDataTree().getRoot().getLogging().registerLog(this.currentTransaction.getLog());
+        this.currentTransaction.getLog().resume();
 
         try {
             run.run();
         } catch (Exception e) {
+            this.currentTransaction.getLog().close();
             this.currentTransaction.abortedState();
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
 
-            app.getDataTree().getRoot().getLogging().unregisterLog(transaction.getLog());
             app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
             try {
                 this.revertTransaction(transaction);
@@ -116,7 +108,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
         }
 
-        app.getDataTree().getRoot().getLogging().unregisterLog(this.currentTransaction.getLog());
+        this.currentTransaction.getLog().pause();
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
@@ -134,12 +126,12 @@ public class Controller {
     /**
      * Commits current transaction and pushes it into the history manager of the app
      */
-    public void commitCurrentTransactionToHistory() {
+    public void commitCurrentTransaction(HistoryManager historyManager) {
         if (this.currentTransaction == null) return;
         app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
-        if (app.getHistoryManager() != null) {
-            app.getHistoryManager().pushTransaction(this.currentTransaction);
+        if (historyManager != null) {
+            historyManager.pushTransaction(this.currentTransaction);
         }
         this.currentTransaction = null;
     }

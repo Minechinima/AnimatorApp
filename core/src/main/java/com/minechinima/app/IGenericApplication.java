@@ -6,6 +6,5 @@ import com.minechinima.model.DataTreeManager;
 
 public interface IGenericApplication<T extends DataTreeManager<?>> {
     T getDataTree();
-    HistoryManager getHistoryManager();
     Controller getController();
 }

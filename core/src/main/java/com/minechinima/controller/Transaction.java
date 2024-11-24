@@ -2,6 +2,8 @@ package com.minechinima.controller;
 
 import com.minechinima.model.dataoperations.DataOperationLog;
 
+import java.util.Stack;
+
 /**
  * This class represents a database transaction.
  * <br><br>
@@ -23,7 +25,16 @@ public class Transaction {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public DataOperationLog getLog() {
+    public Stack<DataOperationLog.Entry> getDataOperationStack() {
+        return this.log.getLog();
+    }
+
+    /**
+     * @return the log of this transaction
+     * @implNote package-private so no one outside controller module can register this log and do weird things with it
+     * as it should only contain what the controller changes.
+     */
+    DataOperationLog getLog() {
         return this.log;
     }
 
