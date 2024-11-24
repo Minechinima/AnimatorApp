@@ -23,23 +23,11 @@ public class DataOperationLogging {
      * @param log
      */
     public final void registerLog(DataOperationLog log) {
-        if (log.isEnded()) return;
+        if (log.isClosed()) {
+            throw new IllegalArgumentException("Cannot register a log that is closed.");
+        }
         this.loggers.add(log);
         log.addLogger(this);
-    }
-
-    /**
-     * Unregister a log and freezes it.
-     * @param log
-     */
-    public final void unregisterLog(DataOperationLog log) {
-        /*
-         * This is part of the public interface of the logging system.
-         * Therefore, it does more logic and ensures a log is frozen and cannot be reused
-         * to create a mashup of different operations from different loggers.
-         */
-        log.freeze();
-        this.loggers.remove(log);
     }
 
     /**

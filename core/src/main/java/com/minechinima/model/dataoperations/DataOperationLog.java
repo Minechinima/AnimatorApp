@@ -23,6 +23,7 @@ public class DataOperationLog {
      */
     private final Set<IDataOperation<?>> cache = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean end;
+    private boolean paused;
     private final Set<DataOperationLogging> loggers = new HashSet<>();
 
     /**
@@ -64,9 +65,9 @@ public class DataOperationLog {
     }
 
     /**
-     * End the log. After calling this, no more changes can be recorded.
+     * End the log and remove from all logging services. After calling this, no more changes can be recorded.
      */
-    public final void freeze() {
+    public final void close() {
         this.end = true;
         for (DataOperationLogging logger : this.loggers) {
             logger.removeLog(this);
@@ -74,10 +75,18 @@ public class DataOperationLog {
         this.cache.clear();
     }
 
+    public void pause() {
+        this.paused = true;
+    }
+
+    public void resume() {
+        this.paused = false;
+    }
+
     /**
      * @return true if this log is closed and cannot record anymore.
      */
-    public boolean isEnded() {
+    public boolean isClosed() {
         return this.end;
     }
 
@@ -101,7 +110,7 @@ public class DataOperationLog {
      * This also removes the logging/recording from the public interface of this log class, making it cleaner.
      */
     void pushDataOperation(ValuePath fullPath, IDataOperation<?> dataOperation) {
-        if (this.end) return;
+        if (this.end || this.paused) return;
 
         /*
          * We can't recover and fix this ourselves.

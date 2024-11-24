@@ -43,7 +43,7 @@ public class Transaction {
     void abortedState() {
         if (this.state == State.ACTIVE) {
             this.state = State.ABORTED;
-            this.log.freeze();
+            this.log.close();
         }
     }
 
@@ -56,7 +56,7 @@ public class Transaction {
     void committedState() {
         if (this.state == State.ACTIVE) {
             this.state = State.COMMITTED;
-            this.log.freeze();
+            this.log.close();
         }
     }
 
