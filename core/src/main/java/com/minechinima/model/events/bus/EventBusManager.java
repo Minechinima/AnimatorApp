@@ -112,9 +112,11 @@ public class EventBusManager extends BaseStructureReferences {
             clazz = clazz.getSuperclass();
         }
 
-        handlers.put(subscriber, methodHandlers);
-        if (subscriber instanceof BaseStructure referencedNode) {
-            this.afterAddReference(referencedNode);
+        if (!methodHandlers.isEmpty()) {
+            handlers.put(subscriber, methodHandlers);
+            if (subscriber instanceof BaseStructure referencedNode) {
+                this.afterAddReference(referencedNode);
+            }
         }
     }
 
