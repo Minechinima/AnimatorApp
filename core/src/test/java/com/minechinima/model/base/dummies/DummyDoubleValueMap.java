@@ -1,7 +1,6 @@
 package com.minechinima.model.base.dummies;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueMap;
 import com.minechinima.model.values.DoubleValue;
 import org.jetbrains.annotations.NotNull;
@@ -9,12 +8,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class DummyBaseMap extends BaseValueMap<DoubleValue> {
-    public DummyBaseMap(String id) {
+public class DummyDoubleValueMap extends BaseValueMap<DoubleValue> {
+    public DummyDoubleValueMap(String id) {
         super(id);
     }
 
-    protected DummyBaseMap(String id, UUID uuid) {
+    protected DummyDoubleValueMap(String id, UUID uuid) {
         super(id, uuid);
     }
 

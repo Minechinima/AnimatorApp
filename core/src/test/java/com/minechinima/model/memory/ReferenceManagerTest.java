@@ -1,9 +1,8 @@
 package com.minechinima.model.memory;
 
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
-import com.minechinima.model.base.dummies.DummyBaseMap;
+import com.minechinima.model.base.dummies.DummyDoubleValueMap;
 import com.minechinima.model.events.EventTypeRegistry;
-import com.minechinima.model.events.EventTypeRegistryTest;
 import com.minechinima.model.events.bus.EventBusManager;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.ParentChangeEvent;
@@ -71,12 +70,12 @@ public class ReferenceManagerTest {
 
     public class TestEnvironment {
         DummyBaseHierarchyRoot root;
-        DummyBaseMap map;
+        DummyDoubleValueMap map;
         ReferenceManager manager;
         EventBusManager busManager;
         public TestEnvironment() {
             root = new DummyBaseHierarchyRoot("r");
-            map = new DummyBaseMap("map");
+            map = new DummyDoubleValueMap("map");
             root._addChild("var", map);
             root.initChildren();
 
