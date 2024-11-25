@@ -3,7 +3,11 @@ package com.minechinima.model.events.bus;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.types.Event;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * The base EventBus class for a {@link BaseStructure} node to dispatch events through.
@@ -26,8 +30,7 @@ public abstract class EventBus {
      * <br><br>
      * @implNote Do not expose this attribute.
      */
-    @Nullable
-    private EventBusManager manager;
+    private final Set<EventBusManager> managers = new HashSet<>();
     /**
      * Important to define what the owner of the eventbus is, so no one else
      * can dispatch events through it.
@@ -36,8 +39,13 @@ public abstract class EventBus {
      */
     private final BaseStructure owner;
 
-    protected EventBus(BaseStructure owner) {
-        this.owner = owner;
+    /**
+     * @param owner owner of this eventbus
+     * @implNote protected so only the owner can instantiate it.
+     */
+    protected EventBus(@NotNull BaseStructure owner) {
+
+        this.owner = Objects.requireNonNull(owner);
     }
 
     public BaseStructure getOwner() {
@@ -50,12 +58,8 @@ public abstract class EventBus {
      * @implNote Package-private so only the {@link EventBusManager} can set the manager. This makes it more secure against
      * bad manager changes and memory leaks, in theory...
      */
-    final void setManager(EventBusManager manager) {
-        EventBusManager prevManager = this.manager;
-        this.manager = manager;
-        if (prevManager != null && prevManager != manager) {
-            prevManager._removeEventBus(this);
-        }
+    final void addManager(EventBusManager manager) {
+        this.managers.add(manager);
     }
 
     /**
@@ -66,12 +70,12 @@ public abstract class EventBus {
      * dispatch events through it.
      */
     protected final void dispatchEventOnThis(Event event) {
-        if (this.manager == null) return;
+        if (this.managers.isEmpty()) return;
 
         if (event.getTrigger() != this.owner) {
             throw new IllegalArgumentException("Cannot dispatch an event with a different trigger node than the bus owner.");
         }
-        this.manager.dispatchEvent(this, EventOrigin.NODE, event);
+        this.managers.forEach(m -> m.dispatchEvent(this, EventOrigin.NODE, event));
     }
 
     /**
@@ -82,11 +86,11 @@ public abstract class EventBus {
      * dispatch events through it.
      */
     protected final void dispatchEventFromChildNode(Event event) {
-        if (this.manager == null) return;
+        if (this.managers.isEmpty()) return;
 
         if (!(this.owner instanceof BaseValueHierarchy<?> hierarchy) || !event.getTrigger().isChildOf(hierarchy)) {
             throw new IllegalArgumentException("Cannot dispatch a child event from a node that is not child of the bus owner.");
         }
-        this.manager.dispatchEvent(this, EventOrigin.CHILDREN, event);
+        this.managers.forEach(m -> m.dispatchEvent(this, EventOrigin.CHILDREN, event));
     }
 }
