@@ -2,10 +2,7 @@ package com.minechinima.utils;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class LimitedSizeSet<T> implements Set<T> {
     private final Set<T> backedSet;
@@ -37,11 +34,13 @@ public class LimitedSizeSet<T> implements Set<T> {
 
     @Override
     public boolean isEmpty() {
+        this.checkSizeState();
         return this.backedSet.isEmpty();
     }
 
     @Override
     public boolean contains(Object o) {
+        this.checkSizeState();
         return this.backedSet.contains(o);
     }
 
@@ -49,8 +48,13 @@ public class LimitedSizeSet<T> implements Set<T> {
     @Override
     public Iterator<T> iterator() {
         this.checkSizeState();
-        /* return iterator of copy so the iterator can't add/remove */
-        return new HashSet<>(this.backedSet).iterator();
+        return this.backedSet.iterator();
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        this.checkSizeState();
+        return this.backedSet.spliterator();
     }
 
     @NotNull
