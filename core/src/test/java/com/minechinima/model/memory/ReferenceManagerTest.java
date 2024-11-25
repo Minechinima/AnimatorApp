@@ -17,26 +17,78 @@ import org.junit.jupiter.api.Test;
 public class ReferenceManagerTest {
     @Test
     public void clearReferenceTest() {
-        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("r");
-        DummyBaseMap map = new DummyBaseMap("map");
-        root._addChild("var", map);
-        root.initChildren();
+        TestEnvironment test = new TestEnvironment();
 
-        EventTypeRegistry registry = new EventTypeRegistry();
-        registry.addEventClass(RemoveFromTreeEvent.class);
-        registry.addEventClass(AddToTreeEvent.class);
-        registry.addEventClass(ParentChangeEvent.class);
-        registry.addEventClass(ValueAddEvent.class);
-        registry.addEventClass(ValueRemoveEvent.class);
-        ReferenceManager manager = new ReferenceManager(root);
-        EventBusManager busManager = new EventBusManager(manager, root, registry);
-        manager.initEventSubscription(busManager);
-
-        SimpleReference reference = new SimpleReference(manager);
-        map.add(new DoubleValue("aa"));
-        reference.set(map.get("aa"));
+        SimpleReference reference = new SimpleReference(test.manager);
+        test.map.add(new DoubleValue("aa"));
+        reference.set(test.map.get("aa"));
         Assertions.assertNotNull(reference.get());
-        map.remove("aa");
+        test.map.remove("aa");
         Assertions.assertNull(reference.get());
+    }
+
+    @Test
+    public void reapplyCachedReferencesTest() {
+        TestEnvironment test = new TestEnvironment();
+
+        DoubleValue val = new DoubleValue("aa");
+        SimpleReference reference = new SimpleReference(test.manager);
+        test.map.add(val);
+        reference.set(val);
+        Assertions.assertNotNull(reference.get());
+
+        test.manager.cacheClearedReferences();
+        test.map.remove(val);
+        Assertions.assertNull(reference.get());
+
+        test.map.add(val);
+        test.manager.reapplyCachedClearedReferences();
+        Assertions.assertNotNull(reference.get());
+
+        test.map.remove(val);
+        Assertions.assertNull(reference.get());
+    }
+
+    @Test
+    public void finalzieCachedReferencesTest() {
+        TestEnvironment test = new TestEnvironment();
+
+        DoubleValue val = new DoubleValue("aa");
+        SimpleReference reference = new SimpleReference(test.manager);
+        test.map.add(val);
+        reference.set(val);
+        Assertions.assertNotNull(reference.get());
+
+        test.manager.cacheClearedReferences();
+        test.map.remove(val);
+        Assertions.assertNull(reference.get());
+
+        test.map.add(val);
+        test.manager.finalizeCachedClearedReferences();
+        test.manager.reapplyCachedClearedReferences();
+        Assertions.assertNull(reference.get());
+    }
+
+    public class TestEnvironment {
+        DummyBaseHierarchyRoot root;
+        DummyBaseMap map;
+        ReferenceManager manager;
+        EventBusManager busManager;
+        public TestEnvironment() {
+            root = new DummyBaseHierarchyRoot("r");
+            map = new DummyBaseMap("map");
+            root._addChild("var", map);
+            root.initChildren();
+
+            EventTypeRegistry registry = new EventTypeRegistry();
+            registry.addEventClass(RemoveFromTreeEvent.class);
+            registry.addEventClass(AddToTreeEvent.class);
+            registry.addEventClass(ParentChangeEvent.class);
+            registry.addEventClass(ValueAddEvent.class);
+            registry.addEventClass(ValueRemoveEvent.class);
+            manager = new ReferenceManager(root);
+            busManager = new EventBusManager(manager, root, registry);
+            manager.initEventSubscription(busManager);
+        }
     }
 }

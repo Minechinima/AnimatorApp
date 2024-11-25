@@ -33,21 +33,21 @@ public class ReferenceManager {
 
     @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
     private void onNodeRemoveFromTree(RemoveFromTreeEvent event) {
-        BaseStructure structure = event.getTrigger();
+        BaseStructure removedNode = event.getTrigger();
         Set<BaseStructureReferences> references;
-        if ((references = this.references.get(structure)) == null) return;
+        if ((references = this.references.get(removedNode)) == null) return;
 
         if (this.cacheDeletion) {
-            this.cachedDeletion.put(structure, references);
+            this.cachedDeletion.put(removedNode, references);
         }
 
         for (BaseStructureReferences reference : references) {
             try {
-                reference.prepareClearReferences(structure);
+                reference.prepareClearReferences(removedNode);
                 if (!this.cacheDeletion) {
                     reference.finalizeClearReferences();
 
-                    if (reference.containsReference(structure)) {
+                    if (reference.containsReference(removedNode)) {
                         throw new MemoryLeakError("Could not clear the reference.");
                     }
                 }
@@ -55,6 +55,8 @@ public class ReferenceManager {
                 throw new MemoryLeakError("An unexpected Exception happened while clearing the reference", e);
             }
         }
+
+        this.references.remove(removedNode);
     }
 
     public void cacheClearedReferences() {
@@ -66,6 +68,10 @@ public class ReferenceManager {
 
         for (Map.Entry<BaseStructure, Set<BaseStructureReferences>> ref : this.cachedDeletion.entrySet()) {
             BaseStructure referenced = ref.getKey();
+            if (!referenced.isChildOf(this.root) && referenced != this.root) {
+                throw new MemoryLeakError("Tried reapplying a reference to a node that is not part of the tree");
+            }
+
             for (BaseStructureReferences reference : ref.getValue()) {
                 try {
                     reference.undoClearReferences();
@@ -77,6 +83,8 @@ public class ReferenceManager {
                     throw new MemoryLeakError("An unexpected Exception happened while reapplying references.", e);
                 }
             }
+
+            this.references.put(ref.getKey(), ref.getValue());
         }
 
         this.cachedDeletion.clear();
