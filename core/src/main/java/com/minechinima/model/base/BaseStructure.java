@@ -365,6 +365,19 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Check if two nodes are part of the same tree.
+     * @param other
+     * @return true if this node and the other node are in the same tree.
+     */
+    @NoExceptions
+    public final boolean isInSameTree(BaseStructure other) {
+        /* both are to be considered as "root". Can only be in same tree if they are same */
+        if (this.parent == null && other.parent == null && other != this) return false;
+
+        return this.getRoot() == other.getRoot();
+    }
+
+    /**
      * Add a logger that logs changes, triggering the {@link ChangeEvent} event.
      * Changes to this and all children are logged.
      * @param log
