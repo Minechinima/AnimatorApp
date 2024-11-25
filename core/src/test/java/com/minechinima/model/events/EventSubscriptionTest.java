@@ -1,6 +1,7 @@
 package com.minechinima.model.events;
 
 import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
@@ -11,6 +12,7 @@ import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.events.types.changes.ValueRemoveEvent;
+import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -56,12 +58,16 @@ public class EventSubscriptionTest {
         Assertions.assertEquals(2, tester.onChangeEventOnNode);
     }
 
-    public class EventSubscriber {
+    public static class EventSubscriber extends DoubleValue {
         private int onEventAll = 0;
         private int onEventInChildren = 0;
         private int onEventOnNode = 0;
         private int onValueChangeEventOnNode = 0;
         private int onChangeEventOnNode = 0;
+
+        public EventSubscriber() {
+            super("id", 0, 0, 0);
+        }
 
         @SubscribeEvent(type = SubscribeEvent.Type.ALL)
         public void onEventAll(Event event) {
