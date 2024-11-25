@@ -10,10 +10,7 @@ import com.minechinima.model.memory.ReferenceManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This manages all available event buses for a data tree and their subscribers.
@@ -28,8 +25,13 @@ public class EventBusManager extends BaseStructureReferences {
      * Cache the references that should be removed
      */
     private final Map<EventBus, Map<Object, Set<EventMethodHandler>>> cachedRemoval = new IdentityHashMap<>();
+
     private final EventTypeNode<Event> rootType;
     private final Set<Class<? extends Event>> availableEventTypes;
+    /**
+     * EventBusManager is part of ReferenceManagement, which can only manage references to one data tree.
+     * Therefore, we should also check here if eventbus is correct.
+     */
     private final BaseHierarchyRoot dataTree;
 
     public EventBusManager(ReferenceManager referenceManager, BaseHierarchyRoot root, EventTypeRegistry registry) {
@@ -53,21 +55,20 @@ public class EventBusManager extends BaseStructureReferences {
             throw new IllegalArgumentException("EventBus owner mismatch.");
         }
 
-        if (!owner.isChildOf(this.dataTree) && owner != this.dataTree) {
+        if (!owner.isInSameTree(this.dataTree)) {
             throw new IllegalArgumentException("Cannot register an EventBus that is not in the data tree.");
         }
 
         this.subscribers.put(bus, new IdentityHashMap<>());
-        bus.setManager(this);
-        //TODO add reference management implementations
-        //this.afterAddReference(bus.getOwner());
+        bus.addManager(this);
+        this.afterAddReference(bus.getOwner());
     }
 
     /**
      * Subscribe an object to an EventBus. The Object must declare methods with annotations that want to receive events.
      * @param subscriber
      */
-    public final void subscribe(EventBus bus, Object subscriber) {
+    public void subscribe(EventBus bus, Object subscriber) {
         Map<Object, Set<EventMethodHandler>> handlers;
         if ((handlers = this.subscribers.get(bus)) == null) {
             this.registerEventBus(bus.getOwner(), bus);
@@ -112,18 +113,9 @@ public class EventBusManager extends BaseStructureReferences {
         }
 
         handlers.put(subscriber, methodHandlers);
-    }
-
-    /**
-     * Safety feature for {@link EventBus}.
-     * @param bus
-     * @implNote Package-private so only {@link EventBus} can remove itself. This is for a safety check
-     * if the manager in the EventBus changes for some reason.
-     */
-    final void _removeEventBus(EventBus bus) {
-        this.subscribers.remove(bus);
-        //TODO the basestructure might still be in the subscribers
-        this.afterRemoveReference(bus.getOwner());
+        if (subscriber instanceof BaseStructure referencedNode) {
+            this.afterAddReference(referencedNode);
+        }
     }
 
     /**
@@ -134,6 +126,10 @@ public class EventBusManager extends BaseStructureReferences {
     final void dispatchEvent(EventBus bus, EventOrigin origin, Event event) {
         if (!this.availableEventTypes.contains(event.getClass())) {
             throw new IllegalArgumentException("The dispatched Event class is not registered.");
+        }
+
+        if (!bus.getOwner().isInSameTree(this.dataTree)) {
+            throw new IllegalArgumentException("Cannot dispatch an event of a bus from a different tree.");
         }
 
         Map<Object, Set<EventMethodHandler>> subscribers;
@@ -148,26 +144,64 @@ public class EventBusManager extends BaseStructureReferences {
 
     @Override
     protected void prepareClearAllReferences() {
-
+        this.cachedRemoval.putAll(this.subscribers);
+        this.subscribers.clear();
     }
 
     @Override
     protected void prepareClearReferences(BaseStructure reference) {
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> entry : this.subscribers.entrySet()) {
+            final EventBus removeEventBus = entry.getKey();
+            final Map<Object, Set<EventMethodHandler>> removeSubscribers = entry.getValue();
 
+            if (removeEventBus.getOwner() == reference) {
+                this.cachedRemoval.put(removeEventBus, removeSubscribers);
+                this.subscribers.remove(removeEventBus);
+            } else if (removeSubscribers.containsKey(reference)) {
+                Map<Object, Set<EventMethodHandler>> subscriber = new HashMap<>();
+                subscriber.put(reference, removeSubscribers.get(reference));
+
+                removeSubscribers.remove(reference);
+                this.cachedRemoval.put(removeEventBus, subscriber);
+            }
+        }
     }
 
     @Override
     protected void finalizeClearReferences() {
-
+        this.cachedRemoval.clear();
     }
 
     @Override
     protected void undoClearReferences() {
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> entry : this.cachedRemoval.entrySet()) {
+            final EventBus removedEventBus = entry.getKey();
+            final Map<Object, Set<EventMethodHandler>> removedSubscribers = entry.getValue();
 
+            Map<Object, Set<EventMethodHandler>> storedSubscribers;
+
+            if ((storedSubscribers = this.subscribers.get(removedEventBus)) == null) {
+                this.subscribers.put(removedEventBus, storedSubscribers = new IdentityHashMap<>());
+            }
+
+            storedSubscribers.putAll(removedSubscribers);
+        }
+
+        this.cachedRemoval.clear();
     }
 
     @Override
     public boolean containsReference(BaseStructure reference) {
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> bus : this.subscribers.entrySet()) {
+            if (bus.getKey().getOwner() == reference) return true;
+            if (bus.getValue().containsKey(reference)) return true;
+        }
+
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> bus : this.cachedRemoval.entrySet()) {
+            if (bus.getKey().getOwner() == reference) return true;
+            if (bus.getValue().containsKey(reference)) return true;
+        }
+
         return false;
     }
 
