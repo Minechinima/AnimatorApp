@@ -1,5 +1,6 @@
 package com.minechinima.controller;
 
+import com.minechinima.app.IGenericApplication;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.dataoperations.DataOperationLog;
@@ -13,14 +14,10 @@ import java.util.Stack;
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
-    private final BaseValueHierarchy<?> observed;
+    private final IGenericApplication<?> app;
 
-    public HistoryManager(BaseValueHierarchy<?> observed) {
-        this.observed = observed;
-    }
-
-    public BaseValueHierarchy<? extends BaseStructure> getObservedRoot() {
-        return this.observed;
+    public HistoryManager(IGenericApplication<?> owner) {
+        this.app = owner;
     }
 
     public void pushTransaction(Transaction transaction) {
@@ -32,34 +29,23 @@ public class HistoryManager {
             return;
         }
 
-        Stack<Pair<String, IDataOperation>> step = new Stack<>();
-
-        for (DataOperationLog.RelativeEntry entry : transaction.getLog().getLogRelativeTo(this.observed)) {
-            ValuePath path = entry.getRelativePath();
-            String stringPath = null;
-            if (path != null) {
-                stringPath = path.toUniquePath();
-            }
-            step.push(new Pair<>(stringPath, entry.getOperation()));
-        }
-
-        toPush.push(new HistoryStep(transaction.getLocalizedTitle(), step));
+        toPush.push(new HistoryStep(transaction.getLocalizedTitle(), transaction.getLog()));
     }
 
-    public ControllerResult undo(Controller controller) {
+    public ControllerResult undo(final BaseValueHierarchy<?> relative) {
         if (this.undos.empty()) {
             return new ControllerResult(ControllerResult.State.SUCCESS, "Nothing to undo.");
-        } else if (controller.getCurrentTransaction() != null) {
+        } else if (this.app.getController().getCurrentTransaction() != null) {
             return new ControllerResult(ControllerResult.State.ERROR, "Cannot undo while an action is being performed.");
         }
 
         HistoryStep step = this.undos.pop();
-        ControllerResult result = controller.startTransaction("Undo: " + step.stepTitle, () -> {
-            this.applyHistoryStep(step);
+        ControllerResult result = this.app.getController().startTransaction("Undo: " + step.stepTitle, () -> {
+            this.applyHistoryStep(relative, step);
         });
         if (result.state() == ControllerResult.State.SUCCESS) {
-            Transaction transaction = controller.getCurrentTransaction();
-            controller.commitCurrentTransaction();
+            Transaction transaction = this.app.getController().getCurrentTransaction();
+            this.app.getController().commitCurrentTransaction();
             this.pushTransaction(this.redos, transaction);
         }
 
@@ -70,10 +56,21 @@ public class HistoryManager {
         return null;
     }
 
-    private void applyHistoryStep(HistoryStep step) throws UserException {
-        while (!step.log.isEmpty()) {
-            Pair<String, IDataOperation> op = step.log.pop();
-            BaseStructure context = op.getA() == null ? this.observed : this.observed.getChildByUniquePath(op.getA());
+    private void applyHistoryStep(BaseValueHierarchy<?> relative, HistoryStep historyStep) throws UserException {
+        Stack<Pair<String, IDataOperation>> step = new Stack<>();
+
+        for (DataOperationLog.RelativeEntry entry : historyStep.log().getLogRelativeTo(relative)) {
+            ValuePath path = entry.getRelativePath();
+            String stringPath = null;
+            if (path != null) {
+                stringPath = path.toUniquePath();
+            }
+            step.push(new Pair<>(stringPath, entry.getOperation()));
+        }
+
+        while (!step.isEmpty()) {
+            Pair<String, IDataOperation> op = step.pop();
+            BaseStructure context = op.getA() == null ? relative : relative.getChildByUniquePath(op.getA());
             if (context == null) {
                 throw new UserException("Cannot revert transaction as one element cannot be found.");
             }
@@ -92,5 +89,5 @@ public class HistoryManager {
         }
     }
 
-    protected record HistoryStep(String stepTitle, Stack<Pair<String, IDataOperation>> log) { }
+    protected record HistoryStep(String stepTitle, DataOperationLog log) { }
 }

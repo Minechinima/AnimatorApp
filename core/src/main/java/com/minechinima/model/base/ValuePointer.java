@@ -7,7 +7,6 @@ import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.utils.IPointer;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,8 +31,10 @@ import java.util.function.Consumer;
 // * only validate once this pointers set or get is called and cache the validation result or throw exception.
 // - Cons: would allow invalid pointers to be in the tree as long as no one touches them.
 // + Pro: more efficient
+//TODO idea for removing callback (we don't like lambdas anymore - memory leaks lol) -> interface PointerConstraint.
+// If the parent is mutable, remove on null, if parent is immutable,
 @Deprecated
-public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IPointer<T>, IValue<T> {
+public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T> {
     /**
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.
      */
@@ -167,17 +168,14 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         }
     }
 
-    @Override
     public void setNullPointer() {
         this.set(null);
     }
 
-    @Override
     public void point(T target) {
         this.set(target);
     }
 
-    @Override
     public T getReference() {
         return this.get();
     }
@@ -200,7 +198,6 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             /* pointer successfully cleared - let pointer target know */
             if (this.get() == null) {
                 this.cachedUniquePath = null;
-                prev.removePointer(this);
             }
 
             return;
@@ -233,10 +230,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         }
         /* if the pointer really changed, remove from old pointer target */
         if (prev != null && this.get() != prev) {
-            prev.removePointer(this);
         }
-
-        this.get().addPointer(this);
     }
 
     public T get() {

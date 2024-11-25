@@ -56,6 +56,10 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
         return this.children.contains(child);
     }
 
+    public final boolean isInitialized() {
+        return this.initializedChildren;
+    }
+
     /**
      * Add the given children into a buffer. The buffer can be flushed into the children <b>once</b> with {@link #initChildren()}.
      * This should be done outside the constructor, after "<i>new CLASS()</i>" is finished.

@@ -2,10 +2,10 @@ package com.minechinima.app;
 
 import com.minechinima.controller.Controller;
 import com.minechinima.controller.HistoryManager;
-import com.minechinima.model.base.BaseHierarchyRoot;
+import com.minechinima.model.DataTreeManager;
 
-public interface IGenericApplication<T extends BaseHierarchyRoot> {
-    T getDataRoot();
+public interface IGenericApplication<T extends DataTreeManager<?>> {
+    T getDataTree();
     HistoryManager getHistoryManager();
     Controller getController();
 }

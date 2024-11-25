@@ -3,10 +3,12 @@ package com.minechinima.model.base;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.dataoperations.datainterfaces.IValue;
-import com.minechinima.model.events.changes.ValueChangeEvent;
+import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
+import com.minechinima.utils.LimitedSizeSet;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -15,7 +17,7 @@ import java.util.*;
  * @param <T>
  */
 public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T> {
-    private T value;
+    private final LimitedSizeSet<T> proxySet = new LimitedSizeSet<>(1, new HashSet<>());
 
     public BaseSingleValueHierarchy(String id) {
         super(id, ValuePath.Format.PATH);
@@ -27,58 +29,50 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public final Set<T> getChildren() {
-        return this.value == null ? Set.of() : Set.of(this.value);
+        if (this.proxySet.size() > 1) throw new IllegalStateException("Proxy Set size is greater than 1");
+        return Set.copyOf(this.proxySet);
     }
 
     @Override
     public final boolean isDirectChild(BaseStructure child) {
-        return child != null && this.value != null && this.value == child;
+        return child != null && this.proxySet.contains(child);
     }
 
     public final T get() {
-        return this.value;
+        if (this.proxySet.size() > 1) throw new IllegalStateException("Proxy Set size is greater than 1");
+        return this.proxySet.isEmpty() ? null : this.proxySet.iterator().next();
     }
 
     @Override
     public void set(T value) {
-        if (this.value == value) return;
-        final T prevValue = this.value;
+        if (this.get() == value) return;
+        final T prevValue = this.get();
         final BaseType<?> valueBefore = this.valueToData();
         final BaseType<?> valueAfter;
 
         /*
          * Perform valueAfter serialization in case it causes an exception, so we can recover.
-         * Do it in a separate try-catch as the set parent operation must throw Error
          */
         try {
-            this.value = value;
+            this.proxySet.clear();
+            this.proxySet.add(value);
             valueAfter = this.valueToData();
-        } catch (Exception e) {
-            this.value = prevValue;
-            throw e;
+        } finally {
+            /* in case of exception: revert
+             * in case serialization was successful,
+             * put old value back, so it can be removed from the tree */
+            this.proxySet.clear();
+            this.proxySet.add(prevValue);
         }
 
-        /* first operation: try removing from tree */
+        BaseOperationsUtils.removeChildOrThrow(prevValue, this.proxySet);
         try {
-            this.value = null;
-            prevValue.setParent(null);
-        } catch (SetParentNotAllowed e) {
-            this.value = prevValue;
-            throw new UnsupportedOperationException(e);
+            BaseOperationsUtils.addChildOrThrow(value, this, this.proxySet);
         } catch (Exception e) {
-            throw new Error("", e);
-        }
-
-        /* now try adding the child */
-        try {
-            this.value = value;
-            this.value.setParent(this);
-        } catch (SetParentNotAllowed e) {
-            this.value = null;
             //TODO what to do with null in serialization?
             /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
             this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
-            throw new UnsupportedOperationException(e);
+            throw e;
         }
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
@@ -86,18 +80,18 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public final boolean removeChild(T child) {
-        if (child == null || this.value != child) return false;
+        if (child == null || this.get() != child) return false;
 
         this.set(null);
-        return this.value == null;
+        return this.get() == null;
     }
 
     @Override
     public final boolean addChild(T child) {
-        if (child == null || this.value != null) return false;
+        if (child == null || this.get() != null) return false;
 
         this.set(child);
-        return this.value == child;
+        return this.get() == child;
     }
 
     @Override

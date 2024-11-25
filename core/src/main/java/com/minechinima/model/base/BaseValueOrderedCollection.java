@@ -10,12 +10,11 @@ import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.base.utils.IBaseValueCollection;
 import com.minechinima.model.dataoperations.datainterfaces.ListElement;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
-import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.dataoperations.datainterfaces.IValueList;
-import com.minechinima.model.events.changes.ListAddEvent;
-import com.minechinima.model.events.changes.ListIndexChangeEvent;
-import com.minechinima.model.events.changes.ListRemoveEvent;
+import com.minechinima.model.events.types.changes.ListAddEvent;
+import com.minechinima.model.events.types.changes.ListIndexChangeEvent;
+import com.minechinima.model.events.types.changes.ListRemoveEvent;
 import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
 import com.minechinima.utils.UUIDUtils;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -132,7 +131,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     public void move(int index, int newIndex) {
         if (index == newIndex) return;
         if (index >= this.children.size() || index < 0
-                || newIndex + 1 > this.children.size() || newIndex < 0) throw new IndexOutOfBoundsException();
+                || newIndex >= this.children.size() || newIndex < 0) throw new IndexOutOfBoundsException();
 
         UUID uuid = this.listUUIDOfIndex(index);
         if (uuid == null) throw new IllegalStateException("No UUID mapping for a valid index.");
@@ -140,6 +139,11 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         T child = this.children.get(index);
         if (child == null) throw new IllegalStateException("A child is null.");
 
+        /*
+         * Just move around the child in the internal list.
+         * Path collisions should be impossible, as no new path is created. We can only move the child to an index
+         * that existed previously e.g. move index 1 to 2 [0,1,2] -> [0,2] -> [0,2,1]
+         */
         if (!this.children.remove(child)) throw new UnsupportedOperationException("Could not remove the child");
         this.children.add(newIndex, child);
         this.triggerEvent(new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child)));

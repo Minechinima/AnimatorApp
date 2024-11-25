@@ -90,7 +90,8 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        app.getDataRoot().addLogger(this.currentTransaction.getLog());
+        app.getDataTree().getReferenceManager().cacheClearedReferences();
+        app.getDataTree().getRoot().addLogger(this.currentTransaction.getLog());
 
         try {
             run.run();
@@ -98,8 +99,14 @@ public class Controller {
             this.currentTransaction.abortedState();
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
-            app.getDataRoot().removeLogger(transaction.getLog());
-            this.revertTransaction(transaction);
+            app.getDataTree().getRoot().removeLogger(transaction.getLog());
+            app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
+            try {
+                this.revertTransaction(transaction);
+            } catch (Exception e2) {
+                /* crash the app as we cannot guarantee data sync / integrity anymore */
+                throw new Error("An unexpected exception happened during reverting a failed transaction.");
+            }
 
             if (e instanceof UserException userException) {
                 return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
@@ -108,7 +115,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
         }
 
-        app.getDataRoot().removeLogger(this.currentTransaction.getLog());
+        app.getDataTree().getRoot().removeLogger(this.currentTransaction.getLog());
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
@@ -118,6 +125,7 @@ public class Controller {
      */
     public void commitCurrentTransaction() {
         if (this.currentTransaction == null) return;
+        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         this.currentTransaction = null;
     }
@@ -127,6 +135,7 @@ public class Controller {
      */
     public void commitCurrentTransactionToHistory() {
         if (this.currentTransaction == null) return;
+        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         if (app.getHistoryManager() != null) {
             app.getHistoryManager().pushTransaction(this.currentTransaction);
@@ -140,7 +149,7 @@ public class Controller {
      * @throws RuntimeException probably best to let the app crash when reverting a transaction fails for some reason.
      */
     protected void revertTransaction(Transaction transaction) {
-        BaseValueHierarchy<?> root = app.getDataRoot();
+        BaseValueHierarchy<?> root = app.getDataTree().getRoot();
         Stack<DataOperationLog.RelativeEntry> log = transaction.getLog().getLogRelativeTo(root);
         while (!log.isEmpty()) {
             DataOperationLog.RelativeEntry step = log.pop();
