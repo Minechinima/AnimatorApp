@@ -120,6 +120,27 @@ public class EventBusManager extends BaseStructureReferences {
         }
     }
 
+    public void unsubscribe(EventBus bus, Object subscriber) {
+        if (this.subscribers.containsKey(bus) && this.subscribers.get(bus).containsKey(subscriber)) {
+            this.subscribers.get(bus).remove(subscriber);
+
+            /* if subscriber is node and is not referenced anymore we need to remove */
+            if (subscriber instanceof BaseStructure node && !this.subscribersReferences(node)) {
+                this.afterRemoveReference(node);
+            }
+        }
+    }
+
+    public void unsubscribe(Object subscriber) {
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> entry : this.subscribers.entrySet()) {
+            entry.getValue().remove(subscriber);
+        }
+
+        if (subscriber instanceof BaseStructure node && !this.subscribersReferences(node)) {
+            this.afterRemoveReference(node);
+        }
+    }
+
     /**
      *
      * @param event
@@ -143,6 +164,10 @@ public class EventBusManager extends BaseStructureReferences {
             });
         }
     }
+
+    /* +----------------------+
+     * | REFERENCE MANAGEMENT |
+     * +----------------------+ */
 
     @Override
     protected void prepareClearAllReferences() {
@@ -171,6 +196,12 @@ public class EventBusManager extends BaseStructureReferences {
 
     @Override
     protected void finalizeClearReferences() {
+        for (EventBus bus : this.cachedRemoval.keySet()) {
+            if (!this.subscribers.containsKey(bus)) {
+                bus.removeManager(this);
+            }
+        }
+
         this.cachedRemoval.clear();
     }
 
@@ -194,9 +225,8 @@ public class EventBusManager extends BaseStructureReferences {
 
     @Override
     public boolean containsReference(BaseStructure reference) {
-        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> bus : this.subscribers.entrySet()) {
-            if (bus.getKey().getOwner() == reference) return true;
-            if (bus.getValue().containsKey(reference)) return true;
+        if (this.subscribersReferences(reference)) {
+            return true;
         }
 
         for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> bus : this.cachedRemoval.entrySet()) {
@@ -204,6 +234,14 @@ public class EventBusManager extends BaseStructureReferences {
             if (bus.getValue().containsKey(reference)) return true;
         }
 
+        return false;
+    }
+
+    private boolean subscribersReferences(BaseStructure reference) {
+        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> bus : this.subscribers.entrySet()) {
+            if (bus.getKey().getOwner() == reference) return true;
+            if (bus.getValue().containsKey(reference)) return true;
+        }
         return false;
     }
 
