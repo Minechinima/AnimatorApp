@@ -177,13 +177,14 @@ public class EventBusManager extends BaseStructureReferences {
 
     @Override
     protected void prepareClearReferences(BaseStructure reference) {
-        for (Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> entry : this.subscribers.entrySet()) {
+        for(Iterator<Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>>> it = this.subscribers.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<EventBus, Map<Object, Set<EventMethodHandler>>> entry = it.next();
             final EventBus removeEventBus = entry.getKey();
             final Map<Object, Set<EventMethodHandler>> removeSubscribers = entry.getValue();
 
             if (removeEventBus.getOwner() == reference) {
                 this.cachedRemoval.put(removeEventBus, removeSubscribers);
-                this.subscribers.remove(removeEventBus);
+                it.remove();
             } else if (removeSubscribers.containsKey(reference)) {
                 Map<Object, Set<EventMethodHandler>> subscriber = new HashMap<>();
                 subscriber.put(reference, removeSubscribers.get(reference));
