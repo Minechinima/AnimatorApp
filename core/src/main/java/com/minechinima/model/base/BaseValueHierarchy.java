@@ -199,12 +199,17 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
             ValuePath relativePath = child.getRelativePath(parent);
             if (relativePath == null) throw new IllegalStateException("relative path to parent could not be built.");
 
+            final int prevSize;
+            final ValuePath childPath;
             if (childPathBuilder == null) {
                 childPathBuilder = useUniquePath ? relativePath.getUniquePathIterator() : relativePath.getValuePathIterator();
+                prevSize = 0;
+                while (childPathBuilder.nextNonEmpty() != null) {}
+                childPath = childPathBuilder.getBuiltList();
+            } else {
+                prevSize = childPathBuilder.getBuiltList().getSize();
+                childPath = childPathBuilder.append(relativePath);
             }
-
-            int prevSize = childPathBuilder.getBuiltList().getSize();
-            ValuePath childPath = childPathBuilder.append(relativePath); //TODO???? relativePath + relativePath??
 
             /* empty path element - if it is a hierarchy, go down */
             if (childPath.getStart() == null && child instanceof BaseValueHierarchy<?> subHierarchy) {

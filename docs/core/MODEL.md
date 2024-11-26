@@ -34,3 +34,7 @@ There are two core methods, which are final, that are responsible for securing t
 A lot of other methods are final in `base` module that are built upon the implementation knowledge of the safety mechanisms.
 This ensures that they cannot be overridden and change the tree behavior in a bad way, e.g. the algorithm for finding nodes with a path
 is final.
+
+### Important notes
+- avoid lambdas / callbacks in the model modules that could be used to reference 
+another BaseStructure node and cause a memory leak.

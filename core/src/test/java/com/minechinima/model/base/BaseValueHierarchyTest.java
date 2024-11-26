@@ -70,6 +70,32 @@ public class BaseValueHierarchyTest {
     }
 
     @Test
+    public void getChildFirstEmpty() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseStructure test = new DummyBaseStructure("test");
+        root.add(
+                h1.add(test),
+                h2.add(new DummyBaseStructure("test2")));
+
+        Assertions.assertEquals(test, root.getChildByValuePath("test"));;
+    }
+
+    @Test
+    public void getChildFirstNonEmpty() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("a", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("b", ValuePath.Format.PATH);
+        DummyBaseStructure test = new DummyBaseStructure("test");
+        root.add(
+                h1.add(test),
+                h2.add(new DummyBaseStructure("test2")));
+
+        Assertions.assertEquals(test, root.getChildByValuePath("a.test"));;
+    }
+
+    @Test
     public void getChild() {
         DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
         DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("test", ValuePath.Format.PATH);
