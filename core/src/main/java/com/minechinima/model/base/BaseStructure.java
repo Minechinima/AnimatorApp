@@ -188,6 +188,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
                 }
             }
 
+            //TODO clear pointers when path changes, think about case where parent is changed in the same tree or changed to other tree
             /*
              * Automatically call the clear references method in setParent when the parent is changed to null.
              * This is very important so a node cannot be accidentally removed from tree without cleaning up
@@ -226,11 +227,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
                 this.throwExceptionForInvalidIDState(this.id);
 
                 BaseValueHierarchy<?> uniquenessContext = this.parent.getPathCollisionContext();
-                /* when we have a parent, uniquenessContext could never be null -> exception here means sus stuff! */
-                if (uniquenessContext == null) {
-                    throw new IllegalStateException("Uniqueness context for resolving path collisions is null while having a parent...");
-                }
-
                 /*
                  * since we ensured at the beginning that the tree state is correct,
                  * this list must also include children of this element, as the children of this are now part of the tree
@@ -302,7 +298,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
                     this.triggerEvent(new AddToTreeEvent(this));
                 }
 
-                //TODO what about this event? Only trigger for non nulls? Do we need this event even?
                 /* if this point is reached there was no exception and the operation is successful */
                 if (this.parent != originalParent) {
                     this.triggerEvent(new ParentChangeEvent(this, originalParent, this.parent));
@@ -530,10 +525,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         if (this.parent != null) {
             if (this.parent.getPathFormatPrefixForChildren() != null
                     && !this.parent.getPathFormatPrefixForChildren().isValidStringForEnclosure(id)) {
-                throw new IllegalStateException("The identifier does not adhere to the parent's prefix path format for this child.");
+                throw new IllegalArgumentException("The identifier does not adhere to the parent's prefix path format for this child.");
             } else if (this.parent.getPathFormatPrefixForChildren() == null
                     && !this.parent.getPathFormat().isValidStringForEnclosure(id)) {
-                throw new IllegalStateException("The identifier does not adhere to the parent's path format.");
+                throw new IllegalArgumentException("The identifier does not adhere to the parent's path format.");
             }
         }
     }
