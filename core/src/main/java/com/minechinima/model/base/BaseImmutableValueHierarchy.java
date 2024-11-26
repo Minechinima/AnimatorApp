@@ -5,7 +5,7 @@ import com.google.common.collect.HashBiMap;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
-import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.utils.ValuePath;
 
 import java.util.*;

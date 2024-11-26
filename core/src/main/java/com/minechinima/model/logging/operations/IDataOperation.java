@@ -1,4 +1,4 @@
-package com.minechinima.model.dataoperations.operations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.base.BaseStructure;

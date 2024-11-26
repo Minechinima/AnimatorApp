@@ -1,7 +1,7 @@
-package com.minechinima.model.dataoperations.operations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.dataoperations.datainterfaces.IValueList;
+import com.minechinima.model.logging.datainterfaces.IValueList;
 
 import java.util.UUID;
 

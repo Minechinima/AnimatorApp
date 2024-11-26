@@ -2,8 +2,8 @@ package com.minechinima.controller;
 
 import com.minechinima.app.IGenericApplicationData;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.DataOperationLog;
-import com.minechinima.model.dataoperations.operations.IDataOperation;
+import com.minechinima.model.logging.DataOperationLog;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.base.BaseValueHierarchy;
 

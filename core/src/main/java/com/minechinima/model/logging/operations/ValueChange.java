@@ -1,9 +1,9 @@
-package com.minechinima.model.dataoperations.operations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.datainterfaces.IValue;
+import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 
 public class ValueChange implements IDataOperation<IValue<?>> {

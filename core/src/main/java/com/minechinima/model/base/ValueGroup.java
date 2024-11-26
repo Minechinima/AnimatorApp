@@ -1,11 +1,6 @@
 package com.minechinima.model.base;
 
-import com.minechinima.data.types.BaseType;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.data.types.MapType;
-import com.minechinima.model.exceptions.SetParentNotAllowed;
-import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 import java.util.*;
 

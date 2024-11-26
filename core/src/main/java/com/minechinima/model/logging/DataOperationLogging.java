@@ -1,7 +1,7 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.logging;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.operations.IDataOperation;
+import com.minechinima.model.logging.operations.IDataOperation;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,6 +1,6 @@
 package com.minechinima.controller;
 
-import com.minechinima.model.dataoperations.DataOperationLog;
+import com.minechinima.model.logging.DataOperationLog;
 
 import java.util.Stack;
 

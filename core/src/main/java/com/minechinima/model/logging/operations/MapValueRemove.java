@@ -1,8 +1,8 @@
-package com.minechinima.model.dataoperations.operations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.MapType;
-import com.minechinima.model.dataoperations.datainterfaces.IValueMap;
+import com.minechinima.model.logging.datainterfaces.IValueMap;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 
 public class MapValueRemove implements IDataOperation<IValueMap<?>> {

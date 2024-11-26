@@ -5,7 +5,7 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.base.BaseValueList;
-import com.minechinima.model.dataoperations.datainterfaces.ListElement;
+import com.minechinima.model.logging.datainterfaces.ListElement;
 import com.minechinima.model.base.ValuePointer;
 import org.jetbrains.annotations.Nullable;
 

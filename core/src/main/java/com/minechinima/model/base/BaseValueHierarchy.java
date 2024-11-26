@@ -5,7 +5,7 @@ import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.utils.ID;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.Pair;
-import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

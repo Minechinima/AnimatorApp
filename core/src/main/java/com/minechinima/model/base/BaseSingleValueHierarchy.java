@@ -2,13 +2,11 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
-import com.minechinima.model.dataoperations.datainterfaces.IValue;
+import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.utils.LimitedSizeSet;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
