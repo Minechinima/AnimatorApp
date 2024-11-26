@@ -29,6 +29,7 @@ public class HistoryManager {
             return;
         }
 
+        transaction.getLog().close();
         toPush.push(new HistoryStep(transaction.getLocalizedTitle(), transaction.getLog()));
     }
 
