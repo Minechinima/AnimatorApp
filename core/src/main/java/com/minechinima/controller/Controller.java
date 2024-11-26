@@ -1,19 +1,19 @@
 package com.minechinima.controller;
 
-import com.minechinima.app.IGenericApplication;
+import com.minechinima.app.IGenericApplicationData;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.dataoperations.DataOperationLog;
+import com.minechinima.model.dataoperations.operations.IDataOperation;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.base.BaseValueHierarchy;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Stack;
 
 public class Controller {
     private Transaction currentTransaction;
-    private final IGenericApplication app;
+    private final IGenericApplicationData<?> app;
 
-    public Controller(IGenericApplication app) {
+    public Controller(IGenericApplicationData<?> app) {
         this.app = app;
     }
 
@@ -46,7 +46,7 @@ public class Controller {
      * @param run
      * @return
      */
-    public ControllerResult executeNewTransactionToHistory(HistoryManager historyManager, String actionTitle, ControllerRunnable run) {
+    public ControllerResult executeNewTransaction(HistoryManager historyManager, String actionTitle, ControllerRunnable run) {
         if (this.currentTransaction != null) {
             this.commitCurrentTransaction(historyManager);
         }
@@ -82,7 +82,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        app.getDataTree().getReferenceManager().cacheClearedReferences();
+        this.app.getDataTree().getReferenceManager().cacheClearedReferences();
         this.currentTransaction.getLog().resume();
 
         try {
@@ -93,13 +93,14 @@ public class Controller {
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
 
-            app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
             try {
                 this.revertTransaction(transaction);
             } catch (Exception e2) {
                 /* crash the app as we cannot guarantee data sync / integrity anymore */
                 throw new Error("An unexpected exception happened during reverting a failed transaction.");
             }
+
+            this.app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
 
             if (e instanceof UserException userException) {
                 return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
@@ -118,7 +119,7 @@ public class Controller {
      */
     public void commitCurrentTransaction() {
         if (this.currentTransaction == null) return;
-        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         this.currentTransaction = null;
     }
@@ -128,7 +129,7 @@ public class Controller {
      */
     public void commitCurrentTransaction(HistoryManager historyManager) {
         if (this.currentTransaction == null) return;
-        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         if (historyManager != null) {
             historyManager.pushTransaction(this.currentTransaction);
@@ -142,11 +143,12 @@ public class Controller {
      * @throws RuntimeException probably best to let the app crash when reverting a transaction fails for some reason.
      */
     protected void revertTransaction(Transaction transaction) {
-        BaseValueHierarchy<?> root = app.getDataTree().getRoot();
+        BaseValueHierarchy<?> root = this.app.getDataTree().getRoot();
         Stack<DataOperationLog.RelativeEntry> log = transaction.getLog().getLogRelativeTo(root);
         while (!log.isEmpty()) {
             DataOperationLog.RelativeEntry step = log.pop();
             BaseStructure context;
+            IDataOperation operation = step.getOperation();
 
             if (step.getRelativePath() == null) {
                 context = root;
@@ -158,8 +160,12 @@ public class Controller {
                 throw new IllegalStateException("Cannot revert transaction as one element cannot be found.");
             }
 
+            if (!operation.isCorrectType(context)) {
+                throw new IllegalStateException("Cannot revert transaction as the type of an element is not applicable.");
+            }
+
             try {
-                step.getOperation().undo(context);
+                operation.undo(context);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
