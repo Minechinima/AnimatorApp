@@ -1,7 +1,7 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 
 public class IdentifierChange implements IDataOperation<IDMutable> {
     private final String oldIdentifier;

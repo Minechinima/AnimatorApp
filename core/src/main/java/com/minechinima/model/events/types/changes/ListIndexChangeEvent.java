@@ -1,8 +1,8 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.datainterfaces.ListElement;
-import com.minechinima.model.dataoperations.ListChangeIndex;
+import com.minechinima.model.logging.datainterfaces.ListElement;
+import com.minechinima.model.logging.operations.ListChangeIndex;
 
 public class ListIndexChangeEvent extends ChangeEvent<ListChangeIndex> {
     private final int oldIndex;

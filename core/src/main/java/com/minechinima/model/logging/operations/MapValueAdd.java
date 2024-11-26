@@ -1,7 +1,7 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.datainterfaces.IValueMap;
+import com.minechinima.model.logging.datainterfaces.IValueMap;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.utils.ID;
 

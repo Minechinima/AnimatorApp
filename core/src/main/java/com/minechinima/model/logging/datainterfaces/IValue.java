@@ -1,9 +1,9 @@
-package com.minechinima.model.dataoperations.datainterfaces;
+package com.minechinima.model.logging.datainterfaces;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.dataoperations.IDataOperation;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import org.jetbrains.annotations.Nullable;
 

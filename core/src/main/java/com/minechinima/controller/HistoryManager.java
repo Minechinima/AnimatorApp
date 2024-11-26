@@ -1,27 +1,27 @@
 package com.minechinima.controller;
 
-import com.minechinima.app.IGenericApplication;
+import com.minechinima.app.IGenericApplicationData;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
-import com.minechinima.model.dataoperations.DataOperationLog;
-import com.minechinima.model.dataoperations.IDataOperation;
+import com.minechinima.model.logging.DataOperationLog;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.utils.Pair;
 
 import java.util.Stack;
 
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
-    private final IGenericApplication<?> app;
+    private final IGenericApplicationData<?> app;
+    private boolean pushTransactionToRedo;
 
-    public HistoryManager(IGenericApplication<?> owner) {
+    public HistoryManager(IGenericApplicationData<?> owner) {
         this.app = owner;
     }
 
     public void pushTransaction(Transaction transaction) {
-        this.pushTransaction(this.undos, transaction);
+        this.pushTransaction(this.pushTransactionToRedo ? this.redos : this.undos, transaction);
     }
 
     private void pushTransaction(Stack<HistoryStep> toPush, Transaction transaction) {
@@ -29,58 +29,51 @@ public class HistoryManager {
             return;
         }
 
+        transaction.getLog().close();
         toPush.push(new HistoryStep(transaction.getLocalizedTitle(), transaction.getLog()));
     }
 
     public ControllerResult undo(final BaseValueHierarchy<?> relative) {
         if (this.undos.empty()) {
             return new ControllerResult(ControllerResult.State.SUCCESS, "Nothing to undo.");
-        } else if (this.app.getController().getCurrentTransaction() != null) {
+        } else if (this.app.getController().isActive()) {
             return new ControllerResult(ControllerResult.State.ERROR, "Cannot undo while an action is being performed.");
         }
 
         HistoryStep step = this.undos.pop();
-        ControllerResult result = this.app.getController().startTransaction("Undo: " + step.stepTitle, () -> {
+        this.pushTransactionToRedo = true;
+        ControllerResult result = this.app.getController().executeNewTransaction(this,
+                "Undo: " + step.stepTitle, () -> {
             this.applyHistoryStep(relative, step);
         });
-        if (result.state() == ControllerResult.State.SUCCESS) {
-            Transaction transaction = this.app.getController().getCurrentTransaction();
-            this.app.getController().commitCurrentTransaction();
-            this.pushTransaction(this.redos, transaction);
-        }
-
+        this.pushTransactionToRedo = false;
         return result;
     }
 
-    public ControllerResult redo(Controller controller) {
+    public ControllerResult redo(final BaseValueHierarchy<?> relative) {
+        //TODO
         return null;
     }
 
     private void applyHistoryStep(BaseValueHierarchy<?> relative, HistoryStep historyStep) throws UserException {
-        Stack<Pair<String, IDataOperation>> step = new Stack<>();
-
-        for (DataOperationLog.RelativeEntry entry : historyStep.log().getLogRelativeTo(relative)) {
-            ValuePath path = entry.getRelativePath();
-            String stringPath = null;
-            if (path != null) {
-                stringPath = path.toUniquePath();
-            }
-            step.push(new Pair<>(stringPath, entry.getOperation()));
-        }
+        Stack<DataOperationLog.RelativeEntry> step = historyStep.log().getLogRelativeTo(relative);
 
         while (!step.isEmpty()) {
-            Pair<String, IDataOperation> op = step.pop();
-            BaseStructure context = op.getA() == null ? relative : relative.getChildByUniquePath(op.getA());
+            DataOperationLog.RelativeEntry entry = step.pop();
+            ValuePath path = entry.getRelativePath();
+            IDataOperation operation = entry.getOperation();
+
+            BaseStructure context = path == null ? relative : relative.getChildByUniquePath(path);
             if (context == null) {
                 throw new UserException("Cannot revert transaction as one element cannot be found.");
             }
 
-            if (!op.getB().isCorrectType(context)) {
+            if (!operation.isCorrectType(context)) {
                 throw new UserException("Cannot revert step as the element that was defined cannot be handled by the data operation.");
             }
 
             try {
-                op.getB().undo(context);
+                operation.undo(context);
             } catch (UserException e) {
                 throw e;
             } catch (RuntimeException e) {

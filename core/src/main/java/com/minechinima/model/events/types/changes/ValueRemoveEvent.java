@@ -2,7 +2,7 @@ package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseValueMap;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.MapValueRemove;
+import com.minechinima.model.logging.operations.MapValueRemove;
 
 public class ValueRemoveEvent extends ChangeEvent<MapValueRemove> {
     private final BaseStructure removedElement;

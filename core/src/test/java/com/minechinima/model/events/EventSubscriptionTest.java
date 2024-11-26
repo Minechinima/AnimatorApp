@@ -58,7 +58,7 @@ public class EventSubscriptionTest {
         Assertions.assertEquals(2, tester.onChangeEventOnNode);
     }
 
-    public static class EventSubscriber extends DoubleValue {
+    public static class EventSubscriber {
         private int onEventAll = 0;
         private int onEventInChildren = 0;
         private int onEventOnNode = 0;
@@ -66,7 +66,6 @@ public class EventSubscriptionTest {
         private int onChangeEventOnNode = 0;
 
         public EventSubscriber() {
-            super("id", 0, 0, 0);
         }
 
         @SubscribeEvent(type = SubscribeEvent.Type.ALL)

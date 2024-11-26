@@ -1,25 +1,24 @@
 package com.minechinima.controller;
 
-import com.minechinima.app.IGenericApplication;
+import com.minechinima.app.IGenericApplicationData;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.dataoperations.DataOperationLog;
+import com.minechinima.model.logging.DataOperationLog;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.base.BaseValueHierarchy;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Stack;
 
 public class Controller {
     private Transaction currentTransaction;
-    private final IGenericApplication app;
+    private final IGenericApplicationData<?> app;
 
-    public Controller(IGenericApplication app) {
+    public Controller(IGenericApplicationData<?> app) {
         this.app = app;
     }
 
-    @Nullable
-    public Transaction getCurrentTransaction() {
-        return this.currentTransaction;
+    public boolean isActive() {
+        return this.currentTransaction != null;
     }
 
     /**
@@ -47,14 +46,14 @@ public class Controller {
      * @param run
      * @return
      */
-    public ControllerResult executeNewTransactionToHistory(String actionTitle, ControllerRunnable run) {
+    public ControllerResult executeNewTransaction(HistoryManager historyManager, String actionTitle, ControllerRunnable run) {
         if (this.currentTransaction != null) {
-            this.commitCurrentTransactionToHistory();
+            this.commitCurrentTransaction(historyManager);
         }
         ControllerResult result = this.startTransaction(actionTitle, run);
 
         if (result.state() == ControllerResult.State.SUCCESS) {
-            this.commitCurrentTransactionToHistory();
+            this.commitCurrentTransaction(historyManager);
         }
 
         return result;
@@ -70,14 +69,7 @@ public class Controller {
         }
 
         this.currentTransaction = new Transaction(actionTitle);
-        return this.continueTransaction(run);
-    }
-
-    public ControllerResult startOrContinueTransaction(String actionTitle, ControllerRunnable run) {
-        if (this.currentTransaction == null) {
-            return this.startTransaction(actionTitle, run);
-        }
-
+        this.app.getDataTree().getRoot().getLogging().registerLog(this.currentTransaction.getLog());
         return this.continueTransaction(run);
     }
 
@@ -90,23 +82,25 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        app.getDataTree().getReferenceManager().cacheClearedReferences();
-        app.getDataTree().getRoot().addLogger(this.currentTransaction.getLog());
+        this.app.getDataTree().getReferenceManager().cacheClearedReferences();
+        this.currentTransaction.getLog().resume();
 
         try {
             run.run();
         } catch (Exception e) {
+            this.currentTransaction.getLog().close();
             this.currentTransaction.abortedState();
             Transaction transaction = this.currentTransaction;
             this.currentTransaction = null;
-            app.getDataTree().getRoot().removeLogger(transaction.getLog());
-            app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
+
             try {
                 this.revertTransaction(transaction);
             } catch (Exception e2) {
                 /* crash the app as we cannot guarantee data sync / integrity anymore */
                 throw new Error("An unexpected exception happened during reverting a failed transaction.");
             }
+
+            this.app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
 
             if (e instanceof UserException userException) {
                 return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
@@ -115,7 +109,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
         }
 
-        app.getDataTree().getRoot().removeLogger(this.currentTransaction.getLog());
+        this.currentTransaction.getLog().pause();
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
@@ -125,7 +119,7 @@ public class Controller {
      */
     public void commitCurrentTransaction() {
         if (this.currentTransaction == null) return;
-        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         this.currentTransaction = null;
     }
@@ -133,12 +127,12 @@ public class Controller {
     /**
      * Commits current transaction and pushes it into the history manager of the app
      */
-    public void commitCurrentTransactionToHistory() {
+    public void commitCurrentTransaction(HistoryManager historyManager) {
         if (this.currentTransaction == null) return;
-        app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
-        if (app.getHistoryManager() != null) {
-            app.getHistoryManager().pushTransaction(this.currentTransaction);
+        if (historyManager != null) {
+            historyManager.pushTransaction(this.currentTransaction);
         }
         this.currentTransaction = null;
     }
@@ -149,11 +143,12 @@ public class Controller {
      * @throws RuntimeException probably best to let the app crash when reverting a transaction fails for some reason.
      */
     protected void revertTransaction(Transaction transaction) {
-        BaseValueHierarchy<?> root = app.getDataTree().getRoot();
+        BaseValueHierarchy<?> root = this.app.getDataTree().getRoot();
         Stack<DataOperationLog.RelativeEntry> log = transaction.getLog().getLogRelativeTo(root);
         while (!log.isEmpty()) {
             DataOperationLog.RelativeEntry step = log.pop();
             BaseStructure context;
+            IDataOperation operation = step.getOperation();
 
             if (step.getRelativePath() == null) {
                 context = root;
@@ -165,8 +160,12 @@ public class Controller {
                 throw new IllegalStateException("Cannot revert transaction as one element cannot be found.");
             }
 
+            if (!operation.isCorrectType(context)) {
+                throw new IllegalStateException("Cannot revert transaction as the type of an element is not applicable.");
+            }
+
             try {
-                step.getOperation().undo(context);
+                operation.undo(context);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

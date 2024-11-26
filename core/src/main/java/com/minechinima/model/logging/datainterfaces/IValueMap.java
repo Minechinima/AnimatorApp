@@ -1,4 +1,4 @@
-package com.minechinima.model.dataoperations.datainterfaces;
+package com.minechinima.model.logging.datainterfaces;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.MapType;

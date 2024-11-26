@@ -1,4 +1,4 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.base.BaseStructure;
@@ -70,5 +70,5 @@ public interface IDataOperation<T> {
      * @return true if the given object can be handled by this.
      */
     boolean isCorrectType(Object object);
-    boolean merge(IDataOperation<T> next);
+    boolean merge(IDataOperation<?> next);
 }

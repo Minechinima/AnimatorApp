@@ -53,13 +53,20 @@ public abstract class EventBus {
     }
 
     /**
-     *
      * @param manager
      * @implNote Package-private so only the {@link EventBusManager} can set the manager. This makes it more secure against
      * bad manager changes and memory leaks, in theory...
      */
     final void addManager(EventBusManager manager) {
         this.managers.add(manager);
+    }
+
+    /**
+     * @param manager
+     * @implNote Package-private so only the {@link EventBusManager} can remove itself.
+     */
+    final void removeManager(EventBusManager manager) {
+        this.managers.remove(manager);
     }
 
     /**

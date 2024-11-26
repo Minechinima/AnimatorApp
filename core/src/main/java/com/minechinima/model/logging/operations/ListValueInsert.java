@@ -1,7 +1,7 @@
-package com.minechinima.model.dataoperations;
+package com.minechinima.model.logging.operations;
 
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.model.dataoperations.datainterfaces.IValueList;
+import com.minechinima.model.logging.datainterfaces.IValueList;
 
 import java.util.UUID;
 
@@ -32,7 +32,7 @@ public class ListValueInsert implements IDataOperation<IValueList<?>> {
     }
 
     @Override
-    public boolean merge(IDataOperation<IValueList<?>> next) {
+    public boolean merge(IDataOperation<?> next) {
         return false;
     }
 }

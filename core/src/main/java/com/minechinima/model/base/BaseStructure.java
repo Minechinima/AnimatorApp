@@ -2,16 +2,17 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.IDataSerializable;
 import com.minechinima.data.types.BaseType;
-import com.minechinima.model.dataoperations.DataOperationLog;
 import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.ParentChangeEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.logging.DataOperationLogging;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.utils.*;
 import com.minechinima.utils.Pair;
-import com.minechinima.model.dataoperations.datainterfaces.IDMutable;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
@@ -55,11 +56,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      */
     private final EventBusImpl bus = new EventBusImpl(this);
     /**
-     * A collection of loggers where change operations on this node or children are logged.
-     * @see ChangeEvent
-     */
-    private final Set<DataOperationLog> loggers = Collections.newSetFromMap(new IdentityHashMap<>());
-    /**
      * This set contains all pointers, that are part of the same tree, that point to this node.
      * <br><br>
      * Only using ValuePointer allows better tracking pointers and relations inside the database.
@@ -69,6 +65,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * The referenceManagement is for internal runtime references, which is different to this kind of link.
      */
     private final Set<ValuePointer<?>> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final DataOperationLoggingImpl logger = new DataOperationLoggingImpl();
 
     /**
      * @param id
@@ -377,18 +374,8 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         return this.getRoot() == other.getRoot();
     }
 
-    /**
-     * Add a logger that logs changes, triggering the {@link ChangeEvent} event.
-     * Changes to this and all children are logged.
-     * @param log
-     */
-    public void addLogger(DataOperationLog log) {
-        if (log.isEnded()) return;
-        this.loggers.add(log);
-    }
-
-    public void removeLogger(DataOperationLog manager) {
-        this.loggers.remove(manager);
+    public DataOperationLogging getLogging() {
+        return this.logger;
     }
 
     /**
@@ -591,9 +578,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @param event
      */
     private void logChangeEvent(ChangeEvent<?> event) {
-        for (DataOperationLog manager : this.loggers) {
-            manager.recordDataOperation(event.getTrigger(), event.getDataOperation());
-        }
+        this.logger.logDataOperation(event.getTrigger(), event.getDataOperation());
 
         if (this.parent != null) {
             ((BaseStructure)this.parent).logChangeEvent(event);
@@ -715,6 +700,16 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
 
         final void _dispatchEventFromChildNode(Event event) {
             super.dispatchEventFromChildNode(event);
+        }
+    }
+
+    /**
+     * Hide this class here to ensure that only the node where the change was triggered can log the operation.
+     */
+    private class DataOperationLoggingImpl extends DataOperationLogging {
+        @Override
+        protected void logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
+            super.logDataOperation(context, dataOperation);
         }
     }
 }

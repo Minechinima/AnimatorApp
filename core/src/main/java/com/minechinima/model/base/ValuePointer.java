@@ -2,7 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
-import com.minechinima.model.dataoperations.datainterfaces.IValue;
+import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
