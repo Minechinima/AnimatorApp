@@ -6,6 +6,7 @@ import com.minechinima.model.utils.ID;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -274,6 +275,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      *         Otherwise, it will search for the next parent where the path is not empty anymore. This element is
      *         where we need to flatten all children with empty paths to check for path collisions.
      */
+    @NotNull
     public final BaseValueHierarchy<?> getPathCollisionContext() {
         if (this.getParent() == null) return this;
         BaseValueHierarchy<?> uniquenessContext = this;

@@ -132,7 +132,7 @@ public class DataOperationLog {
          * If the node is not addressable and triggers a change, that is rather an indication of a wrongly built
          * tree structure.
          */
-        this.log.push(new Entry(fullPath, dataOperation));
+        this.log.push(new Entry(fullPath.copy(), dataOperation));
     }
 
     protected static abstract class AbstractEntry {
