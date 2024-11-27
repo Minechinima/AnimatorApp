@@ -625,13 +625,21 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
-     * Triggers an event on this element and passes and event to the parents
+     * Triggers an event on this element and passes and event to the parents.
+     * <br><br>
+     * <h2>Important:</h2><br>
+     * The logging happens first. If any exception happens during logging, the app is terminated with an Error.
+     * Therefore, you can assume that this method will not cause an exception that prevents logging a change, as a failed logging
+     * will terminate.
      * @param event
      * @throws IllegalArgumentException if the trigger of the event is not equal to this.
      */
+    @NoExceptions
     protected final <T extends Event> void triggerEvent(T event) {
         if (event.getTrigger() != this) {
-            throw new IllegalArgumentException("Cannot trigger event where the trigger is not this.");
+            /* for change events terminate, as logging needs to always be successful. */
+            if (event instanceof ChangeEvent<?>) throw new Error("Cannot trigger event where the trigger is not this.");
+            else throw new IllegalArgumentException("Cannot trigger event where the trigger is not this.");
         }
 
         try {
@@ -691,6 +699,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Add the pointer to a collection.
+     * @throws UnsupportedOperationException if the pointer type is not compatible with this class.
+     * @throws IllegalArgumentException if the pointer is not part of the same tree.
      * @implNote package-private so only ValuePointer can add itself as a pointer to a tree node.
      */
     final void addPointer(ValuePointer<?> pointer) {
@@ -698,7 +709,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             throw new UnsupportedOperationException("Cannot add a pointer link when the type of the pointer does not match this class.");
         }
 
-        if (pointer.getRoot() != this.getRoot()) {
+        if (!this.isInSameTree(pointer)) {
             throw new IllegalArgumentException("Tried adding a pointer that is not part of the same data tree.");
         }
 
@@ -706,7 +717,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Remove the pointer from a collection
+     * <br><br>
      * A pointer needs to call this when it does not point to this anymore.
+     * @throws IllegalArgumentException if the pointer still references this node.
      * @implNote package-private so only ValuePointer can remove itself as a pointer to a tree node.
      */
     final void removePointer(ValuePointer<?> pointer) {
