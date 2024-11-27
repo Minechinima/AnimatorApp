@@ -20,7 +20,7 @@ public class HistoryManager {
 
     private void pushTransaction(Stack<HistoryStep> toPush, Transaction transaction) {
         if (transaction.getState() != Transaction.State.COMMITTED) {
-            return;
+            throw new IllegalArgumentException("Cannot push an uncommitted transaction into the history.");
         }
 
         transaction.getLog().close();
