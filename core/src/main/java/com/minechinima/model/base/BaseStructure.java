@@ -710,6 +710,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote package-private so only ValuePointer can remove itself as a pointer to a tree node.
      */
     final void removePointer(ValuePointer<?> pointer) {
+        if (pointer.getReference() == this) {
+            throw new IllegalArgumentException("Cannot remove a pointer from a referenced node that still points to it.");
+        }
         this.pointersToThis.remove(pointer);
     }
 
