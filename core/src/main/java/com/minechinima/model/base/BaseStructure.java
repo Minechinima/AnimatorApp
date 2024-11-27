@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * The base for all nodes in the data tree.
@@ -350,12 +351,55 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Goes through the parents and finds the first parent where the filter is true.
+     * @param filter
+     * @return the first parent that satisfies the predicate or null if none was found or if there is no parent.
+     */
+    @Nullable
+    public final BaseValueHierarchy<? extends BaseStructure> findFirstParent(
+            Predicate<BaseValueHierarchy<? extends BaseStructure>> filter) {
+        if (this.parent == null) return null;
+        if (filter.test(this.parent)) return this.parent;
+        else return this.parent.findFirstParent(filter);
+    }
+
+    /**
+     * Goes through the parents until the first parent is found where the filter is true.
+     * While going through the parents it collects them in a list.
+     * @param filter
+     * @return a list of all parents until the first parent is found that matches the filter.
+     *         The last element of the list is the parent that matches the filter.
+     *         The first element is the parent of this node.
+     *         <b>The list size is never 0.</b>
+     *         <br><br>
+     *         null if no parent was found matching the predicate.
+     */
+    @Nullable
+    public final List<BaseValueHierarchy<? extends BaseStructure>> findFirstParentTrace(
+            Predicate<BaseValueHierarchy<? extends BaseStructure>> filter) {
+        if (this.parent == null) return null;
+
+        List<BaseValueHierarchy<? extends BaseStructure>> parents = new ArrayList<>();
+        BaseValueHierarchy<?> parentTest = this.parent;
+        while (parentTest != null) {
+            parents.add(parentTest);
+            if (filter.test(parentTest)) {
+                return parents;
+            }
+
+            parentTest = parentTest.getParent();
+        }
+
+        return null;
+    }
+
+    /**
      * Check if two nodes are part of the same tree.
      * @param other
      * @return true if this node and the other node are in the same tree.
      */
     @NoExceptions
-    public final boolean isInSameTree(BaseStructure other) {
+    public final boolean isInSameTree(@NotNull BaseStructure other) {
         /* both are to be considered as "root". Can only be in same tree if they are same */
         if (this.parent == null && other.parent == null && other != this) return false;
 
