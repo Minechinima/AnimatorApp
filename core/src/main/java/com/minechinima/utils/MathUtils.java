@@ -1,10 +1,6 @@
 package com.minechinima.utils;
 
 public class MathUtils {
-    public static boolean isBitFlagSet(int flagToTest, int flags) {
-        return (flagToTest & flags) == flagToTest;
-    }
-
     public static int clamp(int value, int min, int max) {
         return max(min, min(max, value));
     }
