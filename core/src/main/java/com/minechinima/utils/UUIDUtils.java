@@ -17,7 +17,6 @@ public class UUIDUtils {
      * @return a byte array
      */
     public static byte[] convertUUIDToBytes(UUID uuid) {
-        //TODO test
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
         bb.putLong(uuid.getMostSignificantBits());
         bb.putLong(uuid.getLeastSignificantBits());
@@ -31,7 +30,6 @@ public class UUIDUtils {
      * @throws IOException when there are less than 16 bytes or the bytes cannot be converted to a UUID
      */
     public static UUID convertBytesToUUID(byte[] bytes) throws IOException {
-        //TODO test
         if (bytes.length < 16) {
             throw new IOException("Cannot convert byte array with less than 16 bytes to UUID");
         }
@@ -55,7 +53,7 @@ public class UUIDUtils {
      * @throws BaseTypeCannotBeParsed if the uuid could not be created but the key was present with the correct datatype.
      */
     @Nullable
-    public static UUID readUUID(MapType data, String key) throws BaseTypeCannotBeParsed {
+    public static UUID readUUIDorNull(MapType data, String key) throws BaseTypeCannotBeParsed {
         if (data.getByteArrayType(key) == null) {
             return null;
         }

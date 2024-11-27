@@ -184,7 +184,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
         }
 
         String id = data.getStringType("id") != null ? data.getStringType("id").getValue() : "";
-        UUID uuid = UUIDUtils.readUUID(data, "uuid");
+        UUID uuid = UUIDUtils.readUUIDorNull(data, "uuid");
         return this.instantiate(id, uuid, data.get("data"));
     }
 
