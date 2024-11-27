@@ -632,7 +632,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * Call this after an element is removed from tree. Do not call after temporarily removing an element from tree,
      * e.g. setting parent to null for a while.
      */
-    protected final void afterRemoveFromTree() {
+    private final void afterRemoveFromTree() {
         /* only trigger event once on the element that this method is called */
         this.triggerEvent(new RemoveFromTreeEvent(this));
         this.afterFromTreeIteration();
@@ -650,8 +650,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote package-private so only ValuePointer can add itself as a pointer to a tree node.
      */
     final void addPointer(ValuePointer<?> pointer) {
-        /* TODO slowly I am wondering if I do too many safety checks...
-            theoretically ValuePointer handles this, but assuming this here would mean spreading implementation knowledge*/
         if (!pointer.getType().isAssignableFrom(this.getClass())) {
             throw new UnsupportedOperationException("Cannot add a pointer link when the type of the pointer does not match this class.");
         }
