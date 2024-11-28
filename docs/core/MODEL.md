@@ -33,8 +33,7 @@ Following aspects are the only scope of `base` classes:
 - manage pointers (ValuePointer is a core `base` class). The `base` classes also ensure that no 
   invalid pointers can be inserted into the tree.
 - search algorithms for finding nodes with paths.
-
-<br>
+<br><br>
 
 There are two core methods, which are final, that are responsible for securing tree structure:
 - `BaseStructure.setParent()`
@@ -44,11 +43,97 @@ There are two core methods, which are final, that are responsible for securing t
     if they were not logged.<br>If `BaseStructure.setParent()` throws something else than `SetParentNotAllowed`, the app must terminate.
 - `BaseStructure._setID()`
   - is responsible for ensuring the paths stay valid and unique without path collisions.
+<br><br>
 
 A lot of other methods are final in `base` module that are built upon the implementation knowledge of the safety mechanisms.
 This ensures that they cannot be overridden and change the tree behavior in a bad way, e.g. the algorithm for finding nodes with a path
 is final.
 
-### Important notes
+<br><br>
+A node can be categorized as either a subclass of `BaseStructure` or of `BaseValueHierarchy`.
+- subclasses of `BaseValueHierarchy` are the only types of nodes that can have children.
+- subclasses of `BaseStructure` are considered leafs/ends of the data tree.
+
+<br>
+
+#### Important notes
 - avoid lambdas / callbacks in the model modules that could be used to reference 
 another BaseStructure node and cause a memory leak.
+- Always perform checks whether the state your code works on is a valid state you expect it to be and throw
+  exceptions if it is not valid.
+  This should help with finding bugs that are rooted in core modules,
+- Always document `@Nullable` if a field or method returns a null value.
+  By default, you can assume that a method or field that is not annotated with `@Nullable` will not be null.
+- For clarity and in important cases,
+  you may use `@NotNull` if a method never returns null or if a field/parameter should never be null.
+  However, if something is annotated with `@NotNull`,
+  it is still appropriate to throw exceptions if it is null for clarity
+  and debugging purposes to find bugs and wrong values.
+
+### Events module
+The `events` module contains standard event types,
+event-type registry code and the code for dispatching events and managing event subscribers.
+<br>
+This module is also very decoupled from the `base` tree classes. The only information link of these modules is that
+an `EventBus`, which you subscribe to, has a `BaseStructure` owner.
+<br><br>
+
+Events can be categorized as two types: subclasses of `ChangeEvent` or of `Event`.
+- Subclasses of `ChangeEvent` are events that were triggered by changes to the tree/data that can be reverted. 
+  These are usually changes that could be caused by user edits. Every `ChangeEvent` therefore contains the respective
+  `IDataOperation`.
+- Subclasses of `Event` can be any kind of general event that is needed to notify subscribers of general events.
+  `RemoveFromTreeEvent` is such a general event, as it cannot be reverted but is used to clear references to a node.
+<br><br>
+
+The only way to dispatch an event to subscribers is to dispatch it in an `EventBus`. 
+This acts as a bridge between the `base` tree classes and the event management code, making
+the two modules independent of each-other.
+<br>
+
+The event subscription works by declaring a method with the `@SubscribeEvent` annotation and subscribe the object that
+listens to events to an `EventBus` in the `EventBusManager`.
+<br><br>
+The public interface of `EventBusManager` does not contain any references to `base` classes. 
+This design decision is on purpose to only couple `EventBusManager` with `EventBus`.
+<br><br>
+An `EventBusManager` can only manage subscriptions to `EventBus` of nodes in the tree the manager is assigned to.
+This is necessary as `EventBusManager` is part of reference management, which can only work on one tree at a time.
+
+### Logging module
+The `logging` module is responsible for logging data operations that are revert-able and reproducible.
+<br><br>
+The module is divided into `datainterfaces` and `operations`.
+- `datainterfaces` are all the interfaces for classes that can be modified by a `IDataOperation`
+- `operations` contains all the concrete data operation logic that modify implementations of the `datainterfaces`.
+<br>
+
+This design decouples `base` from data operations
+and allows any object to be part of logging and data operation management.
+
+
+The only way of logging an operation is by registering a log to `DataOperationLogging` and dispatch 
+an operation through the `DataOperationLogging` object. 
+This secures the log from external systems trying to inject operations that were not logged by the owner.
+<br><br>
+A `DataOperationLog` can be paused and resumed, but once it is closed,
+it will be removed from all logging objects permanently and cannot be registered anymore.
+Closing a log will freeze it.
+
+### Memory module
+The `memory` module is responsible for general management of references to nodes of a tree. 
+As soon as a node is removed from the tree, all references to it should be cleared. 
+<br><br>
+The reference management system allows caching the cleared references 
+to later reapply them in case a transaction gets reverted. 
+This allows a full recovery of database and internal app references.
+<br><br>
+A `ReferenceManager` is assigned to a data tree root and manages all references to that tree.
+Any class that wants to participate in automatic reference management needs to extend `BaseStructureReferences`.
+At the moment this is an abstract class to enforce that every implementation has a `ReferenceManager` that manages it.
+Depending on future use cases this might need to be rewritten to an interface.
+<br><br>
+Any exceptions or wrong reference clearing logic will cause a `MemoryLeakError` which will terminate the app.
+
+### DateTreeManager
+This object combines all management classes and the root of a data tree into one object for easier access and management.

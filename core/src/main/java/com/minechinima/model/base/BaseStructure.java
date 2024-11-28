@@ -39,6 +39,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote This is private as it can only be changed by methods that are final to ensure
      * that the path algorithms and uniqueness cannot be overridden!
      */
+    @NotNull
     private String id;
     /**
      * A UUID to uniquely identify nodes where {@link #id} might change during runtime.<br>
@@ -75,7 +76,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @throws ContractViolatedException if {@link IDMutable} contract is violated
      *                                   and {@link IDMutable#getUUID()} returns a different uuid than this {@link #uuid}
      */
-    public BaseStructure(String id) {
+    public BaseStructure(@NotNull String id) {
         if (this instanceof IDMutable mutable) {
             this.uuid = UUID.randomUUID();
             if (!mutable.getUUID().equals(this.uuid)) {
@@ -85,7 +86,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             this.uuid = null;
         }
 
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     /**
@@ -97,12 +98,12 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote A constructor where uuid is exposed should be kept protected.
      * All subclasses should define this constructor to allow {@link IDMutable} subclasses.
      */
-    protected BaseStructure(String id, @NotNull UUID uuid) {
+    protected BaseStructure(@NotNull String id, @NotNull UUID uuid) {
         if (this instanceof IDMutable && uuid == null) {
             throw new ContractViolatedException("The given uuid is null while this implements IDMutable.");
         }
 
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
         this.uuid = this instanceof IDMutable ? uuid : null;
 
         if (this instanceof IDMutable mutable && !mutable.getUUID().equals(uuid)) {
@@ -364,6 +365,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @return the root from this node, or this node if there is no parent anymore.
      */
     @NoExceptions
+    @NotNull
     public BaseValueHierarchy<?> getRoot() {
         if (this.parent != null) return this.parent.getRoot();
 
@@ -393,8 +395,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @return the first parent that satisfies the predicate or null if none was found or if there is no parent.
      */
     @Nullable
-    public final BaseValueHierarchy<? extends BaseStructure> findFirstParent(
-            Predicate<BaseValueHierarchy<? extends BaseStructure>> filter) {
+    public final BaseValueHierarchy<?> findFirstParent(final Predicate<BaseValueHierarchy<?>> filter) {
         if (this.parent == null) return null;
         if (filter.test(this.parent)) return this.parent;
         else return this.parent.findFirstParent(filter);
@@ -413,8 +414,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * null if no parent was found matching the predicate.
      */
     @Nullable
-    public final List<BaseValueHierarchy<? extends BaseStructure>> findFirstParentTrace(
-            Predicate<BaseValueHierarchy<? extends BaseStructure>> filter) {
+    public final List<BaseValueHierarchy<?>> findFirstParentTrace(Predicate<BaseValueHierarchy<?>> filter) {
         if (this.parent == null) return null;
 
         List<BaseValueHierarchy<? extends BaseStructure>> parents = new ArrayList<>();
@@ -546,9 +546,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                              <li>The ID does not adhere to the path format of the parent.</li>
      *                          </ul>
      */
-    protected final void _setID(String identifier) throws RuntimeException {
+    protected final void _setID(@NotNull String identifier) throws RuntimeException {
         if (identifier == null) {
-            return;
+            throw new IllegalArgumentException("Setting identifier to null is not allowed.");
         }
 
         /* good place to do a random check for uuid validity */
