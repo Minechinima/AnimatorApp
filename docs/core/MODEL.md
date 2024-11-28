@@ -69,6 +69,14 @@ another BaseStructure node and cause a memory leak.
   However, if something is annotated with `@NotNull`,
   it is still appropriate to throw exceptions if it is null for clarity
   and debugging purposes to find bugs and wrong values.
+- Performance intensive methods:
+  - `setParent()` performs a lot of checks and logic. It bubbles events up the tree and down the tree. Either we find a way to optimize it, or
+    you should carefully consider whether you want to perform frequent tree updates to a node in the data tree for every tick/render frame. 
+    Updating in batches is better.
+    Another way of improving tree performance is by keeping subtrees to a minimum. 
+    Try to avoid creating lots of layers of nodes and keep the tree shallow.
+  - `setID()`
+  - all the methods that retrieve a node with a path.
 
 ### Events module
 The `events` module contains standard event types,
