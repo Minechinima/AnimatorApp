@@ -19,15 +19,29 @@ the database transaction will be reverted. If reverting fails, the app must cras
 
 ### Base Module
 The sole purpose of the `base` module is to build a tree that allows to retrieve any node with a path. Nodes in a tree
-can hold data and expose data operations. 
+can hold data and expose data operations.
 <br><br>
-This module should be very decoupled of any other modules and information, e.g. how logging, events, controller or history management works.
+This module should be very decoupled of any other modules and information, e.g. how the app, logging, events, controller or history management works.
 Classes in `base` are kept simple and only perform data operations and important safety checks to ensure the structural integrity
 of the tree.
 <br><br>
-There are two core methods, which are final, that are responsible for securing tree structure: 
+Following aspects are the only scope of `base` classes:
+- build a tree of nodes
+- ensure no invalid tree structure can be produced e.g., path collisions, missing parent-child linkage, parent-recursion etc.
+- trigger events and bubble events up the tree (this is also used for logging).
+  However, only tree traversal code is in `base` and event and logging logic is in external modules.
+- manage pointers (ValuePointer is a core `base` class). The `base` classes also ensure that no 
+  invalid pointers can be inserted into the tree.
+- search algorithms for finding nodes with paths.
+
+<br>
+
+There are two core methods, which are final, that are responsible for securing tree structure:
 - `BaseStructure.setParent()`
   - is responsible for ensuring that there is no way to insert a node / build a tree with an illegal structure.
+  - This method will never throw anything else than a `SetParentNotAllowed` Exception, which is a checked Exception.
+    This forces the caller to catch it, and reminds them that any previous intermediary tree/value changes need to be reverted manually
+    if they were not logged.<br>If `BaseStructure.setParent()` throws something else than `SetParentNotAllowed`, the app must terminate.
 - `BaseStructure._setID()`
   - is responsible for ensuring the paths stay valid and unique without path collisions.
 
