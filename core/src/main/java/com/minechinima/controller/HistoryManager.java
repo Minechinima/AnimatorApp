@@ -1,6 +1,5 @@
 package com.minechinima.controller;
 
-import com.minechinima.app.IGenericApplicationData;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.logging.DataOperationLog;
@@ -13,12 +12,7 @@ import java.util.Stack;
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
-    private final IGenericApplicationData<?> app;
     private boolean pushTransactionToRedo;
-
-    public HistoryManager(IGenericApplicationData<?> owner) {
-        this.app = owner;
-    }
 
     public void pushTransaction(Transaction transaction) {
         this.pushTransaction(this.pushTransactionToRedo ? this.redos : this.undos, transaction);
@@ -33,16 +27,21 @@ public class HistoryManager {
         toPush.push(new HistoryStep(transaction.getLocalizedTitle(), transaction.getLog()));
     }
 
-    public ControllerResult undo(final BaseValueHierarchy<?> relative) {
+    //TODO think about HistoryManager dependency towards Controller. If Operator executes this it will be inside a transaction?
+    public ControllerResult undo(final Controller controller, final BaseValueHierarchy<?> relative) {
+        if (!controller.getDataTree().getRoot().isInSameTree(relative)) {
+            throw new IllegalArgumentException("The relative element for the HistoryManager is not in the Controller data tree.");
+        }
+
         if (this.undos.empty()) {
             return new ControllerResult(ControllerResult.State.SUCCESS, "Nothing to undo.");
-        } else if (this.app.getController().isActive()) {
+        } else if (controller.isActive()) {
             return new ControllerResult(ControllerResult.State.ERROR, "Cannot undo while an action is being performed.");
         }
 
         HistoryStep step = this.undos.pop();
         this.pushTransactionToRedo = true;
-        ControllerResult result = this.app.getController().executeNewTransaction(this,
+        ControllerResult result = controller.executeNewTransaction(this,
                 "Undo: " + step.stepTitle, () -> {
             this.applyHistoryStep(relative, step);
         });
