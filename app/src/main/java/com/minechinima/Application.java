@@ -2,7 +2,10 @@ package com.minechinima;
 
 import com.minechinima.model.BBContext;
 import com.minechinima.model.BBDataTreeManager;
+import com.minechinima.model.app.BBDatabase;
+import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.events.EventTypeRegistry;
+import com.minechinima.model.scene.Scene;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -80,6 +83,17 @@ public class Application {
         GL.createCapabilities();
         this.windowManager.init();
         this.windowManager.windows.add(new BBUIWindow(new BBContext("context", this.dataTree.getRoot().data)));
+
+        BBDatabase db = this.dataTree.getRoot().data;
+        db.objects.add(new BaseObject("test", db));
+        db.objects.add(new BaseObject("test1", db));
+        db.objects.add(new BaseObject("test2", db));
+        db.objects.add(new BaseObject("test3", db));
+        Scene scene = new Scene("test", db);
+        db.scenes.add(scene);
+        for (BaseObject child : db.objects.getChildren()) {
+            //scene.rootCollection.addPointer(child);
+        }
     }
 
     public void loop() {
