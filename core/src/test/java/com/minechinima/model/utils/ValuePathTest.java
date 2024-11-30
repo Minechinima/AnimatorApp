@@ -640,4 +640,86 @@ public class ValuePathTest {
         Assertions.assertTrue(p8.equals(it.getStart().getNext().getNext().getNext().getNext().getNext().getNext().getNext(), true));
         Assertions.assertNull(it.getStart().getNext().getNext().getNext().getNext().getNext().getNext().getNext().getNext());
     }
+
+    @Test
+    public void subtractPathSimpleSuccess() throws PathParsingException {
+        ValuePath path = new ValuePath("test[0].test2");
+        ValuePath subtracted = path.subtractFromStart(new ValuePath("test"));
+        Assertions.assertEquals("[0].test2", subtracted.toValuePath());
+    }
+
+    @Test
+    public void subtractEmptyPath() throws PathParsingException {
+        ValuePath path = new ValuePath("test[0].test2");
+        ValuePath subtracted = path.subtractFromStart(new ValuePath());
+        Assertions.assertNull(subtracted);
+    }
+
+    @Test
+    public void subtractNotFullyExistentPath() throws PathParsingException {
+        ValuePath path = new ValuePath("test[0].test2");
+        ValuePath subtracted = path.subtractFromStart(new ValuePath("test[1]"));
+        Assertions.assertNull(subtracted);
+    }
+
+    @Test
+    public void subtractFullPath() throws PathParsingException {
+        ValuePath path = new ValuePath("test[0].test2");
+        ValuePath subtracted = path.subtractFromStart(new ValuePath("test[0].test2"));
+        Assertions.assertTrue(subtracted.getSize() == 0);
+    }
+
+    @Test
+    public void subtractFullPathNotMatchingWithEmptiesInSubtract() throws PathParsingException {
+        ValuePath path = new ValuePath("test[0].test2");
+        ValuePath toSubtract = new ValuePath();
+        toSubtract.append(new ID("test"));
+        toSubtract.append(ValuePath.Format.PATH, new ID(""));
+        toSubtract.append(ValuePath.Format.PATH, new ID(""));
+        toSubtract.append(ValuePath.Format.ARRAY, new ID("0"));
+
+        ValuePath subtracted = path.subtractFromStart(toSubtract);
+        Assertions.assertNull(subtracted);
+    }
+
+    @Test
+    public void subtractFullPathNotMatchingWithEmptiesInOriginal() throws PathParsingException {
+        ValuePath path = new ValuePath();
+        path.append(new ID("test"));
+        path.append(ValuePath.Format.PATH, new ID(""));
+        path.append(ValuePath.Format.PATH, new ID(""));
+        path.append(ValuePath.Format.ARRAY, new ID("0"));
+        path.append(ValuePath.Format.PATH, new ID("test"));
+        path.append(ValuePath.Format.PATH, new ID("test2"));
+        path.append(ValuePath.Format.PATH, new ID(""));
+
+        ValuePath toSubtract = new ValuePath();
+        toSubtract.append(new ID("test"));
+        toSubtract.append(ValuePath.Format.ARRAY, new ID("0"));
+
+        ValuePath subtracted = path.subtractFromStart(toSubtract);
+        Assertions.assertNull(subtracted);
+    }
+
+    @Test
+    public void subtractFullPathMatchingWithEmptiesInSubtract() throws PathParsingException {
+        ValuePath path = new ValuePath();
+        path.append(new ID("test"));
+        path.append(ValuePath.Format.PATH, new ID(""));
+        path.append(ValuePath.Format.PATH, new ID(""));
+        path.append(ValuePath.Format.ARRAY, new ID("0"));
+        path.append(ValuePath.Format.PATH, new ID("test"));
+        path.append(ValuePath.Format.PATH, new ID("test2"));
+        path.append(ValuePath.Format.PATH, new ID(""));
+
+        ValuePath toSubtract = new ValuePath();
+        toSubtract.append(new ID("test"));
+        toSubtract.append(ValuePath.Format.PATH, new ID(""));
+        toSubtract.append(ValuePath.Format.PATH, new ID(""));
+        toSubtract.append(ValuePath.Format.ARRAY, new ID("0"));
+
+        ValuePath subtracted = path.subtractFromStart(toSubtract);
+        Assertions.assertEquals("test.test2", subtracted.toValuePath());
+        Assertions.assertTrue(subtracted.getSize() == 3);
+    }
 }
