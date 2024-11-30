@@ -101,7 +101,8 @@ public class DataOperationLog {
 
     /**
      * Pushes the given data operation with the given full path into the stack.
-     * @param fullPath the full path to the node where the operation was executed
+     * @param fullPath the full path to the node where the operation was executed.<br>
+     *                 <b>It needs to be the uncleaned path that includes all nodes' path segments, even empties.</b>
      * @param dataOperation
      * @throws IllegalArgumentException
      * @implNote Package-private so only the logger {@link DataOperationLogging} can log changes.
