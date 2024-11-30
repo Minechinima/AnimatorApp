@@ -17,8 +17,6 @@ import java.util.*;
  */
 public class ReferenceManager {
     private final BaseHierarchyRoot root;
-    //TODO we need to record a way to undo the clearing of references, in case controller reverts a transaction because error
-    // The references need to be virtually cleared so for a running transaction the app can work with correct states as if the references were removed.
     private final Map<BaseStructure, Set<BaseStructureReferences>> references = new IdentityHashMap<>();
     private final Map<BaseStructure, Set<BaseStructureReferences>> cachedDeletion = new IdentityHashMap<>();
     private boolean cacheDeletion = false;
@@ -68,7 +66,7 @@ public class ReferenceManager {
 
         for (Map.Entry<BaseStructure, Set<BaseStructureReferences>> ref : this.cachedDeletion.entrySet()) {
             BaseStructure referenced = ref.getKey();
-            if (!referenced.isChildOf(this.root) && referenced != this.root) {
+            if (!referenced.isInSameTree(this.root)) {
                 throw new MemoryLeakError("Tried reapplying a reference to a node that is not part of the tree");
             }
 
@@ -124,7 +122,7 @@ public class ReferenceManager {
             throw new ContractViolatedException("Tried registering a reference to a node that is not referenced by the holder.");
         }
 
-        if (!referencedNode.isChildOf(this.root) && this.root != referencedNode) {
+        if (!referencedNode.isInSameTree(this.root)) {
             throw new IllegalArgumentException("Cannot manage a reference to a node that is not in the observed tree.");
         }
 
