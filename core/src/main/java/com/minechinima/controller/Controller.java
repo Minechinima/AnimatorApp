@@ -1,6 +1,6 @@
 package com.minechinima.controller;
 
-import com.minechinima.app.IGenericApplicationData;
+import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.DataOperationLog;
 import com.minechinima.model.logging.operations.IDataOperation;
@@ -9,16 +9,23 @@ import com.minechinima.model.base.BaseValueHierarchy;
 
 import java.util.Stack;
 
+/**
+ * Controller performs/manages operations on one data tree.
+ */
 public class Controller {
     private Transaction currentTransaction;
-    private final IGenericApplicationData<?> app;
+    private final DataTreeManager<?> dataTree;
 
-    public Controller(IGenericApplicationData<?> app) {
-        this.app = app;
+    public Controller(DataTreeManager<?> app) {
+        this.dataTree = app;
     }
 
     public boolean isActive() {
         return this.currentTransaction != null;
+    }
+
+    public DataTreeManager<?> getDataTree() {
+        return this.dataTree;
     }
 
     /**
@@ -69,7 +76,7 @@ public class Controller {
         }
 
         this.currentTransaction = new Transaction(actionTitle);
-        this.app.getDataTree().getRoot().getLogging().registerLog(this.currentTransaction.getLog());
+        this.dataTree.getRoot().getLogging().registerLog(this.currentTransaction.getLog());
         return this.continueTransaction(run);
     }
 
@@ -82,7 +89,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        this.app.getDataTree().getReferenceManager().cacheClearedReferences();
+        this.dataTree.getReferenceManager().cacheClearedReferences();
         this.currentTransaction.getLog().resume();
 
         try {
@@ -100,7 +107,7 @@ public class Controller {
                 throw new Error("An unexpected exception happened during reverting a failed transaction.");
             }
 
-            this.app.getDataTree().getReferenceManager().reapplyCachedClearedReferences();
+            this.dataTree.getReferenceManager().reapplyCachedClearedReferences();
 
             if (e instanceof UserException userException) {
                 return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
@@ -119,7 +126,7 @@ public class Controller {
      */
     public void commitCurrentTransaction() {
         if (this.currentTransaction == null) return;
-        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.dataTree.getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         this.currentTransaction = null;
     }
@@ -129,7 +136,7 @@ public class Controller {
      */
     public void commitCurrentTransaction(HistoryManager historyManager) {
         if (this.currentTransaction == null) return;
-        this.app.getDataTree().getReferenceManager().finalizeCachedClearedReferences();
+        this.dataTree.getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
         if (historyManager != null) {
             historyManager.pushTransaction(this.currentTransaction);
@@ -143,7 +150,7 @@ public class Controller {
      * @throws RuntimeException probably best to let the app crash when reverting a transaction fails for some reason.
      */
     protected void revertTransaction(Transaction transaction) {
-        BaseValueHierarchy<?> root = this.app.getDataTree().getRoot();
+        BaseValueHierarchy<?> root = this.dataTree.getRoot();
         Stack<DataOperationLog.RelativeEntry> log = transaction.getLog().getLogRelativeTo(root);
         while (!log.isEmpty()) {
             DataOperationLog.RelativeEntry step = log.pop();

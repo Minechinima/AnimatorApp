@@ -1,6 +1,10 @@
 package com.minechinima.model.events;
 
+import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.ParentChangeEvent;
+import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.events.types.changes.*;
 
 import java.util.*;
 
@@ -9,6 +13,23 @@ public class EventTypeRegistry {
 
     public EventTypeRegistry() {
         this.availableEvents.add(Event.class);
+        /* register the module's default event types from type package */
+        this.availableEvents.add(RemoveFromTreeEvent.class);
+        this.availableEvents.add(AddToTreeEvent.class);
+        this.availableEvents.add(ParentChangeEvent.class);
+
+        /* change events */
+        this.availableEvents.add(ChangeEvent.class);
+
+        this.availableEvents.add(IdentifierChangeEvent.class);
+        this.availableEvents.add(ValueChangeEvent.class);
+
+        this.availableEvents.add(ListAddEvent.class);
+        this.availableEvents.add(ListIndexChangeEvent.class);
+        this.availableEvents.add(ListRemoveEvent.class);
+
+        this.availableEvents.add(ValueRemoveEvent.class);
+        this.availableEvents.add(ValueAddEvent.class);
     }
 
 
