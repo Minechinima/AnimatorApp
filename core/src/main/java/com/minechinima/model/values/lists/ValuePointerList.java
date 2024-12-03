@@ -52,7 +52,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
     public void addPointer(T pointerTarget) {
         ValuePointer<T> p = new ValuePointer<>("", this.type, this.relative);
         p.set(pointerTarget);
-        if (p.get() == pointerTarget) {
+        if (p.getReference() == pointerTarget) {
             this.addPointer(this.size(), pointerTarget);
         } else {
             throw new RuntimeException("Could not set pointer target.");
@@ -63,7 +63,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
     public void addPointer(int index, T pointerTarget) {
         ValuePointer<T> p = new ValuePointer<>("", this.type, this.relative);
         p.set(pointerTarget);
-        if (p.get() == pointerTarget) {
+        if (p.getReference() == pointerTarget) {
             this.addListElement(index, new ListElement<>(UUID.randomUUID(), p));
         } else {
             throw new RuntimeException("Could not set pointer target.");
@@ -72,18 +72,18 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
 
     @Override
     public boolean addListElement(int index, ListElement<ValuePointer<T>> element) {
-        if (element.value().getRelative() != this.relative) {
+        if (element.value().getReferenceFrame() != this.relative) {
             throw new IllegalArgumentException("Trying to add a pointer to a pointerlist with a different relative target.");
         }
 
         if (!this.nullPointerAllowed) {
-            if (element.value().get() == null) {
+            if (element.value().getReference() == null) {
                 return false;
             }
 
             //TODO memory leak
             Consumer<T> consumer = v -> { if (v == null) this.remove(element.value()); };
-            element.value().addCallbackBeforeSet(consumer);
+            //element.value().addCallbackBeforeSet(consumer);
             //TODO element.value().addListener(RemoveFromTreeEvent.class, e -> element.value().removeCallbackBeforeSet(consumer));
         }
 
@@ -93,7 +93,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
             }
 
             Consumer<T> consumer = v -> { if (this.getPointerTargets().contains(v)) this.remove(element.value()); };
-            element.value().addCallbackBeforeSet(consumer);
+            //element.value().addCallbackBeforeSet(consumer);
             //TODO element.value().addListener(RemoveFromTreeEvent.class, e -> element.value().removeCallbackBeforeSet(consumer));
         }
 

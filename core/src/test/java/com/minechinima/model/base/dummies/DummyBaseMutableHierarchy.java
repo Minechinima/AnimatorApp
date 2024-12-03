@@ -3,6 +3,7 @@ package com.minechinima.model.base.dummies;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
 
@@ -52,7 +53,9 @@ public class DummyBaseMutableHierarchy extends BaseMutableValueHierarchy<BaseStr
 
     @Override
     public boolean removeChild(BaseStructure child) {
-        return false;
+        if (!this.children.contains(child)) return false;
+        BaseOperationsUtils.removeChildOrThrow(child, this.children);
+        return !this.children.contains(child);
     }
 
     @Override

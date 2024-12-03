@@ -2,6 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.model.base.dummies.DummyBaseImmutableHierarchy;
 import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
+import com.minechinima.model.base.dummies.DummyBaseStructure;
 import com.minechinima.model.utils.ValuePath;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -79,6 +80,7 @@ public class BaseStructureTest {
                 h2.add(
                         h3.add(test)));
 
+        Assertions.assertFalse(h3.isChildOf(h3));
         Assertions.assertFalse(h3.isChildOf(test));
         Assertions.assertFalse(h3.isChildOf(new DummyBaseImmutableHierarchy("a", ValuePath.Format.PATH)));
     }

@@ -10,6 +10,7 @@ import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.logging.DataOperationLogging;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.ContractViolatedException;
+import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.*;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
@@ -169,7 +170,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                             </ul>
      */
     public final void setParent(@Nullable final BaseValueHierarchy<?> parent) throws SetParentNotAllowed {
-        //TODO pointers: think about case where parent is changed in the same tree or changed to other tree
         if (this.parent == parent) return;
         /*
          * declare ALL values of the tree state that might be changed during setParent here at the top
@@ -218,7 +218,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
              */
             this.parent = parent;
             /* call this here so BaseStructure implementation can also prohibit changing parent to null */
-            this.throwExceptionForIllegalParentChange();
+            this.throwExceptionForIllegalParentChange(originalParent);
+            if (this instanceof BaseValueHierarchy<?> hierarchy) {
+                this.onParentChangeIterateChildren(hierarchy, hierarchy, originalParent);
+            }
 
             /* The safety checks performed here are only relevant when the node is inserted into the tree, not removed. */
             if (parent != null) {
@@ -347,7 +350,32 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * This here is for the base data tree integrity. If your app data thinks it could create something that creates invalid
      * tree integrity, you are wrong, that would simply be invalid application data you need to validate before setting.
      */
-    void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {
+    void throwExceptionForIllegalParentChange(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+    }
+
+    private final void onParentChangeIterateChildren(@NotNull final BaseValueHierarchy<?> affectedNode,
+                                                     @NotNull final BaseValueHierarchy<?> current,
+                                                     @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+        for (BaseStructure child : current.getChildren()) {
+            child.onParentChangeInParents(affectedNode, oldParent);
+            if (child instanceof BaseValueHierarchy<?> childHierarchy) {
+                child.onParentChangeIterateChildren(affectedNode, childHierarchy, oldParent);
+            }
+        }
+    }
+
+    /**
+     * This method is called on every child and distant child of a node where the parent changed.
+     * <br><br>
+     * This method is called in {@link #setParent(BaseValueHierarchy)} after parent is changed.
+     * Throwing a {@link SetParentNotAllowed} exception will prevent the parent from changing and revert the tree state.
+     * @param oldParent the previous parent.
+     * @param affectedNode is the node where the parent changed.
+     * @throws SetParentNotAllowed
+     * @implNote package-private, see {@link #throwExceptionForIllegalParentChange(BaseValueHierarchy)}
+     */
+    void onParentChangeInParents(@NotNull final BaseValueHierarchy<?> affectedNode,
+                                 @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
     }
 
     /* +------------------------------------+
@@ -477,6 +505,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     public final ValuePath getRelativePath(@Nullable BaseValueHierarchy<?> relative) {
         /* no need to search for this in the parents */
         if (relative == this) return null;
+
+        if (this.parent != null && !this.parent.isDirectChild(this)) {
+            throw new IllegalStateException("Illegal tree state: this is not a child of this.parent..");
+        }
 
         /* did not reach relative yet - go one hierarchy up */
         if (this.parent != relative && this.parent != null) {
@@ -707,14 +739,20 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     private final void afterRemoveFromTree() {
         /* only trigger event once on the element that this method is called */
         this.triggerEvent(new RemoveFromTreeEvent(this));
-        this.afterFromTreeIteration();
+        this.afterRemoveFromTreeIteration();
     }
 
-    private void afterFromTreeIteration() {
-        //TODO go through ValuePointers and clear them
+    private void afterRemoveFromTreeIteration() {
+        for (ValuePointer<?> pointer : this.pointersToThis) {
+            pointer.set(null);
+            if (pointer.getReference() == this) {
+                throw new MemoryLeakError("Could not clear pointer.");
+            }
+        }
+
         this.pointersToThis.clear();
         if (this instanceof BaseValueHierarchy<?> hierarchy) {
-            hierarchy.getChildren().forEach(BaseStructure::afterFromTreeIteration);
+            hierarchy.getChildren().forEach(BaseStructure::afterRemoveFromTreeIteration);
         }
     }
 
@@ -736,6 +774,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
 
         if (!this.isInSameTree(pointer)) {
             throw new IllegalArgumentException("Tried adding a pointer that is not part of the same data tree.");
+        }
+
+        if (pointer.getReference() != this) {
+            throw new IllegalArgumentException("Cannot add a pointer to a node that does not reference the node.");
         }
 
         this.pointersToThis.add(pointer);
