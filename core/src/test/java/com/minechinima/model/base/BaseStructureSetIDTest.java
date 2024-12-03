@@ -139,6 +139,22 @@ public class BaseStructureSetIDTest {
     }
 
     @Test
+    public void _setIDCollisionsResolveMAPRandomSuffixFree() {
+        DummyBaseMutableHierarchy parent = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.MAP);
+        DummyIDMutable mutable = new DummyIDMutable("b");
+        DummyIDMutable mutable2 = new DummyIDMutable("c");
+
+        parent.add(
+                h1.add(new DummyBaseStructure("test"),
+                        new DummyBaseStructure("test.002"),
+                        mutable2, mutable));
+
+        testSetIDCollisionResolvedSuccess(mutable, "test", "test.001");
+        testSetIDCollisionResolvedSuccess(mutable2, "test", "test.003");
+    }
+
+    @Test
     public void _setIDCollisionsResolveRandomSuffixFree() {
         DummyBaseMutableHierarchy parent = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
         DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
