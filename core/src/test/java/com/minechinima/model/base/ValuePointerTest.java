@@ -174,7 +174,7 @@ public class ValuePointerTest {
         root.add(ref.add(pointer), point);
 
         Exception e = assertThrowsExactly(IllegalArgumentException.class, () -> pointer.set(point));
-        assertEquals("Cannot point to a node that is not a child of the pointer's reference frame", e.getMessage());
+        assertEquals("Cannot point to a node that is not a child of the pointer's reference frame.", e.getMessage());
         assertNull(pointer.getReference());
     }
 
@@ -202,7 +202,7 @@ public class ValuePointerTest {
         root.add(ref.add(pointer, point));
 
         Exception e = assertThrowsExactly(IllegalArgumentException.class, () -> pointer.set(point));
-        assertEquals("Cannot point to a node with an empty unique path.", e.getMessage());
+        assertEquals("Cannot point to a node as it is not addressable with a path.", e.getMessage());
         assertNull(pointer.getReference());
     }
 

@@ -19,7 +19,6 @@ public interface IValuePointerConstraint {
      * @param pointer
      */
     default void callbackOnNullPointer(ValuePointer<?> pointer) {
-        throw new ContractViolatedException("Not implemented");
     }
 
     boolean duplicatePointerTargetsAllowed();
@@ -31,6 +30,5 @@ public interface IValuePointerConstraint {
      * @param pointer
      */
     default void callbackOnDuplicatePointerTarget(ValuePointer<?> pointer) {
-        throw new ContractViolatedException("Not implemented");
     }
 }
