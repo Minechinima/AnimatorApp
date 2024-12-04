@@ -1,10 +1,10 @@
 package com.minechinima.model.base;
 
-import com.minechinima.model.base.dummies.DummyBaseImmutableHierarchy;
-import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
-import com.minechinima.model.base.dummies.DummyBaseStructure;
+import com.minechinima.model.base.dummies.*;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.model.logging.DummyHistoryManager;
 import com.minechinima.model.utils.ValuePath;
+import com.minechinima.model.values.DoubleValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -262,5 +262,31 @@ public class ValuePointerTest {
 
         ref.removeChild(point);
         Assertions.assertNull(pointer.getReference());
+    }
+
+    @Test
+    public void undoRemoveNodeAndPointerClear() throws UserException {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("", ValuePath.Format.PATH);
+        DummyDoubleValueMap map = new DummyDoubleValueMap("map");
+        ValuePointer<DoubleValue> pointer = new ValuePointer<>("ptr", DoubleValue.class, map);
+        DoubleValue point = new DoubleValue("a");
+
+        root._addChild("ref", map);
+        root._addChild("ptr", pointer);
+        root.initChildren();
+        map.add(point);
+        pointer.set(point);
+        point.set(2D);
+
+        DummyHistoryManager historyManager = new DummyHistoryManager(root);
+        root.getLogging().registerLog(historyManager);
+
+        map.removeChild(point);
+        Assertions.assertNull(pointer.getReference());
+        historyManager.commitUndoStep();
+
+        historyManager.undo();
+        Assertions.assertNotNull(map.get("a"));
+        Assertions.assertEquals(2D, pointer.getReference().get());
     }
 }
