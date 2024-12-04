@@ -164,7 +164,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                                 to check if it is allowed. In the try-catch-block you should remove the child from the
      *                                 children again if this operation is not supported.</li>
      *                                 <li>If there are wonky illegal states that shouldn't be possible.</li>
-     *                                 <li>Implementation of {@link #throwExceptionForIllegalParentChange}</li>
+     *                                 <li>Implementation of {@link #onParentChangeOfThis}</li>
      *                                 <li>If this is IDMutable and the UUID of this is not unique anymore with the neighbors.</li>
      *                                 <li>If something went wrong during {@link #afterRemoveFromTree()}</li>
      *                             </ul>
@@ -218,7 +218,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
              */
             this.parent = parent;
             /* call this here so BaseStructure implementation can also prohibit changing parent to null */
-            this.throwExceptionForIllegalParentChange(originalParent);
+            this.onParentChangeOfThis(originalParent);
             if (this instanceof BaseValueHierarchy<?> hierarchy) {
                 this.onParentChangeIterateChildren(hierarchy, originalParent);
             }
@@ -350,7 +350,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * This here is for the base data tree integrity. If your app data thinks it could create something that creates invalid
      * tree integrity, you are wrong, that would simply be invalid application data you need to validate before setting.
      */
-    void throwExceptionForIllegalParentChange(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+    void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
     }
 
     private final void onParentChangeIterateChildren(@NotNull final BaseValueHierarchy<?> affectedNode,
@@ -372,7 +372,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @param oldParent the previous parent.
      * @param affectedNode is the node where the parent changed.
      * @throws SetParentNotAllowed
-     * @implNote package-private, see {@link #throwExceptionForIllegalParentChange(BaseValueHierarchy)}
+     * @implNote package-private, see {@link #onParentChangeOfThis(BaseValueHierarchy)}
      */
     void onParentChangeInParents(@NotNull final BaseValueHierarchy<?> affectedNode,
                                  @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {

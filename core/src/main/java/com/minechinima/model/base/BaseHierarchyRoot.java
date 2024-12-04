@@ -26,7 +26,7 @@ public abstract class BaseHierarchyRoot extends BaseImmutableValueHierarchy<Base
     }
 
     @Override
-    final void throwExceptionForIllegalParentChange(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+    final void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
         throw new SetParentNotAllowed("Setting the parent of a root element is not allowed.");
     }
 }
