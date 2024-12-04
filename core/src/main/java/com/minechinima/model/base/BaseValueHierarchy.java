@@ -108,45 +108,6 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      */
     public abstract boolean isDirectChild(BaseStructure child);
 
-    /**
-     * Checks if the given node could be retrieved with a unique path from this hierarchy.
-     * The node could be a direct child or any child in the subtree.
-     * @return false if the child would be skipped by the path search algorithm using a value path or, if available, the unique path.
-     * @implNote final as it is part of the path system specification
-     */
-    public final boolean isNodeAddressableWithUniquePath(BaseStructure child) {
-        return this.isNodeAddressableWithPath(child, true);
-    }
-
-    /**
-     * Checks if the given node could be retrieved with a value path from this hierarchy.
-     * The node could be a direct child or any child in the subtree.
-     * @return false if the child would be skipped by the path search algorithm using only the value path.
-     * @implNote final as it is part of the path system specification
-     */
-    public final boolean isNodeAddressableWithValuePath(BaseStructure child) {
-        //TODO test
-        return this.isNodeAddressableWithPath(child, false);
-    }
-
-    /**
-     * @return false if the child would be skipped by the path search algorithm or if this does not contain
-     * the specified child.
-     */
-    private boolean isNodeAddressableWithPath(BaseStructure child, boolean useUnique) {
-        BaseValueHierarchy<?> parent = child.getParent();
-        ValuePath relativePath = child.getRelativePath(this);
-
-        if (parent == null && relativePath != null) {
-            throw new IllegalStateException("The given child has no parent but a relative path could be built to this node.");
-        } else if (relativePath == null) {
-            return false;
-        }
-
-        relativePath = useUnique ? relativePath.getCleanedUniquePath() : relativePath.getCleanedValuePath();
-        return relativePath.getSize() > 0;
-    }
-
     @Nullable
     public final BaseStructure getChildByValuePath(String relativePath) {
         //TODO rename child to node when it is any child of the subtree
