@@ -11,25 +11,25 @@ import java.util.*;
 public class EventTypeRegistry {
     private final Set<Class<? extends Event>> availableEvents = new HashSet<>();
 
-    public EventTypeRegistry() {
-        this.availableEvents.add(Event.class);
+    public static void registerDefaultEventTypes(EventTypeRegistry registry) {
+        registry.availableEvents.add(Event.class);
         /* register the module's default event types from type package */
-        this.availableEvents.add(RemoveFromTreeEvent.class);
-        this.availableEvents.add(AddToTreeEvent.class);
-        this.availableEvents.add(ParentChangeEvent.class);
+        registry.availableEvents.add(RemoveFromTreeEvent.class);
+        registry.availableEvents.add(AddToTreeEvent.class);
+        registry.availableEvents.add(ParentChangeEvent.class);
 
         /* change events */
-        this.availableEvents.add(ChangeEvent.class);
+        registry.availableEvents.add(ChangeEvent.class);
 
-        this.availableEvents.add(IdentifierChangeEvent.class);
-        this.availableEvents.add(ValueChangeEvent.class);
+        registry.availableEvents.add(IdentifierChangeEvent.class);
+        registry.availableEvents.add(ValueChangeEvent.class);
 
-        this.availableEvents.add(ListAddEvent.class);
-        this.availableEvents.add(ListIndexChangeEvent.class);
-        this.availableEvents.add(ListRemoveEvent.class);
+        registry.availableEvents.add(ListAddEvent.class);
+        registry.availableEvents.add(ListIndexChangeEvent.class);
+        registry.availableEvents.add(ListRemoveEvent.class);
 
-        this.availableEvents.add(ValueRemoveEvent.class);
-        this.availableEvents.add(ValueAddEvent.class);
+        registry.availableEvents.add(ValueRemoveEvent.class);
+        registry.availableEvents.add(ValueAddEvent.class);
     }
 
 

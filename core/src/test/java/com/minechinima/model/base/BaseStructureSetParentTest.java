@@ -405,7 +405,23 @@ public class BaseStructureSetParentTest {
         }
 
         Assertions.assertEquals(parent, child.getParent());
-        if (parent != null) Assertions.assertTrue(parent.getChildren().contains(child));
+        if (parent != null) {
+            testIsChildOfParent(child, parent);
+        }
+    }
+
+    public static void testIsChildOfParent(BaseStructure child, BaseValueHierarchy parent) {
+        Assertions.assertTrue(parent.getChildren().contains(child));
+        Assertions.assertTrue(parent.isDirectChild(child));
+        Assertions.assertTrue(child.isChildOf(parent));
+        Assertions.assertTrue(child.isInSameTree(parent));
+        Assertions.assertEquals(parent, child.getParent());
+    }
+
+    public static void testIsNotChildOfParent(BaseStructure child, BaseValueHierarchy parent) {
+        Assertions.assertFalse(parent.getChildren().contains(child));
+        Assertions.assertFalse(parent.isDirectChild(child));
+        Assertions.assertNotEquals(parent, child.getParent());
     }
 
     private void testSetParentFail(BaseStructure child, @Nullable BaseValueHierarchy parent, @Nullable String errorMessage) {

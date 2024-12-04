@@ -28,7 +28,7 @@ public record ID(String id, @Nullable UUID uuid) {
         if (id.getStringType("id") == null) {
             throw new BaseTypeCannotBeParsed("");
         }
-        UUID uuid = UUIDUtils.readUUID(id, "uuid");
+        UUID uuid = UUIDUtils.readUUIDorNull(id, "uuid");
         return new ID(id.getStringType("id").getValue(), uuid);
     }
 }

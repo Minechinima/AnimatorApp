@@ -344,6 +344,8 @@ public class ValuePath implements ICopy<ValuePath> {
             return new ValuePath();
         } else if (path.size == this.size) {
             return null;
+        } else if (path.size == 0) {
+            return null;
         }
 
         ValuePath subtracted = new ValuePath();

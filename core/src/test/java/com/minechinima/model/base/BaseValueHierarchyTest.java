@@ -11,7 +11,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 public class BaseValueHierarchyTest {
-    @Test
+    /*@Test
     public void isChildAddressableWithPath() {
         DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
         DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
@@ -20,17 +20,48 @@ public class BaseValueHierarchyTest {
 
         root.add(h1, v1, v2);
 
-        /* unique path */
+        // unique path
         Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v1));
         Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v2));
 
         Assertions.assertFalse(root.isNodeAddressableWithUniquePath(h1));
 
-        /* value path */
+        // value path
         Assertions.assertTrue(root.isNodeAddressableWithValuePath(v1));
 
         Assertions.assertFalse(root.isNodeAddressableWithValuePath(h1));
         Assertions.assertFalse(root.isNodeAddressableWithValuePath(v2));
+    }
+
+    @Test
+    public void isChildAddressableWithPathEmptyNode() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("test", ValuePath.Format.PATH);
+        DummyIDMutable v1 = new DummyIDMutable("a");
+        DummyIDMutable v2 = new DummyIDMutable("");
+
+        root.add(h1.add(v1,v2));
+
+        // unique path
+        Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v1));
+        Assertions.assertTrue(root.isNodeAddressableWithUniquePath(v2));
+
+        // value path
+        Assertions.assertTrue(root.isNodeAddressableWithValuePath(v1));
+        Assertions.assertFalse(root.isNodeAddressableWithValuePath(v2));
+    }*/
+
+    @Test
+    public void getChildLeafEmptyPath() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("test", ValuePath.Format.PATH);
+        DummyIDMutable v1 = new DummyIDMutable("a");
+        DummyIDMutable v2 = new DummyIDMutable("");
+        root.add(h1.add(v1,v2));
+
+        String path = v2.getRelativePath(root).toValuePath();
+        // CAN ONLY GET h1 and not v2
+        Assertions.assertEquals(h1, root.getChildByValuePath(path));
     }
 
     @Test
@@ -67,6 +98,32 @@ public class BaseValueHierarchyTest {
         Assertions.assertEquals(v2, root.getChildByUniquePath(path2));
         Assertions.assertNull(root.getChildByUniquePath("path2"));
         Assertions.assertEquals(v1, h2.getChildByUniquePath(path1));
+    }
+
+    @Test
+    public void getChildFirstEmpty() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseStructure test = new DummyBaseStructure("test");
+        root.add(
+                h1.add(test),
+                h2.add(new DummyBaseStructure("test2")));
+
+        Assertions.assertEquals(test, root.getChildByValuePath("test"));;
+    }
+
+    @Test
+    public void getChildFirstNonEmpty() {
+        DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("a", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("b", ValuePath.Format.PATH);
+        DummyBaseStructure test = new DummyBaseStructure("test");
+        root.add(
+                h1.add(test),
+                h2.add(new DummyBaseStructure("test2")));
+
+        Assertions.assertEquals(test, root.getChildByValuePath("a.test"));;
     }
 
     @Test

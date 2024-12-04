@@ -1,12 +1,18 @@
 package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.data.types.MapType;
+import com.minechinima.data.types.StringType;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.utils.LimitedSizeSet;
+import com.minechinima.utils.UUIDUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -53,24 +59,29 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
          */
         try {
             this.proxySet.clear();
-            this.proxySet.add(value);
+            if (value != null) this.proxySet.add(value);
             valueAfter = this.valueToData();
         } finally {
             /* in case of exception: revert
              * in case serialization was successful,
              * put old value back, so it can be removed from the tree */
             this.proxySet.clear();
-            this.proxySet.add(prevValue);
+            if (prevValue != null) this.proxySet.add(prevValue);
         }
 
-        BaseOperationsUtils.removeChildOrThrow(prevValue, this.proxySet);
-        try {
-            BaseOperationsUtils.addChildOrThrow(value, this, this.proxySet);
-        } catch (Exception e) {
-            //TODO what to do with null in serialization?
-            /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
-            this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
-            throw e;
+        if (prevValue != null) {
+            BaseOperationsUtils.removeChildOrThrow(prevValue, this.proxySet);
+        }
+
+        if (value != null) {
+            try {
+                BaseOperationsUtils.addChildOrThrow(value, this, this.proxySet);
+            } catch (Exception e) {
+                //TODO what to do with null in serialization?
+                /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
+                this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
+                throw e;
+            }
         }
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
@@ -90,6 +101,37 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
         this.set(child);
         return this.get() == child;
+    }
+
+    @NotNull
+    protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
+
+    @Override
+    public BaseType<?> valueToData() {
+        //TODO what to do with null in serialization... add unit tests to BaseType and think about design again
+        T value = this.get();
+        if (value == null) return null;
+
+        MapType map = new MapType(new HashMap<>());
+        map.getValue().put("id", new StringType(value.getIdentifier()));
+        map.getValue().put("data", value.toData());
+        if (value instanceof IDMutable mutable) {
+            return UUIDUtils.putUUID(map, "uuid", mutable.getUUID());
+        }
+
+        return map;
+    }
+
+    @Override
+    public T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
+        MapType mapType;
+        if (((mapType = data.asMapType()) == null) || mapType.getStringType("id") == null) {
+            throw new BaseTypeCannotBeParsed("");
+        }
+
+        String id = mapType.getStringType("id").getValue();
+        UUID uuid = UUIDUtils.readUUIDorNull(mapType, "uuid");
+        return this.instantiate(id, uuid, mapType.get("data"));
     }
 
     @Override

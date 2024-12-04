@@ -3,6 +3,8 @@ package com.minechinima.model;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.events.bus.EventBusManager;
 import com.minechinima.model.events.EventTypeRegistry;
+import com.minechinima.model.events.bus.SubscribeEvent;
+import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.memory.ReferenceManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +34,6 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         return this.eventBusManager;
     }
 
-    //TODO is it a good idea to spread access throughout the app to the manager. all BaseStructureReferences class will have that reference
     public ReferenceManager getReferenceManager() {
         return this.referenceManager;
     }
@@ -41,9 +42,8 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         return root;
     }
 
-    private void onNodeAdd() {
-        //TODO when something is added to the tree, we can call a method or so on the node that does structural checking when it is in the full tree
-        // initPointerReferenceFrames
-        // set EventBusManager
+    @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
+    private void onNodeAdd(AddToTreeEvent event) {
+
     }
 }

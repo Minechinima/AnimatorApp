@@ -336,7 +336,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     public ListElement<T> listElementFromData(MapType child) throws BaseTypeCannotBeParsed {
         String id = child.getStringType("id") != null ? child.getStringType("id").getValue() : "";
         UUID uuid = UUIDUtils.readUUIDOrCreateRandom(child, "uuid");
-        UUID valueUUID = UUIDUtils.readUUID(child, "value_uuid");
+        UUID valueUUID = UUIDUtils.readUUIDorNull(child, "value_uuid");
         BaseType<?> childData = child.get("data");
         return new ListElement<>(uuid, this.instantiate(id, valueUUID, childData));
     }

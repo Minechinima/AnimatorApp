@@ -2,19 +2,20 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.events.types.changes.ValueChangeEvent;
+import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.PathParsingException;
-import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.ValuePath;
+import com.minechinima.model.utils.IValuePointerConstraint;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * This is a value that points to another element in the tree, where this node is located in.<br>
@@ -23,30 +24,18 @@ import java.util.function.Consumer;
  * This value is not going to serialize and store the target itself, it only points to it with a path.
  * @param <T>
  */
-//TODO idea to solve issue of not loading the pointer target: make this an own class with final methods. Write own getter that tries to load everytime it is called.
-//TODO ideas for validating pointer reference frame:
-// * when a parent changes, it will go through ALL its children and call a method like "validateTreeStructure" which can let the setParent operation fail
-// - Cons: can become performance intensive, a tree can have a lot of subtrees
-// + Pro: allows to validate during building of the tree structure - makes it more clear and debugging easier
-// * only validate once this pointers set or get is called and cache the validation result or throw exception.
-// - Cons: would allow invalid pointers to be in the tree as long as no one touches them.
-// + Pro: more efficient
-//TODO idea for removing callback (we don't like lambdas anymore - memory leaks lol) -> interface PointerConstraint.
-// If the parent is mutable, remove on null, if parent is immutable,
-@Deprecated
 public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T> {
     /**
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.
      */
     private String cachedUniquePath;
+    @Nullable
+    private T referenced;
     private final BaseValueHierarchy<? extends BaseStructure> referenceFrame;
     /**
-     * A callback that is called before this pointer's value is actually set.
-     * <br>
-     * This could be used to prevent illegal pointer values and remove an invalid pointer from the hierarchy before
-     * it is actually set and recording a change event for an illegal state.
+     * True when the reference frame was checked and is correct.
      */
-    private final Set<Consumer<T>> callbacksBeforeSet = Collections.newSetFromMap(new IdentityHashMap<>());
+    private boolean initialized;
     /**
      * The type of this ValuePointer target.
      * @implNote important because generics suck :3
@@ -55,23 +44,61 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
     public ValuePointer(String id, Class<T> type, @NotNull BaseValueHierarchy<? extends BaseStructure> referenceFrame) {
         super(id);
-        this.throwExceptionForIllegalReferenceFrame(referenceFrame);
+
+        if (referenceFrame == null) {
+            throw new IllegalArgumentException("Pointer reference frame cannot be null.");
+        }
+
         this.referenceFrame = referenceFrame;
         this.type = type;
     }
 
-    /**
-     * @throws IllegalStateException with meaningful debug messages.
-     * @implNote This is final as it is a core safety mechanism for the integrity of tree management!
-     */
-    protected final void throwExceptionForIllegalReferenceFrame(BaseValueHierarchy<? extends BaseStructure> frame) {
-        if (frame == null) {
-            throw new IllegalStateException("Pointer reference frame cannot be null.");
-        }
-        /* as long as we don't have a parent we cannot check if this is valid. */
-        if (this.getParent() == null) return;
+    public boolean isInitialized() {
+        return this.initialized;
+    }
 
-        final BaseValueHierarchy<?> thisRoot = this.getRoot();
+    /**
+     * Following cases are not allowed for changing parent of a ValuePointer:
+     * <li>
+     *     <ul>changing the parent when the reference frame would become illegal.</ul>
+     *     <ul>changing the parent when it is constrained and this reference value is not allowed.</ul>
+     * </li>
+     * @param oldParent
+     * @throws SetParentNotAllowed
+     */
+    @Override
+    public final void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+        this.onParentChange(this.getParent());
+    }
+
+    /**
+     * Automatically try to initialize the pointer and also check if the pointer is still valid if it was
+     * initialized and the tree structure changes again.
+     */
+    @Override
+    final void onParentChangeInParents(@NotNull BaseValueHierarchy<?> affectedNode,
+                                       @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+        this.onParentChange(affectedNode.getParent());
+    }
+
+    private void onParentChange(BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
+        if (this.getParent() == null) return;
+        try {
+            this.tryInitOrthrowExceptionIllegalReferenceFrame();
+            this.checkConstraintsForValueAndThrow(this.referenced, false);
+        } catch (Exception e) {
+            throw new SetParentNotAllowed(e.getMessage());
+        }
+        /*
+         * We cannot add a pointer to the tree with an invalid value, but we cannot set the value
+         * if it is not added to the tree.
+         * When we add the pointer to a tree we need to add the observer, as a pointer can be set
+         * without being in the tree.
+         */
+        if (this.referenced != null) this.referenced.addPointer(this);
+    }
+
+    private void tryInitOrthrowExceptionIllegalReferenceFrame() throws IllegalStateException {
         /*
          * A pointer can only point to values that are in the same tree as this pointer.
          * Imagine a pointer in an OS trying to point into inaccessible memory...
@@ -79,65 +106,67 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
          * completely separate tree, we cannot record the change that resulted in clearing this pointer.
          * This would break the core design principle of the data tree that everything is fully revert-able and recordable.
          */
-        if (thisRoot != frame.getRoot()) {
-            //throw new IllegalStateException("Pointer reference frame is out of reach.");
+        if (!this.isInSameTree(this.referenceFrame)) {
+            /* pointer was initialized and parent changed, now it could become invalid */
+            if (this.initialized) {
+                throw new IllegalStateException("Pointer reference frame is not in the same tree.");
+            }
+            return;
         }
 
         /*
-         * Next requirement: A reference frame can never be something that could be removed from the tree.
-         * How do you want to point to something that is not part of the tree anymore?
-         * If frame is root, it is allowed because that means it can never be removed and
-         * this pointer will always be a child of the frame, i.e., a closed system.
+         * We need to go through the parent and check if the reference frame could be removed
+         * and how the tree structure is built.
          */
-        if (frame != thisRoot) {
-            /* frame is not a root, so this must mean it has a parent. */
-            if (frame.getParent() == null) {
-                //throw new IllegalStateException("Pointer reference frame has no parent. " +
-                //        "Not possible: it is not the root but part of the same tree.");
-            }
+        List<BaseValueHierarchy<?>> mutable = this.referenceFrame.findFirstParentTrace(
+                parent -> parent instanceof BaseMutableValueHierarchy<? extends BaseStructure>);
+        if (mutable == null) {
+            /* reference frame will always be in the tree, pointer can always refer to it */
+            this.initialized = true;
+        } else {
             /*
-             * ValueGroup is the only BaseValueHierarchy implementation guaranteed to have static children.
-             * If the frame is not a child of a ValueGroup, it means it could be removed at runtime. If this happens,
-             * where should this pointer point to? Also memory leak since this pointer would still hold that removed node.
-             * //TODO more general check is needed whether the frame could be removed, go through all parents,
-             *    and whether the node where it could be removed
-             *    is a parent of this i.e. closed system again. what about if the valuepointer is removed from tree and added in again?
+             * with size==1: first parent of reference frame is already mutable, this means the pointer needs to be a child
+             * of the reference frame to make up a closed system.
              */
-            if (!(frame.getParent() instanceof BaseImmutableValueHierarchy<?>)) {
+            if (mutable.size() == 1 && !this.isChildOf(this.referenceFrame)) {
+                throw new IllegalStateException("The pointer reference frame could be removed from the tree " +
+                        "and the pointer is not a child of the frame.");
+            } else if (mutable.size() >= 2) {
                 /*
-                 * If the reference frame could be removed at runtime, it is still okay if this pointer
-                 * is a child of that frame, as then it is a closed system.
+                 * When the reference frame is a distant child of a mutable hierarchy,
+                 * the pointer must be at least a child of the first node that is immutable again.
                  */
-                if (!this.isChildOf(frame)) {
-                    //TODO throw new IllegalStateException("Pointer reference frame could be removed from the tree at runtime, creating an illegal pointer.");
+                BaseValueHierarchy<?> test = mutable.get(mutable.size() - 2);
+                /* safety first...*/
+                if (test instanceof BaseMutableValueHierarchy<?>) {
+                    throw new IllegalStateException("Some weird programmer bug...");
                 }
+
+                if (!this.isChildOf(test)) {
+                    throw new IllegalStateException("The pointer reference frame could be removed from the tree " +
+                            "and the pointer is not a child of the subtree.");
+                }
+            } else if (mutable.isEmpty()) {
+                throw new IllegalStateException("Parent trace list is empty, this is unexpected.");
             }
+
+            /* this can only be reached if no invalid state is present as those cause an exception */
+            this.initialized = true;
         }
     }
 
     @Override
-    final void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {
-        //TODO
-        try {
-            this.throwExceptionForIllegalReferenceFrame(this.referenceFrame);
-        } catch (Exception e) {
-            throw new SetParentNotAllowed(e);
-        }
+    public boolean canSet(Object newValue) throws UserException {
+        if (!this.initialized) throw new UserException("ValuePointer is not initialized.");
+        if (newValue == null) return true;
+        return this.type.isAssignableFrom(newValue.getClass());
     }
 
     public Class<T> getType() {
         return this.type;
     }
 
-    public void addCallbackBeforeSet(Consumer<T> callback) {
-        this.callbacksBeforeSet.add(callback);
-    }
-
-    public void removeCallbackBeforeSet(Consumer<T> callback) {
-        this.callbacksBeforeSet.remove(callback);
-    }
-
-    public BaseValueHierarchy<? extends BaseStructure> getRelative() {
+    public BaseValueHierarchy<? extends BaseStructure> getReferenceFrame() {
         return this.referenceFrame;
     }
 
@@ -145,105 +174,158 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         return this.cachedUniquePath;
     }
 
-    @Override
-    public StringType toData() {
-        return this.get() != null ? new StringType(this.cachedUniquePath) : new StringType("");
-    }
-
-    @Override
-    public void fromData(BaseType<?> data) {
-        StringType value;
-        if ((value = data.asStringType()) == null) return;
-        /* first set to null because we are not sure whether the path will lead to a pointer target */
-        this.set(null);
-        this.cachedUniquePath = value.getValue().isEmpty() ? null : value.getValue();
-
-        if (this.cachedUniquePath != null) {
-            //TODO
-            BaseStructure target = this.referenceFrame.getChildByUniquePath(this.cachedUniquePath);
-
-            if (target != null && this.type.isAssignableFrom(target.getClass())) {
-                this.set((T) target);
-            }
-        }
-    }
-
     public void setNullPointer() {
         this.set(null);
     }
 
-    public void point(T target) {
-        this.set(target);
+    @Override
+    public void set(@Nullable T value) {
+        /*
+         * Allow setting the value when it is not in the tree,
+         * as then it can't hurt tree structure with an illegal reference frame.
+         * This needs to be allowed to set the pointer to something valid when adding it to
+         * a constrained parent.
+         * Example: Parent is constrained and does not allow null pointers,
+         * then this needs to be != null before added to the tree.
+         */
+        if (!this.initialized && this.getParent() != null) {
+            this.tryInitOrthrowExceptionIllegalReferenceFrame();
+            if (!this.initialized) {
+                throw new IllegalStateException("ValuePointer is not initialized.");
+            }
+        }
+
+        if (this.referenced == value) {
+            if (value == null) this.cachedUniquePath = null;
+            return;
+        }
+
+        this.checkConstraintsForValueAndThrow(value, true);
+
+        /* clear pointer */
+        if (value == null) {
+            final T prev = this.referenced;
+            final String prevCachedPath = this.cachedUniquePath;
+            this.referenced = null;
+            try {
+                prev.removePointer(this);
+            } catch (Exception e) {
+                this.referenced = prev;
+                throw e;
+            }
+
+            this.cachedUniquePath = null;
+            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevCachedPath), new StringType("")));
+        } else {
+            /* change pointer */
+            ValuePath path = value.getRelativePath(this.referenceFrame);
+            if (!value.isChildOf(this.referenceFrame)) {
+                throw new IllegalArgumentException("Cannot point to a node that is not a child of the pointer's reference frame.");
+            }
+
+            String uniquePath;
+            if (path == null ||
+                    this.referenceFrame.getChildByUniquePath(uniquePath = path.toUniquePath()) != value) {
+                throw new IllegalArgumentException("Cannot point to a node as it is not addressable with a path.");
+            }
+
+            final T prev = this.referenced;
+            this.referenced = value;
+            /* can only perform the listening operations when we are in the same tree */
+            if (this.getParent() != null) {
+                try {
+                    this.referenced.addPointer(this);
+                } catch (Exception e) {
+                    this.referenced = prev;
+                    throw e;
+                }
+            }
+
+            if (prev != null) {
+                try {
+                    prev.removePointer(this);
+                } catch (Exception e) {
+                    this.referenced = prev;
+                    try {
+                        value.removePointer(this);
+                    } catch (Exception e1) {
+                        throw new MemoryLeakError();
+                    }
+                }
+            }
+
+            String prevPath = this.cachedUniquePath;
+            this.cachedUniquePath = uniquePath;
+            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevPath), new StringType(uniquePath)));
+        }
     }
 
     public T getReference() {
-        return this.get();
+        return this.referenced;
     }
 
-    @Override
-    public void set(T value) {
-        if (this.get() == value) return;
-        if (value == null) {
-            T prev = this.get();
+    /**
+     * Check if the given value is allowed with the current parent and throw exceptions if setting this pointer
+     * to the given value is illegal.
+     * @param value the given value to test the constraints
+     * @param executeCallback whether to execute the callbacks of the parent.
+     *                        If false, an exception will be immediately thrown if the given value is not allowed by the parent.
+     * @throws IllegalArgumentException
+     */
+    private void checkConstraintsForValueAndThrow(T value, boolean executeCallback) throws IllegalArgumentException {
+        final BaseValueHierarchy<?> parent;
+        if ((parent = this.getParent()) == null || !(parent instanceof IValuePointerConstraint constraint)) return;
 
-            try {
-                for (Consumer<T> callback : this.callbacksBeforeSet) {
-                    callback.accept(null);
+        if (value == null && !constraint.nullPointerAllowed()) {
+            if (executeCallback) {
+                /* notify constraint of null pointer change */
+                constraint.callbackOnNullPointer(this);
+            }
+
+            /* if we are still part of the parent a null pointer is not allowed */
+            if (this.getParent() == parent) {
+                throw new IllegalArgumentException("Parent does not allow null pointers.");
+            }
+        }
+
+        if (value != null && !constraint.duplicatePointerTargetsAllowed()) {
+            if (this.testIfParentContainsTarget(value)) {
+                if (executeCallback) {
+                    constraint.callbackOnDuplicatePointerTarget(this);
+
+                    /* if there are still duplicates, then it is only valid if we are not part of the parent anymore */
+                    if (this.testIfParentContainsTarget(value) && this.getParent() == parent) {
+                        throw new IllegalArgumentException("Parent does not allow duplicate pointer targets.");
+                    }
+                } else {
+                    throw new IllegalArgumentException("Parent does not allow duplicate pointer targets.");
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
-            
-            //super.set(null);
-            /* pointer successfully cleared - let pointer target know */
-            if (this.get() == null) {
-                this.cachedUniquePath = null;
-            }
-
-            return;
-        }
-
-        ValuePath path = value.getRelativePath(this.referenceFrame);
-        if (path == null) {
-            System.out.println("Cannot set ValuePointer as the path of the value to the relative target is empty.");
-            return;
-        }
-
-        BaseStructure target = this.referenceFrame.getChildByUniquePath(path.toUniquePath());
-        if (target == null || target != value) {
-            System.out.println("Cannot set ValuePointer as the pointer target cannot be retrieved from the relative target.");
-            return;
-        }
-
-        try {
-            for (Consumer<T> callback : this.callbacksBeforeSet) {
-                callback.accept(value);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        T prev = this.get();
-        //super.set(value);
-        if (this.get() != prev) {
-            this.cachedUniquePath = path.toUniquePath();
-        }
-        /* if the pointer really changed, remove from old pointer target */
-        if (prev != null && this.get() != prev) {
         }
     }
 
-    public T get() {
-        return null;
+    private boolean testIfParentContainsTarget(T newValue) {
+        if (this.getParent() == null) return false;
+        Collection<? extends BaseStructure> childrenOfParent = this.getParent().getChildren();
+
+        for (BaseStructure child : childrenOfParent) {
+            if (child instanceof ValuePointer<?> ptr
+                    && ptr != this && ptr.getReference() == newValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return this.get() != null ? new StringType(this.cachedUniquePath) : new StringType("");
+    public StringType valueToData() {
+        return new StringType(this.cachedUniquePath);
     }
 
     @Override
     public @Nullable T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
+        //TODO serialization is just placeholder, we need to check nulls in serialization and how to deal with them
         StringType value;
         if ((value = data.asStringType()) == null) throw new BaseTypeCannotBeParsed("ValuePointer expects stringtype.");
 
@@ -254,7 +336,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             } else if (this.type.isAssignableFrom(target.getClass())) {
                 return (T) target;
             } else {
-                return null;
+                throw new BaseTypeCannotBeParsed("The reference serialized from the path is not applicable to the pointer type.");
             }
         } catch (PathParsingException e) {
             throw new BaseTypeCannotBeParsed(e);
@@ -262,8 +344,20 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     }
 
     @Override
-    public boolean canSet(Object newValue) throws UserException {
-        if (newValue == null) return true;
-        return this.type.isAssignableFrom(newValue.getClass());
+    public StringType toData() {
+        return this.valueToData();
+    }
+
+    @Override
+    public void fromData(BaseType<?> data) {
+        try {
+            T newValue = this.valueFromData(data);
+            String cachedPath = this.cachedUniquePath;
+            this.set(newValue);
+            if (newValue == null) {
+                this.cachedUniquePath = cachedPath;
+            }
+        } catch (BaseTypeCannotBeParsed e) {
+        }
     }
 }

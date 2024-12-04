@@ -7,12 +7,13 @@ import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.base.BaseValueList;
 import com.minechinima.model.logging.datainterfaces.ListElement;
 import com.minechinima.model.base.ValuePointer;
+import com.minechinima.model.utils.IValuePointerConstraint;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ValuePointerList<T extends BaseStructure> extends BaseValueList<ValuePointer<T>> {
+public class ValuePointerList<T extends BaseStructure> extends BaseValueList<ValuePointer<T>> implements IValuePointerConstraint {
     private final BaseValueHierarchy<? extends BaseStructure> relative;
     private final boolean nullPointerAllowed;
     private final boolean duplicatePointerTargetsAllowed;
@@ -44,26 +45,34 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
         this.duplicatePointerTargetsAllowed = duplicatePointerTargetsAllowed;
     }
 
+    @Override
+    public boolean nullPointerAllowed() {
+        return this.nullPointerAllowed;
+    }
+
+    @Override
+    public boolean duplicatePointerTargetsAllowed() {
+        return this.duplicatePointerTargetsAllowed;
+    }
+
+    @Override
+    public void callbackOnNullPointer(ValuePointer ptr) {
+        this.remove(ptr);
+    }
+
     /**
      *
      * @param pointerTarget
      * @throws
      */
     public void addPointer(T pointerTarget) {
-        ValuePointer<T> p = new ValuePointer<>("", this.type, this.relative);
-        p.set(pointerTarget);
-        if (p.get() == pointerTarget) {
-            this.addPointer(this.size(), pointerTarget);
-        } else {
-            throw new RuntimeException("Could not set pointer target.");
-        }
-
+        this.addPointer(this.size(), pointerTarget);
     }
 
     public void addPointer(int index, T pointerTarget) {
         ValuePointer<T> p = new ValuePointer<>("", this.type, this.relative);
         p.set(pointerTarget);
-        if (p.get() == pointerTarget) {
+        if (p.getReference() == pointerTarget) {
             this.addListElement(index, new ListElement<>(UUID.randomUUID(), p));
         } else {
             throw new RuntimeException("Could not set pointer target.");
@@ -72,41 +81,15 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
 
     @Override
     public boolean addListElement(int index, ListElement<ValuePointer<T>> element) {
-        if (element.value().getRelative() != this.relative) {
+        if (element.value().getReferenceFrame() != this.relative) {
             throw new IllegalArgumentException("Trying to add a pointer to a pointerlist with a different relative target.");
         }
 
-        if (!this.nullPointerAllowed) {
-            if (element.value().get() == null) {
-                return false;
-            }
-
-            //TODO memory leak
-            Consumer<T> consumer = v -> { if (v == null) this.remove(element.value()); };
-            element.value().addCallbackBeforeSet(consumer);
-            //TODO element.value().addListener(RemoveFromTreeEvent.class, e -> element.value().removeCallbackBeforeSet(consumer));
-        }
-
-        if (!this.duplicatePointerTargetsAllowed) {
-            if (this.getPointerTargets().contains(element.value().getReference())) {
-                return false;
-            }
-
-            Consumer<T> consumer = v -> { if (this.getPointerTargets().contains(v)) this.remove(element.value()); };
-            element.value().addCallbackBeforeSet(consumer);
-            //TODO element.value().addListener(RemoveFromTreeEvent.class, e -> element.value().removeCallbackBeforeSet(consumer));
+        if (!this.type.isAssignableFrom(element.value().getType())) {
+            throw new IllegalArgumentException("Cannot add a pointer with a different type than this pointer list.");
         }
 
         return super.addListElement(index, element);
-    }
-
-    @Override
-    public boolean canAdd(int index, ListElement<Object> element) throws UserException {
-        if (element.value() instanceof ValuePointer<?> ptr
-                && ptr.getType().equals(this.type)) {
-            return true;
-        }
-        return false;
     }
 
     @Override

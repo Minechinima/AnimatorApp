@@ -7,6 +7,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,7 @@ public abstract class BaseHierarchyRoot extends BaseImmutableValueHierarchy<Base
     }
 
     @Override
-    final void throwExceptionForIllegalParentChange() throws SetParentNotAllowed {
+    final void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
         throw new SetParentNotAllowed("Setting the parent of a root element is not allowed.");
     }
 }
