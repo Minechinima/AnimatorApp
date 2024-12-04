@@ -62,7 +62,7 @@ another BaseStructure node and cause a memory leak.
 - Always perform checks whether the state your code works on is a valid state you expect it to be and throw
   exceptions if it is not valid.
   This should help with finding bugs that are rooted in core modules,
-- Always document `@Nullable` if a field or method returns a null value.
+- Always document `@Nullable` if a field or method return can be null.
   By default, you can assume that a method or field that is not annotated with `@Nullable` will not be null.
 - For clarity and in important cases,
   you may use `@NotNull` if a method never returns null or if a field/parameter should never be null.
