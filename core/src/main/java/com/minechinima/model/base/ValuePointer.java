@@ -10,9 +10,11 @@ import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.ValuePath;
+import com.minechinima.model.utils.IValuePointerConstraint;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -27,6 +29,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.
      */
     private String cachedUniquePath;
+    @Nullable
     private T referenced;
     private final BaseValueHierarchy<? extends BaseStructure> referenceFrame;
     /**
@@ -54,14 +57,18 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         return this.initialized;
     }
 
+    /**
+     * Following cases are not allowed for changing parent of a ValuePointer:
+     * <li>
+     *     <ul>changing the parent when the reference frame would become illegal.</ul>
+     *     <ul>changing the parent when it is constrained and this reference value is not allowed.</ul>
+     * </li>
+     * @param oldParent
+     * @throws SetParentNotAllowed
+     */
     @Override
-    public final void throwExceptionForIllegalParentChange(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
-        if (this.getParent() == null) return;
-        try {
-            this.tryInitOrthrowExceptionIllegalReferenceFrame();
-        } catch (IllegalStateException e) {
-            throw new SetParentNotAllowed(e.getMessage());
-        }
+    public final void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+        this.onParentChange(this.getParent());
     }
 
     /**
@@ -71,12 +78,24 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     @Override
     final void onParentChangeInParents(@NotNull BaseValueHierarchy<?> affectedNode,
                                        @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
-        if (affectedNode.getParent() == null) return;
+        this.onParentChange(affectedNode.getParent());
+    }
+
+    private void onParentChange(BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
+        if (this.getParent() == null) return;
         try {
             this.tryInitOrthrowExceptionIllegalReferenceFrame();
-        } catch (IllegalStateException e) {
+            this.checkConstraintsForValueAndThrow(this.referenced, false);
+        } catch (Exception e) {
             throw new SetParentNotAllowed(e.getMessage());
         }
+        /*
+         * We cannot add a pointer to the tree with an invalid value, but we cannot set the value
+         * if it is not added to the tree.
+         * When we add the pointer to a tree we need to add the observer, as a pointer can be set
+         * without being in the tree.
+         */
+        if (this.referenced != null) this.referenced.addPointer(this);
     }
 
     private void tryInitOrthrowExceptionIllegalReferenceFrame() throws IllegalStateException {
@@ -161,7 +180,15 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
     @Override
     public void set(@Nullable T value) {
-        if (!this.initialized) {
+        /*
+         * Allow setting the value when it is not in the tree,
+         * as then it can't hurt tree structure with an illegal reference frame.
+         * This needs to be allowed to set the pointer to something valid when adding it to
+         * a constrained parent.
+         * Example: Parent is constrained and does not allow null pointers,
+         * then this needs to be != null before added to the tree.
+         */
+        if (!this.initialized && this.getParent() != null) {
             this.tryInitOrthrowExceptionIllegalReferenceFrame();
             if (!this.initialized) {
                 throw new IllegalStateException("ValuePointer is not initialized.");
@@ -172,6 +199,8 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             if (value == null) this.cachedUniquePath = null;
             return;
         }
+
+        this.checkConstraintsForValueAndThrow(value, true);
 
         /* clear pointer */
         if (value == null) {
@@ -191,21 +220,25 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             /* change pointer */
             ValuePath path = value.getRelativePath(this.referenceFrame);
             if (!value.isChildOf(this.referenceFrame)) {
-                throw new IllegalArgumentException("Cannot point to a node that is not a child of the pointer's reference frame");
+                throw new IllegalArgumentException("Cannot point to a node that is not a child of the pointer's reference frame.");
             }
 
             String uniquePath;
-            if (path == null || (uniquePath = path.toUniquePath()).isEmpty()) {
-                throw new IllegalArgumentException("Cannot point to a node with an empty unique path.");
+            if (path == null ||
+                    this.referenceFrame.getChildByUniquePath(uniquePath = path.toUniquePath()) != value) {
+                throw new IllegalArgumentException("Cannot point to a node as it is not addressable with a path.");
             }
 
             final T prev = this.referenced;
             this.referenced = value;
-            try {
-                this.referenced.addPointer(this);
-            } catch (Exception e) {
-                this.referenced = prev;
-                throw e;
+            /* can only perform the listening operations when we are in the same tree */
+            if (this.getParent() != null) {
+                try {
+                    this.referenced.addPointer(this);
+                } catch (Exception e) {
+                    this.referenced = prev;
+                    throw e;
+                }
             }
 
             if (prev != null) {
@@ -229,6 +262,60 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
     public T getReference() {
         return this.referenced;
+    }
+
+    /**
+     * Check if the given value is allowed with the current parent and throw exceptions if setting this pointer
+     * to the given value is illegal.
+     * @param value the given value to test the constraints
+     * @param executeCallback whether to execute the callbacks of the parent.
+     *                        If false, an exception will be immediately thrown if the given value is not allowed by the parent.
+     * @throws IllegalArgumentException
+     */
+    private void checkConstraintsForValueAndThrow(T value, boolean executeCallback) throws IllegalArgumentException {
+        final BaseValueHierarchy<?> parent;
+        if ((parent = this.getParent()) == null || !(parent instanceof IValuePointerConstraint constraint)) return;
+
+        if (value == null && !constraint.nullPointerAllowed()) {
+            if (executeCallback) {
+                /* notify constraint of null pointer change */
+                constraint.callbackOnNullPointer(this);
+            }
+
+            /* if we are still part of the parent a null pointer is not allowed */
+            if (this.getParent() == parent) {
+                throw new IllegalArgumentException("Parent does not allow null pointers.");
+            }
+        }
+
+        if (value != null && !constraint.duplicatePointerTargetsAllowed()) {
+            if (this.testIfParentContainsTarget(value)) {
+                if (executeCallback) {
+                    constraint.callbackOnDuplicatePointerTarget(this);
+
+                    /* if there are still duplicates, then it is only valid if we are not part of the parent anymore */
+                    if (this.testIfParentContainsTarget(value) && this.getParent() == parent) {
+                        throw new IllegalArgumentException("Parent does not allow duplicate pointer targets.");
+                    }
+                } else {
+                    throw new IllegalArgumentException("Parent does not allow duplicate pointer targets.");
+                }
+            }
+        }
+    }
+
+    private boolean testIfParentContainsTarget(T newValue) {
+        if (this.getParent() == null) return false;
+        Collection<? extends BaseStructure> childrenOfParent = this.getParent().getChildren();
+
+        for (BaseStructure child : childrenOfParent) {
+            if (child instanceof ValuePointer<?> ptr
+                    && ptr != this && ptr.getReference() == newValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

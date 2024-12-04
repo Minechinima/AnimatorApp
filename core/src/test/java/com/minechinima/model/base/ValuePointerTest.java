@@ -1,15 +1,21 @@
 package com.minechinima.model.base;
 
+import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.dummies.*;
+import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DummyHistoryManager;
+import com.minechinima.model.utils.IValuePointerConstraint;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -288,5 +294,220 @@ public class ValuePointerTest {
         historyManager.undo();
         Assertions.assertNotNull(map.get("a"));
         Assertions.assertEquals(2D, pointer.getReference().get());
+    }
+
+    @Test
+    public void testEmptyTargetPath() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("test", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("", DummyBaseStructure.class, root);
+
+        root._addChild("h1", h1);
+        root._addChild("ptr", ptr);
+        root.initChildren();
+        h1.add(target);
+
+        Exception e = assertThrows(Exception.class, () -> ptr.set(target));
+        assertEquals("Cannot point to a node as it is not addressable with a path.", e.getMessage());
+    }
+
+    @Test
+    public void setToDuplicateOnConstrained() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr1 = new ValuePointer<>("1", DummyBaseStructure.class, root);
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("2", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.duplicateAllowed = false;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+        map.add(ptr1);
+        map.add(ptr);
+
+        ptr1.set(target);
+
+        Exception e = assertThrows(Exception.class, () -> ptr.set(target));
+        Assertions.assertEquals("Parent does not allow duplicate pointer targets.", e.getMessage());
+        Assertions.assertTrue(map.contains(ptr));
+        Assertions.assertNull(ptr.getReference());
+    }
+
+    @Test
+    public void setToDuplicateOnConstrainedRemoveOnCallback() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr1 = new ValuePointer<>("1", DummyBaseStructure.class, root);
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("2", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.duplicateAllowed = false;
+        map.deleteWhenDuplicate = true;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+        map.add(ptr1);
+        map.add(ptr);
+
+        ptr1.set(target);
+        ptr.set(target);
+
+        Assertions.assertFalse(map.contains(ptr));
+        Assertions.assertEquals(target, ptr.getReference());
+    }
+
+    @Test
+    public void setNonNullToNullOnConstrained() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.nullAllowed = false;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+
+        ptr.set(target);
+        map.add(ptr);
+        Exception e = assertThrows(Exception.class, () -> ptr.set(null));
+        Assertions.assertEquals("Parent does not allow null pointers.", e.getMessage());
+        Assertions.assertTrue(map.contains(ptr));
+        Assertions.assertEquals(target, ptr.getReference());
+    }
+
+    @Test
+    public void setNonNullToNullOnConstrainedRemoveOnCallback() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.nullAllowed = false;
+        map.deleteWhenNull = true;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+
+        ptr.set(target);
+        map.add(ptr);
+        ptr.set(null);
+
+        Assertions.assertFalse(map.contains(ptr));
+        Assertions.assertNull(ptr.getReference());
+    }
+
+    @Test
+    public void undoSetNonNullToNullOnConstrainedRemoveOnCallback() throws UserException {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("ptr", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("map", DummyBaseStructure.class, root);
+        map.nullAllowed = false;
+        map.deleteWhenNull = true;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+
+        ptr.set(target);
+        map.add(ptr);
+
+        DummyHistoryManager historyManager = new DummyHistoryManager(root);
+        root.getLogging().registerLog(historyManager);
+
+        ptr.set(null);
+
+        historyManager.commitUndoStep();
+        Assertions.assertFalse(map.contains(ptr));
+        Assertions.assertNull(ptr.getReference());
+
+        historyManager.undo();
+        Assertions.assertNotNull(map.get("ptr"));
+        Assertions.assertEquals(target, map.get("ptr").getReference());
+    }
+
+    @Test
+    public void addNullPointerToConstrained() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.nullAllowed = false;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+
+        Exception e = assertThrows(Exception.class, () -> map.add(ptr));
+        Assertions.assertEquals("Parent does not allow null pointers.", e.getCause().getMessage());
+        Assertions.assertFalse(map.contains(ptr));
+    }
+
+    @Test
+    public void addDuplicatePointerTargetToConstrained() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        ValuePointer<DummyBaseStructure> ptr1 = new ValuePointer<>("1", DummyBaseStructure.class, root);
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("2", DummyBaseStructure.class, root);
+        DummyConstraintedHierarchy<DummyBaseStructure> map = new DummyConstraintedHierarchy<>("", DummyBaseStructure.class, root);
+        map.duplicateAllowed = false;
+
+        root._addChild("target", target);
+        root._addChild("map", map);
+        root.initChildren();
+        map.add(ptr1);
+        ptr1.set(target);
+        ptr.set(target);
+
+        Exception e = assertThrows(Exception.class, () -> map.add(ptr));
+        Assertions.assertEquals("Parent does not allow duplicate pointer targets.", e.getCause().getMessage());
+        Assertions.assertFalse(map.contains(ptr));
+    }
+
+    public static class DummyConstraintedHierarchy<T extends BaseStructure> extends BaseValueMap<ValuePointer<T>> implements IValuePointerConstraint {
+        public boolean nullAllowed = true;
+        public boolean duplicateAllowed = true;
+        public boolean deleteWhenNull = false;
+        public boolean deleteWhenDuplicate = false;
+        private final BaseValueHierarchy<?> referenceFrame;
+        private final Class<T> type;
+
+        public DummyConstraintedHierarchy(String id, Class<T> type, BaseValueHierarchy<?> referenceFrame) {
+            super(id);
+            this.type = type;
+            this.referenceFrame = referenceFrame;
+        }
+
+        @Override
+        public boolean nullPointerAllowed() {
+            return nullAllowed;
+        }
+
+        @Override
+        public boolean duplicatePointerTargetsAllowed() {
+            return duplicateAllowed;
+        }
+
+        public void callbackOnNullPointer(ValuePointer pointer) {
+            if (this.deleteWhenNull) {
+                this.remove(pointer);
+            }
+        }
+
+        public void callbackOnDuplicatePointerTarget(ValuePointer pointer) {
+            if (this.deleteWhenDuplicate) {
+                this.remove(pointer);
+            }
+        }
+
+        @Override
+        protected @NotNull ValuePointer<T> instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+            ValuePointer<T> ptr = new ValuePointer<>(id, this.type, this.referenceFrame);
+            ptr.fromData(data);
+            return ptr;
+        }
     }
 }
