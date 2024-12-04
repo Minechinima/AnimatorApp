@@ -128,6 +128,25 @@ A `DataOperationLog` can be paused and resumed, but once it is closed,
 it will be removed from all logging objects permanently and cannot be registered anymore.
 Closing a log will freeze it.
 
+#### UserException
+The `datainterfaces` provide a default method that check if an operation can be performed and if not optionally throw a `UserException`.
+The interface `IDataOperation` also throws the checked `UserException` when the operation is performed / undone.
+<br><br>
+It is important to note that this is meant for the application data layer that can define checks based
+on own data rules for specific values.
+<br><br>
+These rules are about consistent data for the application and not whether the datastructures and tree
+are structurally intact. The methods that throw `UserExceptions` are also never called in the `base` data classes.
+They cannot be used to prevent changing the data in general.
+<br><br>
+The `UserException` exception should never be used for internal structural issues. It is for errors
+that can make sense for the user.
+<br><br>
+Example when to use it:
+- A Model has a parent model. If the parent pointer is set to another model that creates a loop in parents, this throws
+a UserException explaining it for the user. The pointer itself is still structurally intact, it just stores another model,
+but in the context of the application the specific value should not be allowed.
+
 ### Memory module
 The `memory` module is responsible for general management of references to nodes of a tree. 
 As soon as a node is removed from the tree, all references to it should be cleared. 
