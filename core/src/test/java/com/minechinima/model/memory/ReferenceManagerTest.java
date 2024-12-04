@@ -6,23 +6,16 @@ import com.minechinima.model.base.BaseValueMap;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.events.bus.EventBusManager;
-import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
-import com.minechinima.model.events.types.changes.ValueAddEvent;
-import com.minechinima.model.events.types.changes.ValueRemoveEvent;
 import com.minechinima.model.values.DoubleValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ReferenceManagerTest {
@@ -149,11 +142,7 @@ public class ReferenceManagerTest {
             root.initChildren();
 
             registry = new EventTypeRegistry();
-            registry.addEventClass(RemoveFromTreeEvent.class);
-            registry.addEventClass(AddToTreeEvent.class);
-            registry.addEventClass(ParentChangeEvent.class);
-            registry.addEventClass(ValueAddEvent.class);
-            registry.addEventClass(ValueRemoveEvent.class);
+            EventTypeRegistry.registerDefaultEventTypes(registry);
 
             manager = new ReferenceManager(root);
             busManager = new EventBusManager(manager, root, registry);

@@ -1,18 +1,12 @@
 package com.minechinima.model.events;
 
 import com.minechinima.model.DataTreeManager;
-import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.bus.SubscribeEvent;
-import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
-import com.minechinima.model.events.types.changes.ValueRemoveEvent;
-import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -26,14 +20,7 @@ public class EventSubscriptionTest {
         root.initChildren();
 
         EventTypeRegistry registry = new EventTypeRegistry();
-        registry.addEventClass(ParentChangeEvent.class);
-        registry.addEventClass(AddToTreeEvent.class);
-        registry.addEventClass(RemoveFromTreeEvent.class);
-
-        registry.addEventClass(ChangeEvent.class);
-        registry.addEventClass(ValueRemoveEvent.class);
-        registry.addEventClass(ValueChangeEvent.class);
-        registry.addEventClass(IdentifierChangeEvent.class);
+        EventTypeRegistry.registerDefaultEventTypes(registry);
 
         DataTreeManager tree = new DataTreeManager<>(root, registry);
         EventSubscriber tester = new EventSubscriber();
