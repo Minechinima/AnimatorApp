@@ -220,7 +220,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             /* call this here so BaseStructure implementation can also prohibit changing parent to null */
             this.throwExceptionForIllegalParentChange(originalParent);
             if (this instanceof BaseValueHierarchy<?> hierarchy) {
-                this.onParentChangeIterateChildren(hierarchy, hierarchy, originalParent);
+                this.onParentChangeIterateChildren(hierarchy, originalParent);
             }
 
             /* The safety checks performed here are only relevant when the node is inserted into the tree, not removed. */
@@ -354,12 +354,12 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     private final void onParentChangeIterateChildren(@NotNull final BaseValueHierarchy<?> affectedNode,
-                                                     @NotNull final BaseValueHierarchy<?> current,
                                                      @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
-        for (BaseStructure child : current.getChildren()) {
+        if (!(this instanceof BaseValueHierarchy<?> thisHierarchy)) return;
+        for (BaseStructure child : thisHierarchy.getChildren()) {
             child.onParentChangeInParents(affectedNode, oldParent);
-            if (child instanceof BaseValueHierarchy<?> childHierarchy) {
-                child.onParentChangeIterateChildren(affectedNode, childHierarchy, oldParent);
+            if (child instanceof BaseValueHierarchy<?>) {
+                child.onParentChangeIterateChildren(affectedNode, oldParent);
             }
         }
     }
@@ -391,14 +391,15 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * Goes through the parents until no parent is available anymore. This parent is considered the root.
      *
      * @return the root from this node, or this node if there is no parent anymore.
+     *         Returns null if this is not a {@link BaseValueHierarchy}
      */
     @NoExceptions
-    @NotNull
+    @Nullable
     public BaseValueHierarchy<?> getRoot() {
         if (this.parent != null) return this.parent.getRoot();
 
         /* cast should be safe here, going to the top of the parents must be a BaseValueHierarchy */
-        return (BaseValueHierarchy<?>) this;
+        return this instanceof BaseValueHierarchy<?> h ? h : null;
     }
 
     /**
@@ -463,12 +464,16 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * Check if two nodes are part of the same tree.
      *
      * @param other
-     * @return true if this node and the other node are in the same tree.
+     * @return true if this node and the other node are in the same tree or are reference equal
      */
     @NoExceptions
     public final boolean isInSameTree(@NotNull BaseStructure other) {
-        /* both are to be considered as "root". Can only be in same tree if they are same */
-        if (this.parent == null && other.parent == null && other != this) return false;
+        if (this == other) return true;
+        /*
+         * Both are to be considered as "root".
+         * If the are different objects, they cannot be in the same tree
+         */
+        if (this.parent == null && other.parent == null) return false;
 
         return this.getRoot() == other.getRoot();
     }
@@ -773,7 +778,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         }
 
         if (!this.isInSameTree(pointer)) {
-            throw new IllegalArgumentException("Tried adding a pointer that is not part of the same data tree.");
+            throw new IllegalArgumentException("Tried adding a pointer to a node that is not part of the same data tree.");
         }
 
         if (pointer.getReference() != this) {

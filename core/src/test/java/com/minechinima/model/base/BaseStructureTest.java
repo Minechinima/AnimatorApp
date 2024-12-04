@@ -1,5 +1,6 @@
 package com.minechinima.model.base;
 
+import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyBaseImmutableHierarchy;
 import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
 import com.minechinima.model.base.dummies.DummyBaseStructure;
@@ -23,7 +24,21 @@ public class BaseStructureTest {
         Assertions.assertTrue(h33.isInSameTree(h3));
 
         Assertions.assertTrue(h3.isInSameTree(h2));
+        Assertions.assertTrue(h2.isInSameTree(h3));
+
         Assertions.assertTrue(h3.isInSameTree(h1));
+        Assertions.assertTrue(h1.isInSameTree(h3));
+    }
+
+    @Test
+    public void isInSameTreeOnSelf() {
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("h1", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("h2", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h3 = new DummyBaseMutableHierarchy("h3", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h33 = new DummyBaseMutableHierarchy("h33", ValuePath.Format.PATH);
+
+        h1.add(h2.add(h3, h33));
+
         Assertions.assertTrue(h3.isInSameTree(h3));
     }
 
@@ -83,6 +98,16 @@ public class BaseStructureTest {
         Assertions.assertFalse(h3.isChildOf(h3));
         Assertions.assertFalse(h3.isChildOf(test));
         Assertions.assertFalse(h3.isChildOf(new DummyBaseImmutableHierarchy("a", ValuePath.Format.PATH)));
+    }
+
+    @Test
+    public void isChildOfItself() {
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("h1", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("h2", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h3 = new DummyBaseMutableHierarchy("h3", ValuePath.Format.PATH);
+        h1.add(h2.add(h3));
+
+        Assertions.assertFalse(h3.isChildOf(h3));
     }
 
     @Test
@@ -181,5 +206,39 @@ public class BaseStructureTest {
         Assertions.assertNotNull(parents);
         Assertions.assertEquals(1, parents.size());
         Assertions.assertEquals(h3, parents.get(0));
+    }
+
+    @Test
+    public void testGetRootRootIsParents() {
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h3 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        h1.add(h2.add(h3));
+
+        Assertions.assertEquals(h1, h3.getRoot());
+    }
+
+    @Test
+    public void testGetRootOnNodeWithoutTree() {
+        DummyBaseMutableHierarchy h3 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+
+        Assertions.assertEquals(h3, h3.getRoot());
+    }
+
+    @Test
+    public void testGetRootOnBaseStructureWithoutTree() {
+        DummyBaseStructure h3 = new DummyBaseStructure("");
+
+        Assertions.assertNull(h3.getRoot());
+    }
+
+    @Test
+    public void testGetRootOnRootInTree() {
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h2 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h3 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        h1.add(h2.add(h3));
+
+        Assertions.assertEquals(h1, h1.getRoot());
     }
 }
