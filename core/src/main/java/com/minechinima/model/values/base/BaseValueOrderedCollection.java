@@ -321,6 +321,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     }
 
     @Nullable
+    @Override
     public final UUID listUUIDOf(T o) {
         if (o == null) return null;
 

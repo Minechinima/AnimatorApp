@@ -4,6 +4,7 @@ import com.minechinima.data.types.MapType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.UserException;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 /**
@@ -61,4 +62,11 @@ public interface IValueList<T> {
 
     int size();
     boolean containsListUUID(UUID uuid);
+
+    /**
+     * @param element
+     * @return the list uuid of the element, null if there is no such element in the list.
+     */
+    @Nullable
+    UUID listUUIDOf(T element);
 }
