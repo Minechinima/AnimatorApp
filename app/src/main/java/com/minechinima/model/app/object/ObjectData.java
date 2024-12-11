@@ -6,10 +6,12 @@ import com.minechinima.data.types.MapType;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.utils.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public class ObjectData extends BaseSingleValueHierarchy<ObjectType> {
@@ -22,6 +24,12 @@ public class ObjectData extends BaseSingleValueHierarchy<ObjectType> {
 
     public ObjectData(String id) {
         super(id);
+    }
+
+    @NotNull
+    @Override
+    protected ObjectType instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+        return null;
     }
 
     @Override

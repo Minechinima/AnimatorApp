@@ -45,7 +45,7 @@ public class UIOutlinerPanel extends UISpace {
 
     private void renderObject(BBContext ctx, BaseObject obj) {
         String icon = obj.data.get() != null ? obj.data.get().getOutlinerIconUnicode() : BBIconUnicodes.OBJECT_OUTLINE;
-        if (ImGui.selectable(icon + " " + obj.getIdentifier(), obj == ctx.activeObject.get())) {
+        if (ImGui.selectable(icon + " " + obj.getIdentifier(), obj == ctx.activeObject.getReference())) {
             ctx.activeObject.set(obj);
             //ControllerResult result = context.getApplication().getMainController().executeNewTransactionToHistory("",
             //        () -> BaseValueController.setValue(ctx.activeObject, obj));
