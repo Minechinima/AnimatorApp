@@ -282,7 +282,12 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
                 constraint.callbackOnNullPointer(this);
             }
 
-            /* if we are still part of the parent a null pointer is not allowed */
+            /*
+             * if we are still part of the parent a null pointer is not allowed
+             * Important: Parent defines what kind of pointers are allowed for it,
+             * so the important criteria here is that the ValuePointer gets removed from
+             * the immediate parent! Do not check whether the parent is removed from the tree.
+             */
             if (this.getParent() == parent) {
                 throw new IllegalArgumentException("Parent does not allow null pointers.");
             }
