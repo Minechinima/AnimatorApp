@@ -1,7 +1,7 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.data.types.*;
 import com.minechinima.model.utils.ID;
 
 import java.util.*;

@@ -2,6 +2,7 @@ package com.minechinima.model.base;
 
 import com.minechinima.model.base.dummies.DummyBaseSingleValueHierarchy;
 import com.minechinima.model.base.dummies.DummyBaseStructure;
+import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

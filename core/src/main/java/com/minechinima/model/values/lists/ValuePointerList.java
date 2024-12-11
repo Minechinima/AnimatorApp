@@ -1,17 +1,15 @@
 package com.minechinima.model.values.lists;
 
-import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
-import com.minechinima.model.base.BaseValueList;
+import com.minechinima.model.values.base.BaseValueList;
 import com.minechinima.model.logging.datainterfaces.ListElement;
 import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.utils.IValuePointerConstraint;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class ValuePointerList<T extends BaseStructure> extends BaseValueList<ValuePointer<T>> implements IValuePointerConstraint {
     private final BaseValueHierarchy<? extends BaseStructure> relative;

@@ -2,7 +2,7 @@ package com.minechinima.model.scene;
 
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
-import com.minechinima.model.base.ValueGroup;
+import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.values.lists.ValuePointerList;
 import org.jetbrains.annotations.NotNull;

@@ -1,7 +1,7 @@
 package com.minechinima.model.values.vectors;
 
 import com.minechinima.model.values.FloatValue;
-import com.minechinima.model.base.ValueGroup;
+import com.minechinima.model.values.base.ValueGroup;
 import org.joml.Vector3f;
 
 import java.util.UUID;

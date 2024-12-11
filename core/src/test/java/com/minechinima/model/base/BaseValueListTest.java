@@ -8,6 +8,7 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.datainterfaces.ListElement;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
+import com.minechinima.model.values.base.BaseValueList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;

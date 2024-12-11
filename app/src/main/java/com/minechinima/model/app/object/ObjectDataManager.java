@@ -2,7 +2,7 @@ package com.minechinima.model.app.object;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.app.BBDatabase;
-import com.minechinima.model.base.BaseValueMap;
+import com.minechinima.model.values.base.BaseValueMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;

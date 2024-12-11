@@ -1,6 +1,6 @@
 package com.minechinima.model.events.types.changes;
 
-import com.minechinima.model.base.BaseValueMap;
+import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.operations.MapValueAdd;
 

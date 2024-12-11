@@ -1,6 +1,7 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;

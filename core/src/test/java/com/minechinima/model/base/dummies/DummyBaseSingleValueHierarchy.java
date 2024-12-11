@@ -1,7 +1,7 @@
 package com.minechinima.model.base.dummies;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.model.base.BaseSingleValueHierarchy;
+import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

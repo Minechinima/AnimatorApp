@@ -2,7 +2,7 @@ package com.minechinima.model.memory;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.base.BaseValueMap;
+import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.events.bus.EventBusManager;

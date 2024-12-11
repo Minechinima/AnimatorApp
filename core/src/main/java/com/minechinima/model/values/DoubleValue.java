@@ -3,7 +3,7 @@ package com.minechinima.model.values;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.DoubleType;
 import com.minechinima.data.types.NumberType;
-import com.minechinima.model.base.BaseValueNumber;
+import com.minechinima.model.values.base.BaseValueNumber;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 
 public class DoubleValue extends BaseValueNumber<Double> {

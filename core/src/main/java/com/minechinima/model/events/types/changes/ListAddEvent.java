@@ -1,7 +1,7 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.base.BaseValueOrderedCollection;
+import com.minechinima.model.values.base.BaseValueOrderedCollection;
 import com.minechinima.model.logging.operations.ListValueInsert;
 
 import java.util.UUID;

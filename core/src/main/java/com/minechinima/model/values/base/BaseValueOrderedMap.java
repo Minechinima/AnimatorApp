@@ -1,5 +1,7 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
+import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +29,7 @@ public abstract class BaseValueOrderedMap<T extends BaseStructure> extends BaseV
     @Nullable
     public T get(UUID uuid) {
         for (T child : this.getChildren()) {
-            if (child.uuid != null && child.uuid.equals(uuid)) {
+            if (child instanceof IDMutable mutable && mutable.getUUID().equals(uuid)) {
                 return child;
             }
         }
@@ -55,7 +57,7 @@ public abstract class BaseValueOrderedMap<T extends BaseStructure> extends BaseV
      */
     public boolean remove(UUID id) {
         for (T child : this.getChildren()) {
-            if (child.uuid != null && child.uuid.equals(id)) {
+            if (child instanceof IDMutable mutable && mutable.getUUID().equals(id)) {
                 return this.remove(child);
             }
         }

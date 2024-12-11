@@ -1,4 +1,4 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -6,6 +6,8 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.ListType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.base.BaseMutableValueHierarchy;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.base.utils.IBaseValueCollection;
 import com.minechinima.model.logging.datainterfaces.ListElement;

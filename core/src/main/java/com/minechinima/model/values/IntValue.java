@@ -3,7 +3,7 @@ package com.minechinima.model.values;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.IntType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
-import com.minechinima.model.base.BaseValueNumber;
+import com.minechinima.model.values.base.BaseValueNumber;
 import org.jetbrains.annotations.Nullable;
 
 public class IntValue extends BaseValueNumber<Integer> {

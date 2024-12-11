@@ -2,7 +2,7 @@ package com.minechinima.model;
 
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
-import com.minechinima.model.base.ValueGroup;
+import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.base.ValuePointer;
 
 public class BBContext extends ValueGroup {

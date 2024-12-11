@@ -1,5 +1,7 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
+import com.minechinima.model.base.BaseImmutableValueHierarchy;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.utils.ValuePath;
 
 import java.util.*;

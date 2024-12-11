@@ -1,4 +1,4 @@
-package com.minechinima.model.base;
+package com.minechinima.model.values.base;
 
 import com.minechinima.data.types.NumberType;
 import com.minechinima.utils.MathUtils;

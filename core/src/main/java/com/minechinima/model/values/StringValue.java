@@ -1,6 +1,6 @@
 package com.minechinima.model.values;
 
-import com.minechinima.model.base.BaseValue;
+import com.minechinima.model.values.base.BaseValue;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;

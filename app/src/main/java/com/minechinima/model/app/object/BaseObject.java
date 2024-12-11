@@ -1,7 +1,7 @@
 package com.minechinima.model.app.object;
 
 import com.minechinima.model.app.BBDatabase;
-import com.minechinima.model.base.ValueGroup;
+import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
 

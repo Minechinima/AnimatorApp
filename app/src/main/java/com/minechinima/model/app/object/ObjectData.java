@@ -3,7 +3,7 @@ package com.minechinima.model.app.object;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.LongType;
 import com.minechinima.data.types.MapType;
-import com.minechinima.model.base.BaseSingleValueHierarchy;
+import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.Nullable;

@@ -4,7 +4,7 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.LongType;
 import com.minechinima.data.types.NumberType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
-import com.minechinima.model.base.BaseValueNumber;
+import com.minechinima.model.values.base.BaseValueNumber;
 import org.jetbrains.annotations.Nullable;
 
 public class LongValue extends BaseValueNumber<Long> {

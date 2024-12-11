@@ -2,12 +2,12 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.dummies.*;
-import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DummyHistoryManager;
 import com.minechinima.model.utils.IValuePointerConstraint;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
+import com.minechinima.model.values.base.BaseValueMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
