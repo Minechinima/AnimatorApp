@@ -17,6 +17,7 @@ import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -113,19 +114,23 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     @NoExceptions
+    @Contract(pure = true)
     public final String getIdentifier() {
         return this.id;
     }
 
+    @Contract(value = " -> new", pure = true)
     @NoExceptions
     public final ID getID() {
         return new ID(this.id, this.uuid);
     }
 
+    @Contract(pure = true)
     public final DataOperationLogging getLogging() {
         return this.logger;
     }
 
+    @Contract(pure = true)
     public final EventBus getEventBus() {
         return this.bus;
     }
@@ -383,6 +388,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * +------------------------------------+ */
 
     @Nullable
+    @Contract(pure = true)
     public final BaseValueHierarchy<?> getParent() {
         return this.parent;
     }
@@ -395,7 +401,8 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      */
     @NoExceptions
     @Nullable
-    public BaseValueHierarchy<?> getRoot() {
+    @Contract(pure = true)
+    public final BaseValueHierarchy<?> getRoot() {
         if (this.parent != null) return this.parent.getRoot();
 
         /* cast should be safe here, going to the top of the parents must be a BaseValueHierarchy */
@@ -408,6 +415,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote simply goes through the parents recursively, not much performance cost.
      */
     @NoExceptions
+    @Contract(value = "null -> false", pure = true)
     public final boolean isChildOf(BaseValueHierarchy<? extends BaseStructure> parent) {
         if (parent == null) return false;
         if (this.parent != null && parent != this.parent) {
@@ -424,6 +432,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @return the first parent that satisfies the predicate or null if none was found or if there is no parent.
      */
     @Nullable
+    @Contract(pure = true)
     public final BaseValueHierarchy<?> findFirstParent(final Predicate<BaseValueHierarchy<?>> filter) {
         if (this.parent == null) return null;
         if (filter.test(this.parent)) return this.parent;
@@ -443,6 +452,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * null if no parent was found matching the predicate.
      */
     @Nullable
+    @Contract(pure = true)
     public final List<BaseValueHierarchy<?>> findFirstParentTrace(Predicate<BaseValueHierarchy<?>> filter) {
         if (this.parent == null) return null;
 
@@ -467,6 +477,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @return true if this node and the other node are in the same tree or are reference equal
      */
     @NoExceptions
+    @Contract(pure = true)
     public final boolean isInSameTree(@NotNull BaseStructure other) {
         if (this == other) return true;
         /*
@@ -487,6 +498,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote includes all elements in the tree, even empty path elements.
      */
     @NotNull
+    @Contract(pure = true)
     public final ValuePath getFullPath() {
         return Objects.requireNonNull(this.getRelativePath(null));
     }
@@ -507,6 +519,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * This behavior should not change as the ValuePath has methods to clean it.
      */
     @Nullable
+    @Contract(pure = true)
     public final ValuePath getRelativePath(@Nullable BaseValueHierarchy<?> relative) {
         /* no need to search for this in the parents */
         if (relative == this) return null;
