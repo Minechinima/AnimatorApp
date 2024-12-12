@@ -41,7 +41,7 @@ public class UIPropertiesPanel extends UISpace {
         BaseObject active;
         Set<IUIPropertyContext> bodies = registry.getStandardBodies();
 
-        if ((active = uiContext.activeObject.get()) != null) {
+        if ((active = uiContext.activeObject.getReference()) != null) {
             bodies.addAll(registry.getReadyToShowContexts(active));
             bodies.addAll(registry.getReadyToShowContexts(active.data.get()));
         }
@@ -57,6 +57,7 @@ public class UIPropertiesPanel extends UISpace {
         ImGui.sameLine();
         ImGui.beginChild("body");
         if (this.currentContext != null) this.currentContext.render(context);
+
         ImGui.endChild();
     }
 

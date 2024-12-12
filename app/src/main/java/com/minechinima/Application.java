@@ -13,6 +13,7 @@ import com.minechinima.ui.UIContext;
 import com.minechinima.ui.WindowManager;
 import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.*;
+import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
 import org.lwjgl.glfw.*;
@@ -100,6 +101,8 @@ public class Application {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
         UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader);
         context.register(new PropertyContextRegistry());
+        // Register EntryPointRegistry
+        context.register(new UIHandlerRegistry());
 
         PropertyContextRegistry propertyPanelRegistry = context.getRegisteredObj(PropertyContextRegistry.class);
         propertyPanelRegistry.registerUIPropertyContext(new UICameraProperties());

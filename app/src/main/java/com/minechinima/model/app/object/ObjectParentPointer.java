@@ -21,7 +21,7 @@ public class ObjectParentPointer extends ValuePointer<BaseObject> {
         }
 
         if (newParent != null) {
-            for (BaseObject p = newParent.parent.get(); p != null; p = p.parent.get()) {
+            for (BaseObject p = newParent.parent.getReference(); p != null; p = p.parent.getReference()) {
                 if (p == this.owner) {
                     throw new UserException("Loop in parents.");
                 }
