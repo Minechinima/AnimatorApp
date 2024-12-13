@@ -108,7 +108,12 @@ public class UIHandlerProcessor extends AbstractProcessor {
                 // Write file
                 javaFile.writeTo(processingEnv.getFiler());
 
-                services.put(((TypeElement) processingEnv.getTypeUtils().asElement(entryPointTypes.get(key))).getQualifiedName().toString(), ClassName.get("com.minechinima.ui.renderers", key + "Renderer").canonicalName());
+                Element enclosingElement = processingEnv.getTypeUtils().asElement(entryPointTypes.get(key)).getEnclosingElement();
+                if (enclosingElement != null && enclosingElement instanceof TypeElement enclosingType) {
+                    services.put(enclosingType.getQualifiedName() + "$" + processingEnv.getTypeUtils().asElement(entryPointTypes.get(key)).getSimpleName().toString(), ClassName.get("com.minechinima.ui.renderers", key + "Renderer").canonicalName());
+                } else {
+                    services.put(((TypeElement) processingEnv.getTypeUtils().asElement(entryPointTypes.get(key))).getQualifiedName().toString(), ClassName.get("com.minechinima.ui.renderers", key + "Renderer").canonicalName());
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
