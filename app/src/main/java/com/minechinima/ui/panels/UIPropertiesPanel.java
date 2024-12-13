@@ -57,6 +57,7 @@ public class UIPropertiesPanel extends UISpace {
         ImGui.sameLine();
         ImGui.beginChild("body");
         if (this.currentContext != null) this.currentContext.render(context);
+
         ImGui.endChild();
     }
 

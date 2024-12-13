@@ -4,6 +4,11 @@ import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
+import com.minechinima.ui.annotation.InGui;
+import com.minechinima.ui.elements.UICheckBox;
+import com.minechinima.ui.elements.UIDragFloat;
+import com.minechinima.ui.elements.properties.UIObjectProperties;
+import com.minechinima.ui.panels.UIPropertiesPanel;
 
 import java.util.UUID;
 
@@ -11,8 +16,13 @@ public class BaseObject extends ValueGroup {
     public final Vector3fValue translation = new Vector3fValue("translation");
     public final Vector3fValue rotation = new Vector3fValue("rotation");
     public final Vector3fValue scale = new Vector3fValue("scale");
+
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_viewport", as = UICheckBox.class)
     public final BooleanValue viewportVisibility = new BooleanValue("visible_viewport", true);
+
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_render", as = UICheckBox.class)
     public final BooleanValue renderVisibility = new BooleanValue("visible_render", true);
+
     public final ObjectParentPointer parent;
     /**
      * The special data that defines this object like model, camera, entity, snowstorm etc.
