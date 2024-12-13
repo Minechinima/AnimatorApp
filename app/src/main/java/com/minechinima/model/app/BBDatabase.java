@@ -11,5 +11,6 @@ public class BBDatabase extends ValueGroup {
     public BBDatabase(String id) {
         super(id);
         this.addChild("objects", this.objects);
+        this.addChild("scenes", this.scenes);
     }
 }

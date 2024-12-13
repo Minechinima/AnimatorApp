@@ -8,6 +8,7 @@ import com.minechinima.model.base.ValuePointer;
 public class BBContext extends ValueGroup {
     public final ValuePointer<BaseObject> activeObject;
 
+    /* not part of BBContext tree */
     public final BBDatabase database;
 
     public BBContext(String id, BBDatabase database) {

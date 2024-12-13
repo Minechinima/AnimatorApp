@@ -10,5 +10,6 @@ public class BBNameSpace extends BaseHierarchyRoot {
     public BBNameSpace(String id) {
         super(id, ValuePath.Format.PATH);
         this.addChild("data", this.data);
+        this.data.initChildren();
     }
 }
