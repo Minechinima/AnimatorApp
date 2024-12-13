@@ -81,6 +81,7 @@ public class BaseStructureTest {
 
         Assertions.assertTrue(h3.isChildOf(h1));
         Assertions.assertTrue(h3.isChildOf(h2));
+        Assertions.assertTrue(h2.isChildOf(h1));
     }
 
     @Test

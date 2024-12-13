@@ -41,9 +41,4 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     public T getRoot() {
         return root;
     }
-
-    @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
-    private void onNodeAdd(AddToTreeEvent event) {
-
-    }
 }
