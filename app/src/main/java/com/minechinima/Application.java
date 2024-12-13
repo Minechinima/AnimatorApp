@@ -40,7 +40,9 @@ public class Application {
     private final BBDataTreeManager dataTree;
 
     public Application() {
-        this.dataTree = new BBDataTreeManager(new EventTypeRegistry());
+        EventTypeRegistry dataEventTypes = new EventTypeRegistry();
+        EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
+        this.dataTree = new BBDataTreeManager(dataEventTypes);
         this.windowManager = new WindowManager(this.windowProvider, new ImguiLoader(), this.dataTree);
     }
 
