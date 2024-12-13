@@ -32,6 +32,37 @@ public class ValuePointerTest {
     }
 
     @Test
+    public void validReferenceFrameOutOfReachAddedLater() {
+        /* a pointer can be added to a subtree or at a different point in time than the reference frame
+        * i.e. it can happen that the pointer has no access to the reference frame temporarily,
+        * but will have access when actually used.*/
+        DummyBaseMutableHierarchy ref = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseStructure struct = new DummyBaseStructure("test");
+        DummyBaseImmutableHierarchy root = new DummyBaseImmutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy h1 = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        DummyBaseMutableHierarchy pointerHolder = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
+        ValuePointer<BaseStructure> pointer = new ValuePointer<>("", BaseStructure.class, ref);
+
+        root.addChild("ref", ref);
+        root.addChild("h1", h1);
+        root.initChildren();
+
+        /* pointer is now part of a tree but it does not have access to reference frame */
+        pointerHolder.add(pointer);
+        assertFalse(pointer.isInitialized());
+        Exception e = assertThrows(Exception.class, () -> pointer.set(null));
+        assertEquals("ValuePointer is not initialized.", e.getMessage());
+        assertFalse(pointer.isInitialized());
+
+        h1.add(pointerHolder);
+
+        assertTrue(pointer.isInitialized());
+
+        ref.add(struct);
+        pointer.set(struct);
+    }
+
+    @Test
     public void illegalReferenceFrameNull() {
         DummyBaseMutableHierarchy ref = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
         DummyBaseMutableHierarchy root = new DummyBaseMutableHierarchy("", ValuePath.Format.PATH);
@@ -400,6 +431,11 @@ public class ValuePointerTest {
 
     @Test
     public void undoSetNonNullToNullOnConstrainedRemoveOnCallback() throws UserException {
+        /*
+         * Test scenario: a pointer is part of a struct that does not allow null pointers.
+         * Pointer is now set to null and the parent automatically removes it.
+         * Undoing the set to null of the pointer should add the fully set pointer back successfully.
+         */
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
         DummyBaseStructure target = new DummyBaseStructure("test");
         ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("ptr", DummyBaseStructure.class, root);
