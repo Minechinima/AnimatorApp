@@ -13,8 +13,10 @@ public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
     private boolean pushTransactionToRedo;
+    private boolean isRedoing;
 
     public void pushTransaction(Transaction transaction) {
+        if (!this.pushTransactionToRedo && !this.isRedoing) this.redos.clear();
         this.pushTransaction(this.pushTransactionToRedo ? this.redos : this.undos, transaction);
     }
 
@@ -49,9 +51,25 @@ public class HistoryManager {
         return result;
     }
 
-    public ControllerResult redo(final BaseValueHierarchy<?> relative) {
-        //TODO
-        return null;
+    public ControllerResult redo(final Controller controller, final BaseValueHierarchy<?> relative) {
+        if (!controller.getDataTree().getRoot().isInSameTree(relative)) {
+            throw new IllegalArgumentException("The relative element for the HistoryManager is not in the Controller data tree.");
+        }
+
+        if (this.redos.empty()) {
+            return new ControllerResult(ControllerResult.State.SUCCESS, "Nothing to redo.");
+        } else if (controller.isActive()) {
+            return new ControllerResult(ControllerResult.State.ERROR, "Cannot undo while an action is being performed.");
+        }
+
+        this.isRedoing = true;
+        HistoryStep step = this.redos.pop();
+        ControllerResult result = controller.executeNewTransaction(this,
+                "Redo: " + step.stepTitle, () -> {
+                    this.applyHistoryStep(relative, step);
+                });
+        this.isRedoing = false;
+        return result;
     }
 
     private void applyHistoryStep(BaseValueHierarchy<?> relative, HistoryStep historyStep) throws UserException {
