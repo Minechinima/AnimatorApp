@@ -70,7 +70,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     }
 
     @Override
-    public boolean contains(UUID uuid) {
+    public boolean contains(@NotNull UUID uuid) {
         return this.get(uuid) != null;
     }
 
@@ -131,7 +131,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     /* REMOVING OPERATIONS */
 
     @Nullable
-    public final T remove(UUID uuid) {
+    public final T remove(@NotNull UUID uuid) {
         T child = this.get(uuid);
         if (child != null) this.remove(child);
         return child;

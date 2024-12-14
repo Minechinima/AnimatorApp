@@ -3,6 +3,7 @@ package com.minechinima.model.logging.datainterfaces;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.data.types.MapType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,8 +14,11 @@ import java.util.UUID;
  * @param <T>
  */
 public interface IValueMap<T> {
+    @Contract(pure = true)
     @NotNull
     T valueFromData(MapType data) throws BaseTypeCannotBeParsed;
+
+    @Contract(pure = true)
     MapType valueToData(T value);
 
     /**
@@ -29,6 +33,7 @@ public interface IValueMap<T> {
      * The type-safety of calling {@link #valueFromData(MapType)} with type T and then {@link #add(T)}
      * should be enough in most cases.
      */
+    @Contract(pure = true)
     default boolean canAdd(Object value) throws UserException {
         return true;
     }
@@ -37,13 +42,15 @@ public interface IValueMap<T> {
      * @param value
      * @return true if the value could be added.
      */
-    boolean add(@NotNull T value);
+    @Contract(pure = false)
+    boolean add(T value);
 
     /**
      * This method should be overridden to define rules for data modification with app domain knowledge.
      * @return true if the method {@link #remove(UUID)} can be called.
      */
-    default boolean canRemove(UUID uuid) throws UserException {
+    @Contract(pure = true)
+    default boolean canRemove(@NotNull UUID uuid) throws UserException {
         return true;
     }
 
@@ -53,6 +60,7 @@ public interface IValueMap<T> {
      * @return true if the method {@link #remove(String)} can be called.
      * @throws UserException
      */
+    @Contract(pure = true)
     default boolean canRemove(String id) throws UserException {
         return true;
     }
@@ -60,14 +68,23 @@ public interface IValueMap<T> {
     /**
      * @return the previous value associated with the uuid, or null if there was no mapping for the uuid.
      */
+    @Contract(pure = false)
     @Nullable
-    T remove(UUID uuid);
+    T remove(@NotNull UUID uuid);
+
     /**
      * @return the previous value associated with the identifier, or null if there was no mapping for the identifier.
      */
+    @Contract(pure = false)
     @Nullable
     T remove(String identifier);
 
+    @Contract(pure = true)
     boolean contains(String id);
-    boolean contains(UUID id);
+
+    @Contract(pure = true)
+    boolean contains(@NotNull UUID id);
+
+    @Contract(pure = true)
+    boolean contains(T value);
 }
