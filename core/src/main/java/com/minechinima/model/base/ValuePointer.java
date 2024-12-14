@@ -155,13 +155,6 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         }
     }
 
-    @Override
-    public boolean canSet(Object newValue) throws UserException {
-        if (!this.initialized) throw new UserException("ValuePointer is not initialized.");
-        if (newValue == null) return true;
-        return this.type.isAssignableFrom(newValue.getClass());
-    }
-
     public Class<T> getType() {
         return this.type;
     }
@@ -180,6 +173,10 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
     @Override
     public void set(@Nullable T value) {
+        if (value != null && !this.type.isAssignableFrom(value.getClass())) {
+            throw new IllegalArgumentException("Cannot set the value to this pointer as the type is not compatible.");
+        }
+
         /*
          * Allow setting the value when it is not in the tree,
          * as then it can't hurt tree structure with an illegal reference frame.

@@ -343,6 +343,16 @@ public class ValuePointerTest {
     }
 
     @Test
+    public void testSetIncompatibleType() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("");
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("", DummyBaseStructure.class, root);
+
+        ValuePointer ptrO = ptr;
+        Exception e = assertThrowsExactly(IllegalArgumentException.class, () -> ptrO.set(root));
+        assertEquals("Cannot set the value to this pointer as the type is not compatible.", e.getMessage());
+    }
+
+    @Test
     public void setToDuplicateOnConstrained() {
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
         DummyBaseStructure target = new DummyBaseStructure("test");
