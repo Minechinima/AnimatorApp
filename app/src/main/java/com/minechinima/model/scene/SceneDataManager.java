@@ -2,6 +2,7 @@ package com.minechinima.model.scene;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.app.BBDatabase;
+import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.values.base.BaseValueMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,6 +14,11 @@ public class SceneDataManager extends BaseValueMap<Scene> {
     public SceneDataManager(String id, BBDatabase database) {
         super(id);
         this.database = database;
+    }
+
+    public boolean add(@NotNull Scene value) {
+        if(!value.isInitialized()) value.initChildren();
+        return super.add(value);
     }
 
     @Override
