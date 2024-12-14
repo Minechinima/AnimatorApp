@@ -3,6 +3,8 @@ package com.minechinima.model.logging.datainterfaces;
 import com.minechinima.data.types.MapType;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.UserException;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -14,8 +16,13 @@ import java.util.UUID;
  * @param <T>
  */
 public interface IValueList<T> {
-    ListElement<T> listElementFromData(MapType child) throws BaseTypeCannotBeParsed;
-    MapType listElementToData(ListElement<T> child);
+    @Contract(pure = true)
+    @NotNull
+    ListElement<T> listElementFromData(@NotNull MapType child) throws BaseTypeCannotBeParsed;
+
+    @Contract(pure = true)
+    @NotNull
+    MapType listElementToData(@NotNull ListElement<T> child);
 
 
     /**
@@ -32,6 +39,7 @@ public interface IValueList<T> {
      * The type-safety of calling {@link #listElementFromData(MapType)} with type T and then {@link #addListElement(int, ListElement)}
      * should be enough in most cases.
      */
+    @Contract(pure = true)
     default boolean canAdd(int index, ListElement<Object> element) throws UserException {
         return true;
     }
@@ -42,31 +50,48 @@ public interface IValueList<T> {
      * @throws NullPointerException when the value is null
      * @throws IllegalArgumentException when the same reference equal {@link ListElement#value} is in the list.
      */
-    boolean addListElement(int index, ListElement<T> element);
+    @Contract(pure = false)
+    boolean addListElement(int index, @NotNull ListElement<T> element);
 
     /**
      * This method should be overridden to define rules for data modification with app domain knowledge.
      * @param uuid
      * @return true if the method {@link #removeByListUUID(UUID)} can be called.
      */
-    default boolean canRemove(UUID uuid) {
+    @Contract(pure = true)
+    default boolean canRemove(@NotNull UUID uuid) {
         return true;
     }
+
     /**
      * @param uuid
      * @return the element with the uuid, if it was present.
      */
-    T removeByListUUID(UUID uuid);
+    @Contract(pure = false)
+    @Nullable
+    T removeByListUUID(@NotNull UUID uuid);
 
-    void moveByListUUID(UUID uuid, int newIndex);
+    @Contract(pure = false)
+    void moveByListUUID(@NotNull UUID uuid, int newIndex);
 
+    @Contract(pure = true)
     int size();
-    boolean containsListUUID(UUID uuid);
+
+    @Contract(pure = true)
+    boolean containsListUUID(@NotNull UUID uuid);
 
     /**
      * @param element
      * @return the list uuid of the element, null if there is no such element in the list.
      */
     @Nullable
+    @Contract(pure = true)
     UUID listUUIDOf(T element);
+
+    /**
+     * @param element
+     * @return true if the list contains the given element
+     */
+    @Contract(pure = true)
+    boolean contains(T element);
 }

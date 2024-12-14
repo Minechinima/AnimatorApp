@@ -75,7 +75,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     }
 
     @Override
-    public final boolean containsListUUID(UUID uuid) {
+    public final boolean containsListUUID(@NotNull UUID uuid) {
         return this.listUUIDMapping.containsKey(uuid);
     }
 
@@ -152,7 +152,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
     }
 
     @Override
-    public final void moveByListUUID(UUID uuid, int newIndex) {
+    public final void moveByListUUID(@NotNull UUID uuid, int newIndex) {
         int index = this.indexOfListUUID(uuid);
         this.move(index, newIndex);
     }
@@ -182,7 +182,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      */
     @Override
     @MustBeInvokedByOverriders
-    public boolean addListElement(int index, ListElement<T> element) {
+    public boolean addListElement(int index, @NotNull ListElement<T> element) {
         if (index < 0 || index > this.children.size()) {
             throw new IndexOutOfBoundsException();
         }
@@ -248,7 +248,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
      */
     @Override
     @Nullable
-    public final T removeByListUUID(UUID uuid) {
+    public final T removeByListUUID(@NotNull UUID uuid) {
         T e = this.getByListUUID(uuid);
         if (e == null) return null;
         this.remove(e);
@@ -336,7 +336,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         return uuid;
     }
 
-    public ListElement<T> listElementFromData(MapType child) throws BaseTypeCannotBeParsed {
+    public @NotNull ListElement<T> listElementFromData(@NotNull MapType child) throws BaseTypeCannotBeParsed {
         String id = child.getStringType("id") != null ? child.getStringType("id").getValue() : "";
         UUID uuid = UUIDUtils.readUUIDOrCreateRandom(child, "uuid");
         UUID valueUUID = UUIDUtils.readUUIDorNull(child, "value_uuid");
@@ -344,7 +344,7 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         return new ListElement<>(uuid, this.instantiate(id, valueUUID, childData));
     }
 
-    public MapType listElementToData(ListElement<T> element) {
+    public @NotNull MapType listElementToData(@NotNull ListElement<T> element) {
         MapType map = new MapType(new HashMap<>());
         map.getValue().put("id", new StringType(element.value().getIdentifier()));
         map.getValue().put("data", element.value().toData());

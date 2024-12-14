@@ -7,6 +7,7 @@ import com.minechinima.model.values.base.BaseValueList;
 import com.minechinima.model.logging.datainterfaces.ListElement;
 import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.utils.IValuePointerConstraint;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -78,7 +79,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
     }
 
     @Override
-    public boolean addListElement(int index, ListElement<ValuePointer<T>> element) {
+    public boolean addListElement(int index, @NotNull ListElement<ValuePointer<T>> element) {
         if (element.value().getReferenceFrame() != this.relative) {
             throw new IllegalArgumentException("Trying to add a pointer to a pointerlist with a different relative target.");
         }
