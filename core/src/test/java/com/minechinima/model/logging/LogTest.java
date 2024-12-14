@@ -4,6 +4,7 @@ import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
 import com.minechinima.model.base.dummies.DummyDoubleValueMap;
+import com.minechinima.model.logging.operations.IdentifierChange;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +13,18 @@ import org.junit.jupiter.api.Test;
 import java.util.Stack;
 
 public class LogTest {
+    @Test
+    public void pushReferenceEqualOperation() {
+        DataOperationLog log = new DataOperationLog();
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("", ValuePath.Format.PATH);
+        IdentifierChange op = new IdentifierChange("");
+        log.pushDataOperation(root.getFullPath(), op);
+        log.pushDataOperation(root.getFullPath(), new IdentifierChange(""));
+        Exception e = Assertions.assertThrowsExactly(IllegalArgumentException.class, ()-> log.pushDataOperation(root.getFullPath(), op));
+        Assertions.assertEquals("Tried to log a data operation instance (reference equal) that was already logged.",
+                e.getMessage());
+    }
+
     @Test
     public void testLogRelativeToEmptyPaths() {
         DataOperationLog log = new DataOperationLog();
