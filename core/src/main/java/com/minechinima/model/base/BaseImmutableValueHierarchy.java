@@ -5,8 +5,10 @@ import com.google.common.collect.HashBiMap;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
+import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.utils.ValuePath;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -35,6 +37,14 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
 
     protected BaseImmutableValueHierarchy(String id, UUID uuid, ValuePath.Format pathFormat) {
         super(id, uuid, pathFormat);
+    }
+
+    @Override
+    void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
+        /* for safety to prevent and debug when we forget to initialize a node before adding it */
+        if (!this.initializedChildren) {
+            throw new SetParentNotAllowed("Cannot add an immutable value hierarchy that is not initialized to the tree.");
+        }
     }
 
     /**
