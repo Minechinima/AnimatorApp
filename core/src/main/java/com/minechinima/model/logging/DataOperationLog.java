@@ -72,6 +72,7 @@ public class DataOperationLog {
         for (DataOperationLogging logger : this.loggers) {
             logger.removeLog(this);
         }
+        this.loggers.clear();
         this.cache.clear();
     }
 
