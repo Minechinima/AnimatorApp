@@ -20,6 +20,7 @@ public class Vector3fValue extends ValueGroup {
         this.addChild("x", this.x);
         this.addChild("y", this.y);
         this.addChild("z", this.z);
+        this.initChildren();
     }
 
     public Vector3f asVector3f() {
