@@ -7,14 +7,23 @@ import com.minechinima.model.values.vectors.Vector3fValue;
 import com.minechinima.ui.annotation.InGui;
 import com.minechinima.ui.elements.UICheckBox;
 import com.minechinima.ui.elements.UIDragFloat;
+import com.minechinima.ui.elements.UIVectorElement;
 import com.minechinima.ui.elements.properties.UIObjectProperties;
 import com.minechinima.ui.panels.UIPropertiesPanel;
 
 import java.util.UUID;
 
 public class BaseObject extends ValueGroup {
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+            translationPrefix = "translation", as = UIVectorElement.class)
     public final Vector3fValue translation = new Vector3fValue("translation");
+
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+            translationPrefix = "rotation", as = UIVectorElement.class)
     public final Vector3fValue rotation = new Vector3fValue("rotation");
+
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+            translationPrefix = "scale", as = UIVectorElement.class)
     public final Vector3fValue scale = new Vector3fValue("scale");
 
     @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_viewport", as = UICheckBox.class)
