@@ -82,7 +82,7 @@ public class ReferenceManagerTest {
         reference.run();
         Assertions.assertTrue(implInstance.containsReference(node));
 
-        environment.manager.cacheClearedReferences();
+        environment.manager.startCachingClearedReferences();
         environment.map.remove(node);
         Assertions.assertTrue(implInstance.containsReference(node));
         environment.map.add(node);
@@ -118,7 +118,7 @@ public class ReferenceManagerTest {
         reference.run();
         Assertions.assertTrue(implInstance.containsReference(node));
 
-        environment.manager.cacheClearedReferences();
+        environment.manager.startCachingClearedReferences();
         environment.map.remove(node);
         Assertions.assertTrue(implInstance.containsReference(node));
         environment.map.add(node);

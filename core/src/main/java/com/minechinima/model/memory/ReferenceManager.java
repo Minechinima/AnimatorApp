@@ -57,8 +57,12 @@ public class ReferenceManager {
         this.references.remove(removedNode);
     }
 
-    public void cacheClearedReferences() {
+    public void startCachingClearedReferences() {
         this.cacheDeletion = true;
+    }
+
+    public void stopCachingClearedReferences() {
+        this.cacheDeletion = false;
     }
 
     public void reapplyCachedClearedReferences() {

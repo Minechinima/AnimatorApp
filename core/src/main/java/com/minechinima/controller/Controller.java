@@ -89,7 +89,7 @@ public class Controller {
             return new ControllerResult(ControllerResult.State.ERROR, "No current running action to continue.");
         }
 
-        this.dataTree.getReferenceManager().cacheClearedReferences();
+        this.dataTree.getReferenceManager().startCachingClearedReferences();
         this.currentTransaction.getLog().resume();
 
         try {
@@ -117,6 +117,7 @@ public class Controller {
         }
 
         this.currentTransaction.getLog().pause();
+        this.dataTree.getReferenceManager().stopCachingClearedReferences();
 
         return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
