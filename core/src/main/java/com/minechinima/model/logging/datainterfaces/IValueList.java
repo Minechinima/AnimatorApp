@@ -40,7 +40,7 @@ public interface IValueList<T> {
      * should be enough in most cases.
      */
     @Contract(pure = true)
-    default boolean canAdd(int index, ListElement<Object> element) throws UserException {
+    default boolean canAdd(int index, @NotNull ListElement<Object> element) throws UserException {
         return true;
     }
 

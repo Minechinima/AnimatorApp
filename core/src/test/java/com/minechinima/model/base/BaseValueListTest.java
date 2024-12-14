@@ -151,7 +151,7 @@ public class BaseValueListTest {
     public static BaseValueList<DoubleValue> getAnonymousDoubleList(String id) {
         BaseValueList<DoubleValue> list = new BaseValueList<>(id) {
             @Override
-            public boolean canAdd(int index, ListElement<Object> element) throws UserException {
+            public boolean canAdd(int index, @NotNull ListElement<Object> element) throws UserException {
                 return element.value() instanceof DoubleValue;
             }
 
