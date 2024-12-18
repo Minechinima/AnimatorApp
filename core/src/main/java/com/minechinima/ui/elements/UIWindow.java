@@ -1,14 +1,19 @@
 package com.minechinima.ui.elements;
 
+import com.minechinima.operator.OperatorContext;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO windows is too specific, maybe into app?
-public class UIWindow extends UIElement {
+public class UIWindow<C extends OperatorContext> extends UIElement {
     public final List<UIScreen> screens = new ArrayList<>();
+    public final C context;
+
+    public UIWindow(C context) {
+        this.context = context;
+    }
 
     @Override
     protected void draw(UIContext context) {

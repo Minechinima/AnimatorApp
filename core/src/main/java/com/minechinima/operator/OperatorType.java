@@ -4,9 +4,10 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.ui.elements.UIElement;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Set;
 
-public abstract class OperatorType<T extends OperatorProperties> {
+public abstract class OperatorType<C extends OperatorContext, T extends OperatorProperties> {
     public final String title;
     public final String description;
 
@@ -31,14 +32,23 @@ public abstract class OperatorType<T extends OperatorProperties> {
      * A set of other operatorTypes that can replace this
      * while in {@link Operator#modal(OperatorContext, CursorInfo)} mode.
      */
-    private final Set<OperatorType> switchToTypes;
+    private final Set<OperatorType> switchToTypes = new HashSet<>();
+
+    public OperatorType(String title, String description, boolean pushUndo, boolean isRepeatable, boolean supportsAdjustLast) {
+        this.title = title;
+        this.description = description;
+        this.pushUndo = pushUndo;
+        this.isRepeatable = isRepeatable;
+        this.supportsAdjustLast = supportsAdjustLast;
+    }
 
     public OperatorType(String title, String description) {
         this.title = title;
         this.description = description;
+        this.pushUndo = false;
+        this.isRepeatable = false;
+        this.supportsAdjustLast = false;
     }
-
-
 
     /**
      * Whether the operator can be executed in the given context.
@@ -47,10 +57,11 @@ public abstract class OperatorType<T extends OperatorProperties> {
      * @return false if the Operator cannot be executed.
      * @throws UserException with a meaningful message, if it should be displayed.
      */
-    public abstract boolean poll(OperatorContext context) throws UserException;
+    public abstract boolean poll(C context) throws UserException;
     @Nullable
     public UIElement ui(T props) {
         //TODO declare more reusable UIGroup -> allows chaining operators, allows reusing for complex UIs, allows substituting with UIGeneratorFramework
         return null;
     }
+    public abstract T createProps();
 }
