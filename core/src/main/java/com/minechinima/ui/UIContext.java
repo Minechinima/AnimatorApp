@@ -16,7 +16,7 @@ import java.util.Set;
 public class UIContext {
     private final ImguiLoader imguiContext;
     private final IWindow window;
-    private final WindowManager manager;
+    private final UIManager manager;
     private UIWindow currentWindow;
     private final UIPanelFactory panelFactory = new UIPanelFactory();
     private final HashMap<Class<?>, Object> registry = new HashMap<>();
@@ -33,7 +33,7 @@ public class UIContext {
     private final Set<Integer> mouseKeysDown = new HashSet<>();
     private float partialTicks;
 
-    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack, UIHandlerRegistry uiHandlerRegistry) {
+    public UIContext(IWindow window, UIManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack, UIHandlerRegistry uiHandlerRegistry) {
         this.window = window;
         this.manager = manager;
         this.imguiContext = imguiContext;
@@ -87,7 +87,7 @@ public class UIContext {
         return this.window;
     }
 
-    public WindowManager getWindowManager() {
+    public UIManager getWindowManager() {
         return this.manager;
     }
 
