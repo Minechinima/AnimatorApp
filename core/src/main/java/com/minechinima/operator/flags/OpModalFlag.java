@@ -1,0 +1,15 @@
+package com.minechinima.operator.flags;
+
+public enum OpModalFlag {
+    CANCELLED,
+    FINISHED,
+    MODAL_RUNNING;
+
+    public OpModalFlag from(OpExecuteFlag flag) {
+        return switch (flag) {
+            case FINISHED -> FINISHED;
+            case CANCELLED -> CANCELLED;
+            default -> throw new IllegalStateException("Unexpected value: " + flag);
+        };
+    }
+}
