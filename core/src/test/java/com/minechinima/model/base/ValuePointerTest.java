@@ -106,12 +106,12 @@ public class ValuePointerTest {
         DummyBaseImmutableHierarchy h2 = new DummyBaseImmutableHierarchy("", ValuePath.Format.PATH);
         ValuePointer pointer = new ValuePointer("", BaseStructure.class, ref);
 
+        h2._add("pointer", pointer);
+        h2.initChildren();
+
         root.add(
                 ref.add(
                         h2));
-
-        h2._add("pointer", pointer);
-        h2.initChildren();
 
         Assertions.assertTrue(pointer.isInitialized());
     }
@@ -124,13 +124,16 @@ public class ValuePointerTest {
         DummyBaseImmutableHierarchy h2 = new DummyBaseImmutableHierarchy("", ValuePath.Format.PATH);
         ValuePointer pointer = new ValuePointer("", BaseStructure.class, ref);
 
-        root.add(h1);
+        ref.initChildren();
         h2._add("ref", ref);
         h2.initChildren();
 
         h1._add("h2", h2);
         h1._add("pointer", pointer);
         h1.initChildren();
+
+        root.add(h1);
+
         pointer.set(null);
         Assertions.assertTrue(pointer.isInitialized());
     }
