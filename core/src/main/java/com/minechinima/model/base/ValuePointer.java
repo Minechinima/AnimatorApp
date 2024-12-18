@@ -82,7 +82,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     }
 
     private void onParentChange(BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
-        if (this.getParent() == null) return;
+        if (newParent == null) return;
         try {
             this.tryInitOrthrowExceptionIllegalReferenceFrame();
             this.checkConstraintsForValueAndThrow(this.referenced, false);
