@@ -1,6 +1,5 @@
 package com.minechinima.ui.elements;
 
-import com.minechinima.controller.BaseValueController;
 import com.minechinima.model.values.StringValue;
 import com.minechinima.ui.UIContext;
 import com.minechinima.utils.MathUtils;

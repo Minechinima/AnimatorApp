@@ -32,10 +32,23 @@ public abstract class ReferencesImplTest<T extends BaseStructureReferences> {
     }
 
 
+    /**
+     * Simply assign the node as a reference to the instance
+     * @param implInstance
+     * @param node
+     */
     public void referenceNode(T implInstance, BaseStructure node) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
+    /**
+     * If a {@link BaseStructureReferences} subclass has multiple ways of referencing a node, this method can
+     * be used to define cases for these ways.
+     * Reference the node for each possible case where a node can be referenced.
+     * @param environment
+     * @param implInstance
+     * @param testCase
+     */
     public void referenceNodeTestCase(ReferenceManagerTest.TestEnvironment environment, T implInstance, Map.Entry<Enum, BaseStructure> testCase) {
         throw new UnsupportedOperationException("Not implemented");
     }
