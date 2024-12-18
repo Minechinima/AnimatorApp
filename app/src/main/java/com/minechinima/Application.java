@@ -57,6 +57,7 @@ public class Application {
     };
     /* ui layer*/
     private final UIManager<BBOperatorContext> uiManager;
+
     /* data layer */
     private final Controller controller;
     private final BBDataTreeManager dataTree;
