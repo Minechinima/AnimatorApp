@@ -1,6 +1,5 @@
 package com.minechinima.operator;
 
-import com.minechinima.ui.UIManager;
 import com.minechinima.ui.elements.UIElement;
 import com.minechinima.ui.elements.UIScreen;
 import com.minechinima.ui.elements.UISpace;
