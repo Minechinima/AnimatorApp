@@ -1,6 +1,7 @@
 package com.minechinima.operator;
 
 import com.minechinima.ui.UIManager;
+
 /**
  * The context in which an Operator executes.
  */
