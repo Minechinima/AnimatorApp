@@ -6,21 +6,21 @@ import com.minechinima.input.raw.Key;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import com.minechinima.i18n.ClasspathBundleProvider;
 import com.minechinima.i18n.TranslationBackpack;
+import com.minechinima.controller.Controller;
 import com.minechinima.model.BBContext;
 import com.minechinima.model.BBDataTreeManager;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.scene.Scene;
+import com.minechinima.operator.OperatorManager;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
 import com.minechinima.ui.UIContext;
-import com.minechinima.ui.WindowManager;
 import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.*;
 import com.minechinima.ui.panels.UIViewport;
-import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
 import org.lwjgl.glfw.*;
@@ -44,7 +44,10 @@ public class Application {
             return Application.this.window[0];
         }
     };
-    private final WindowManager windowManager;
+    /* ui layer*/
+    private final UIManager<BBContext> windowManager;
+    /* data layer */
+    private final Controller controller;
     private final BBDataTreeManager dataTree;
     private LWJGLInputEventManager inputEventManager;
     private final UIHandlerRegistry handlerRegistry;
@@ -54,10 +57,13 @@ public class Application {
         EventTypeRegistry dataEventTypes = new EventTypeRegistry();
         EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
         this.dataTree = new BBDataTreeManager(dataEventTypes);
-        this.windowManager = new WindowManager(this.windowProvider, new ImguiLoader(), this.dataTree);
+        this.windowManager = new UIManager<>(this.windowProvider, new ImguiLoader());
 
         handlerRegistry = new UIHandlerRegistry();
         translationBackpack = new TranslationBackpack();
+
+        this.controller = new Controller(this.dataTree);
+        this.windowManager = new WindowManager(this.windowProvider, new ImguiLoader(), this.controller);
     }
 
     public void init() {
