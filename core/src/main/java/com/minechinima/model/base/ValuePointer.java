@@ -7,7 +7,6 @@ import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.exceptions.PathParsingException;
-import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.utils.IValuePointerConstraint;
@@ -68,7 +67,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
      */
     @Override
     public final void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
-        this.onParentChange(this.getParent());
+        this.onAnyParentChange(this.getParent());
     }
 
     /**
@@ -78,10 +77,10 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     @Override
     final void onParentChangeInParents(@NotNull BaseValueHierarchy<?> affectedNode,
                                        @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
-        this.onParentChange(affectedNode.getParent());
+        this.onAnyParentChange(affectedNode.getParent());
     }
 
-    private void onParentChange(BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
+    private void onAnyParentChange(BaseValueHierarchy<?> newParent) throws SetParentNotAllowed {
         if (newParent == null) return;
         try {
             this.tryInitOrthrowExceptionIllegalReferenceFrame();
