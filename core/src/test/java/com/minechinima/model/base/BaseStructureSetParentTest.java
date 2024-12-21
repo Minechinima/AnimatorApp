@@ -1,5 +1,6 @@
 package com.minechinima.model.base;
 
+import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.dummies.*;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.events.bus.EventBusManager;
@@ -255,12 +256,12 @@ public class BaseStructureSetParentTest {
         parent.add(h2);
         root.initChildren();
 
-        ReferenceManager referenceManager = new ReferenceManager(root);
         EventTypeRegistry registry = new EventTypeRegistry();
         registry.addEventClass(RemoveFromTreeEvent.class);
         registry.addEventClass(AddToTreeEvent.class);
         registry.addEventClass(ParentChangeEvent.class);
-        EventBusManager busManager = new EventBusManager(referenceManager, root, registry);
+        DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
+        EventBusManager busManager = new EventBusManager(manager, registry);
 
         int[] called = new int[3];
         busManager.subscribe(root.getEventBus(), new Object() {
@@ -316,14 +317,16 @@ public class BaseStructureSetParentTest {
         root2.initChildren();
         parent.add(h1);
 
-        ReferenceManager referenceManager = new ReferenceManager(root);
-        ReferenceManager referenceManager2 = new ReferenceManager(root2);
         EventTypeRegistry registry = new EventTypeRegistry();
         registry.addEventClass(RemoveFromTreeEvent.class);
         registry.addEventClass(AddToTreeEvent.class);
         registry.addEventClass(ParentChangeEvent.class);
-        EventBusManager busManager = new EventBusManager(referenceManager, root, registry);
-        EventBusManager busManager2 = new EventBusManager(referenceManager2, root2, registry);
+
+        DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
+        DataTreeManager<?> manager2 = new DataTreeManager<BaseHierarchyRoot>(root2, registry);
+
+        EventBusManager busManager = new EventBusManager(manager, registry);
+        EventBusManager busManager2 = new EventBusManager(manager2, registry);
 
         int[] called = new int[3];
         busManager.subscribe(root.getEventBus(), new Object() {

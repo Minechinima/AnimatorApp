@@ -27,6 +27,11 @@ public class IdentifierChange implements IDataOperation<IDMutable> {
     }
 
     @Override
+    public Type getOperationType() {
+        return Type.UPDATE;
+    }
+
+    @Override
     public boolean merge(IDataOperation next) {
         return false;
     }

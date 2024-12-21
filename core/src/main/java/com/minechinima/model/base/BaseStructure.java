@@ -174,6 +174,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                                 <li>If something went wrong during {@link #afterRemoveFromTree()}</li>
      *                             </ul>
      */
+    @Contract(pure = false)
     public final void setParent(@Nullable final BaseValueHierarchy<?> parent) throws SetParentNotAllowed {
         if (this.parent == parent) return;
         /*
@@ -596,6 +597,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                              <li>The ID does not adhere to the path format of the parent.</li>
      *                          </ul>
      */
+    @Contract(pure = false)
     protected final void _setID(@NotNull String identifier) throws RuntimeException {
         if (identifier == null) {
             throw new IllegalArgumentException("Setting identifier to null is not allowed.");
@@ -709,6 +711,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *
      * @param event
      * @throws IllegalArgumentException if the trigger of the event is not equal to this.
+     * @implNote has {@link NoExceptions} annotation, because in the context of logging and reverting a change: if anything
+     * goes wrong during logging the change, the app will crash with an Error. Any exceptions after logging do not matter as the
+     * change becomes revertable as soon as it is logged
      */
     @NoExceptions
     protected final <T extends Event> void triggerEvent(T event) {

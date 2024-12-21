@@ -18,15 +18,26 @@ public class Transaction {
     private final DataOperationLog log = new DataOperationLog();
     private final long timestamp;
     private State state = State.ACTIVE;
-    private final String localizedTitle;
+    /**
+     * @implNote Effectively final - only mutable for package
+     */
+    private String localizedTitle;
 
     public Transaction(String localizedTitle) {
         this.localizedTitle = localizedTitle;
         this.timestamp = System.currentTimeMillis();
     }
 
+    Transaction() {
+        this.timestamp = System.currentTimeMillis();
+    }
+
     public Stack<DataOperationLog.Entry> getDataOperationStack() {
         return this.log.getLog();
+    }
+
+    void setTitle(String title) {
+        this.localizedTitle = title;
     }
 
     /**

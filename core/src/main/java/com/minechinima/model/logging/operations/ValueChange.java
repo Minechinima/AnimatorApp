@@ -53,6 +53,11 @@ public class ValueChange implements IDataOperation<IValue<?>> {
     }
 
     @Override
+    public Type getOperationType() {
+        return Type.UPDATE;
+    }
+
+    @Override
     public boolean merge(IDataOperation next) {
         return this.canMerge && next instanceof ValueChange changeUndo && changeUndo.path.equals(this.path)
                 && changeUndo.canMerge && !changeUndo.dontMergeWithPrev;

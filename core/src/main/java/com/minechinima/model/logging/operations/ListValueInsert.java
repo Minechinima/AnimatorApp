@@ -35,4 +35,9 @@ public class ListValueInsert implements IDataOperation<IValueList<?>> {
     public boolean merge(IDataOperation<?> next) {
         return false;
     }
+
+    @Override
+    public Type getOperationType() {
+        return Type.CREATE;
+    }
 }

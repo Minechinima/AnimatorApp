@@ -71,4 +71,5 @@ public interface IDataOperation<T> {
      */
     boolean isCorrectType(Object object);
     boolean merge(IDataOperation<?> next);
+    Type getOperationType();
 }
