@@ -28,7 +28,7 @@ public class EventBusManagerReferenceTest extends ReferencesImplTest<EventBusMan
     }
 
     public EventBusManagerReferenceTest() {
-        super(environment -> new EventBusManager(environment.manager, environment.root, environment.registry), getTestCases());
+        super(environment -> new EventBusManager(environment.treeManager, environment.registry), getTestCases());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.minechinima.model.memory;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
@@ -129,6 +130,7 @@ public class ReferenceManagerTest {
 
 
     public class TestEnvironment {
+        DataTreeManager<DummyBaseHierarchyRoot> treeManager;
         DummyBaseHierarchyRoot root;
         DummyGenericMap map;
         ReferenceManager manager;
@@ -136,17 +138,17 @@ public class ReferenceManagerTest {
         EventTypeRegistry registry;
 
         public TestEnvironment() {
-            root = new DummyBaseHierarchyRoot("r");
-            map = new DummyGenericMap("map");
-            root._addChild("var", map);
-            root.initChildren();
+            this.root = new DummyBaseHierarchyRoot("r");
+            this.map = new DummyGenericMap("map");
+            this.root._addChild("var", map);
+            this.root.initChildren();
 
-            registry = new EventTypeRegistry();
+            this.registry = new EventTypeRegistry();
             EventTypeRegistry.registerDefaultEventTypes(registry);
 
-            manager = new ReferenceManager(root);
-            busManager = new EventBusManager(manager, root, registry);
-            manager.initEventSubscription(busManager);
+            this.treeManager = new DataTreeManager<>(this.root, registry);
+            this.manager = this.treeManager.getReferenceManager();
+            this.busManager = this.treeManager.getEventBusManager();
         }
     }
 
