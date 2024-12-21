@@ -73,7 +73,7 @@ public class ControllerManager {
         this.currentTransaction.getLog().resume();
 
         try {
-            while (commands.isEmpty()) {
+            while (!commands.isEmpty()) {
                 IControllerCommand command = commands.poll();
                 command.execute();
             }
