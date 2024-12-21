@@ -35,6 +35,11 @@ public class MapValueAdd implements IDataOperation<IValueMap<?>> {
     }
 
     @Override
+    public Type getOperationType() {
+        return Type.CREATE;
+    }
+
+    @Override
     public boolean merge(IDataOperation next) {
         return false;
     }

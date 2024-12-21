@@ -31,6 +31,11 @@ public class ListChangeIndex implements IDataOperation<IValueList> {
     }
 
     @Override
+    public Type getOperationType() {
+        return Type.UPDATE;
+    }
+
+    @Override
     public boolean merge(IDataOperation next) {
         return false;
     }

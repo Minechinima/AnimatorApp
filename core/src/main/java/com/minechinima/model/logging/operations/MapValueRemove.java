@@ -36,6 +36,11 @@ public class MapValueRemove implements IDataOperation<IValueMap<?>> {
     }
 
     @Override
+    public Type getOperationType() {
+        return Type.DELETE;
+    }
+
+    @Override
     public boolean merge(IDataOperation next) {
         return false;
     }
