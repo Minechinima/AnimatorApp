@@ -5,6 +5,8 @@ import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
 import com.minechinima.ui.annotation.InGui;
+import com.minechinima.ui.annotation.InUIGroup;
+import com.minechinima.ui.elements.UIAccordion;
 import com.minechinima.ui.elements.UICheckBox;
 import com.minechinima.ui.elements.UIDragFloat;
 import com.minechinima.ui.elements.UIVectorElement;
@@ -26,9 +28,11 @@ public class BaseObject extends ValueGroup {
             translationPrefix = "scale", as = UIVectorElement.class)
     public final Vector3fValue scale = new Vector3fValue("scale");
 
+    @InUIGroup(key = "base_object.visibility", as = UIAccordion.class)
     @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_viewport", as = UICheckBox.class)
     public final BooleanValue viewportVisibility = new BooleanValue("visible_viewport", true);
 
+    @InUIGroup(key = "base_object.visibility", as = UIAccordion.class)
     @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_render", as = UICheckBox.class)
     public final BooleanValue renderVisibility = new BooleanValue("visible_render", true);
 
