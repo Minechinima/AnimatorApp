@@ -14,18 +14,20 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
-@SupportedAnnotationTypes("com.minechinima.ui.annotation.InGui")
+@SupportedAnnotationTypes({"com.minechinima.ui.annotation.InGui"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
-public class UIHandlerProcessor extends AbstractProcessor {
+public class UIAnnotationProcessor extends AbstractProcessor {
     private ArrayListMultimap<String, String> services = ArrayListMultimap.create();
 
     @Override
@@ -46,6 +48,7 @@ public class UIHandlerProcessor extends AbstractProcessor {
         for (Element element : roundEnv.getElementsAnnotatedWith(InGui.class)) {
             TypeElement type = (TypeElement) element.getEnclosingElement();
             TypeMirror entryPointType = getEntryPointType(element);
+
             entryPoints.put(type.getSimpleName().toString() + processingEnv.getTypeUtils().asElement(entryPointType).getSimpleName(), (VariableElement) element);
 
             if (!entryPointTypes.containsKey(type.getSimpleName().toString() + processingEnv.getTypeUtils().asElement(entryPointType).getSimpleName())) {
@@ -54,6 +57,9 @@ public class UIHandlerProcessor extends AbstractProcessor {
         }
 
         for (String key : entryPoints.keySet()) {
+            ArrayListMultimap<String, String> elementGroups = ArrayListMultimap.create();
+            HashMap<String, TypeMirror> groupTypes = new HashMap<>();
+
             try {
                 ArrayList<FieldSpec> fields = new ArrayList<>();
                 TypeMirror generic = ((DeclaredType) processingEnv.getTypeUtils().directSupertypes(entryPointTypes.get(key)).get(1)).getTypeArguments().get(0);
@@ -68,9 +74,47 @@ public class UIHandlerProcessor extends AbstractProcessor {
                         as = mte.getTypeMirror();
                     }
 
+                    InUIGroup inUIGroup = entryPoint.getAnnotation(InUIGroup.class);
+                    if (inUIGroup != null) {
+                        elementGroups.put(inUIGroup.key(), entryPoint.getSimpleName().toString());
+
+                        TypeMirror elementGroupAs = null;
+                        try {
+                            inUIGroup.as();
+                        } catch (MirroredTypeException mte) {
+                            elementGroupAs = mte.getTypeMirror();
+                        }
+
+                        if (groupTypes.containsKey(inUIGroup.key())) {
+                            TypeElement groupTypeElement = (TypeElement) processingEnv.getTypeUtils().asElement(groupTypes.get(inUIGroup.key()));
+                            TypeElement requestedGroupTypeElement = (TypeElement) processingEnv.getTypeUtils().asElement(elementGroupAs);
+                            if (!groupTypeElement.getQualifiedName().equals(requestedGroupTypeElement.getQualifiedName())) {
+                                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Group type mismatch: " + groupTypeElement.getQualifiedName() + " != " + requestedGroupTypeElement.getQualifiedName(), entryPoint);
+                            }
+                        } else {
+                            groupTypes.put(inUIGroup.key(), elementGroupAs);
+                        }
+                    }
+
                     fields.add(FieldSpec.builder(TypeName.get(as), entryPoint.getSimpleName().toString(), Modifier.PRIVATE, Modifier.FINAL)
                             .initializer("new $T($S)", as, annotation.translationPrefix())
                             .build());
+                }
+
+                for (String groupKey : groupTypes.keySet()) {
+                    TypeMirror groupType = groupTypes.get(groupKey);
+
+                    fields.add(FieldSpec.builder(TypeName.get(groupType), groupKey.replaceAll("\\.", ""), Modifier.PRIVATE, Modifier.FINAL)
+                            .initializer("new $T($S)", groupType, groupKey)
+                            .build());
+                }
+
+                 // Generate constructor
+                MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
+                        .addModifiers(Modifier.PUBLIC);
+
+                for (Map.Entry<String, String> entry : elementGroups.entries()) {
+                    constructorBuilder.addStatement("this.$L.addChild(this.$L)", entry.getKey().replaceAll("\\.", ""), entry.getValue());
                 }
 
                 // Generate draw method header
@@ -80,7 +124,7 @@ public class UIHandlerProcessor extends AbstractProcessor {
                         .addParameter(ParameterSpec.builder(ClassName.get(UIContext.class), "context").build())
                         .addParameter(ParameterSpec.builder(ClassName.get(generic), "element").build());
 
-                // Generate draw method body
+                // Generate draw method body for ungrouped elements
                 for (VariableElement entryPoint : entryPoints.get(key)) {
                     InGui annotation = entryPoint.getAnnotation(InGui.class);
                     TypeMirror as = null;
@@ -90,7 +134,16 @@ public class UIHandlerProcessor extends AbstractProcessor {
                         as = mte.getTypeMirror();
                     }
 
-                    drawMethodBuilder.addStatement("this.$L.init(element.$L).render(context)", entryPoint.getSimpleName(), entryPoint.getSimpleName());
+                    drawMethodBuilder.addStatement("this.$L.init(element.$L)", entryPoint.getSimpleName(), entryPoint.getSimpleName());
+
+                    if (!elementGroups.containsValue(entryPoint.getSimpleName().toString())) {
+                        drawMethodBuilder.addStatement("this.$L.render(context)", entryPoint.getSimpleName());
+                    }
+                }
+
+                // Generate draw method body for grouped elements
+                for (String groupKey : groupTypes.keySet()) {
+                    drawMethodBuilder.addStatement("this.$L.render(context)", groupKey.replaceAll("\\.", ""));
                 }
 
                 // Generate type
@@ -99,6 +152,7 @@ public class UIHandlerProcessor extends AbstractProcessor {
                         .addSuperinterface(entryPointTypes.get(key))
                         .addFields(fields)
                         .addMethod(drawMethodBuilder.build())
+                        .addMethod(constructorBuilder.build())
                         .build();
 
                 // Generate file
@@ -143,6 +197,16 @@ public class UIHandlerProcessor extends AbstractProcessor {
     }
 
     private TypeMirror getEntryPointType(Element element) {
-        return (TypeMirror) element.getAnnotationMirrors().get(0).getElementValues().entrySet().stream().findFirst().get().getValue().getValue();
+        return (TypeMirror) element.getAnnotationMirrors().stream()
+                .filter(mirror -> processingEnv.getTypeUtils().isSameType(mirror.getAnnotationType(), processingEnv.getElementUtils().getTypeElement(InGui.class.getCanonicalName()).asType()))
+                .findFirst()
+                .get()
+                .getElementValues()
+                .entrySet()
+                .stream()
+                .findFirst()
+                .get()
+                .getValue()
+                .getValue();
     }
 }
