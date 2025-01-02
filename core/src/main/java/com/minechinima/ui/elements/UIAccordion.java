@@ -19,13 +19,10 @@ public class UIAccordion extends UIGroup {
 
     @Override
     protected void draw(UIContext context) {
-        if (ImGui.treeNode(this.label)) {
+        if (ImGui.collapsingHeader(this.label)) {
             for (UIElement child : this.children) {
                 child.draw(context);
             }
-
-            ImGui.treePop();
-            ImGui.spacing();
         }
     }
 }

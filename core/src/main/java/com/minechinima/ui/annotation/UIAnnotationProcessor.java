@@ -109,13 +109,12 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                             .build());
                 }
 
-                 // Generate init method header
-                MethodSpec.Builder initMethodBuilder = MethodSpec.methodBuilder("init")
-                        .addAnnotation(Override.class)
+                 // Generate constructor
+                MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PUBLIC);
 
                 for (Map.Entry<String, String> entry : elementGroups.entries()) {
-                    initMethodBuilder.addStatement("this.$L.addChild(this.$L)", entry.getKey().replaceAll("\\.", ""), entry.getValue());
+                    constructorBuilder.addStatement("this.$L.addChild(this.$L)", entry.getKey().replaceAll("\\.", ""), entry.getValue());
                 }
 
                 // Generate draw method header
@@ -153,7 +152,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                         .addSuperinterface(entryPointTypes.get(key))
                         .addFields(fields)
                         .addMethod(drawMethodBuilder.build())
-                        .addMethod(initMethodBuilder.build())
+                        .addMethod(constructorBuilder.build())
                         .build();
 
                 // Generate file

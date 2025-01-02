@@ -23,7 +23,6 @@ public final class UIHandlerRegistry {
 
         for (F entryPoint : serviceLoader) {
             entryPoints.add(entryPoint);
-            entryPoint.init();
             registerEntryPoint(clazz, entryPoint);
         }
 
