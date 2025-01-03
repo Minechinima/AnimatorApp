@@ -12,6 +12,7 @@ import java.util.Stack;
 /**
  * Controller performs/manages operations on one data tree.
  */
+@Deprecated
 public class Controller {
     private Transaction currentTransaction;
     private final DataTreeManager<?> dataTree;
