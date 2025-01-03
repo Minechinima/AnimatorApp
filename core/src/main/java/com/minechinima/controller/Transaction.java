@@ -36,6 +36,10 @@ public class Transaction {
         return this.log.getLog();
     }
 
+    /**
+     * @param title
+     * @implNote This is package-private so {@link #localizedTitle} is only mutable for the package!
+     */
     void setTitle(String title) {
         this.localizedTitle = title;
     }

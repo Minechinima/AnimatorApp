@@ -5,6 +5,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -18,6 +19,7 @@ public interface IValue<T> {
     /**
      * @return a serialized value that can be parsed again by {@link #valueFromData(BaseType)}
      */
+    @Contract(pure = true)
     BaseType<?> valueToData();
 
     /**
@@ -26,6 +28,7 @@ public interface IValue<T> {
      * @throws BaseTypeCannotBeParsed to differentiate between an on purpose null
      */
     @Nullable
+    @Contract(pure = true)
     T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed;
 
     /**
@@ -40,8 +43,11 @@ public interface IValue<T> {
      * The type-safety of calling {@link #valueFromData(BaseType)} with type T and then {@link #set(T)}
      * should be enough in most cases.
      */
+    @Contract(pure = true)
     default boolean canSet(Object newValue) throws UserException {
         return true;
     }
+
+    @Contract(pure = false)
     void set(T value);
 }

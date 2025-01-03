@@ -1,5 +1,6 @@
 package com.minechinima.model.logging.datainterfaces;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -12,6 +13,7 @@ public interface IDMutable {
      * Exposes changing the identifier value of a BaseStructure node.
      * @param identifier
      */
+    @Contract(pure = false)
     void setID(String identifier);
 
     /**
@@ -19,5 +21,6 @@ public interface IDMutable {
      * Is never null.
      */
     @NotNull
+    @Contract(pure = true)
     UUID getUUID();
 }
