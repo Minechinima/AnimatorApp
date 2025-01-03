@@ -12,19 +12,25 @@ public class ValueControllerFactory<T> extends ControllerFactory<BaseValue<T>> {
     }
 
     public IControllerCommand set(T value) {
-        return new ControllerSetValue(value);
+        return new ControllerSetValue(this.owner, value);
     }
 
     private class ControllerSetValue implements IControllerCommand {
         private final T value;
+        private final BaseValue<T> owner;
 
-        private ControllerSetValue(T value) {
+        private ControllerSetValue(BaseValue<T> owner, T value) {
             this.value = value;
+            this.owner = owner;
         }
 
         @Override
         public void execute() throws UserException {
-            ValueControllerFactory.this.owner.set(this.value);
+            if (!this.owner.canSet(this.value)) {
+                throw new UserException("Cannot set the value of " + this.owner.getIdentifier());
+            }
+
+            this.owner.set(this.value);
         }
 
         @Override
