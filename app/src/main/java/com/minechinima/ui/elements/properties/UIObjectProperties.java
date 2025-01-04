@@ -31,16 +31,7 @@ public class UIObjectProperties extends UIPropertyContext<BaseObject> {
 
     @Override
     protected void drawBody(UIContext context) {
-        if (ImGui.collapsingHeader("Transformation", ImGuiTreeNodeFlags.DefaultOpen)) {
-            drawFromEntryPoint(UIObjectPropertiesTransformation.class, context);
-        }
-
-        if (ImGui.collapsingHeader("Visibility")) {
-            //this.viewportHidden.init(this.getContext().viewportVisibility).render(context);
-            //this.renderHidden.init(this.getContext().renderVisibility).render(context);
-
-            drawFromEntryPoint(UIObjectPropertiesVisibility.class, context);
-        }
+        drawFromEntryPoint(UIObjectPropertiesHandler.class, context);
 
         if (ImGui.collapsingHeader("Relations")) {
             this.parent.setSourceList(((BBUIWindow)context.getCurrentWindow()).context.database.objects);
@@ -48,20 +39,8 @@ public class UIObjectProperties extends UIPropertyContext<BaseObject> {
                 //context.getApplication().getMainController().executeNewTransactionToHistory("",
                 //        () -> ObjectsController.setParent(context.getContextData().data, this.getContext(), obj));
             }).render(context);
-
-            drawFromEntryPoint(UIObjectPropertiesRelations.class, context);
         }
     }
 
-    public interface UIObjectPropertiesTransformation extends IUIHandler<BaseObject> {
-
-    }
-
-    public interface UIObjectPropertiesVisibility extends IUIHandler<BaseObject> {
-
-    }
-
-    public interface UIObjectPropertiesRelations extends IUIHandler<BaseObject> {
-
-    }
+    public interface UIObjectPropertiesHandler extends IUIHandler<BaseObject> {}
 }

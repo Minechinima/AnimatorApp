@@ -16,24 +16,29 @@ import com.minechinima.ui.panels.UIPropertiesPanel;
 import java.util.UUID;
 
 public class BaseObject extends ValueGroup {
-    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+    @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,
             translationPrefix = "translation", as = UIVectorElement.class)
     public final Vector3fValue translation = new Vector3fValue("translation");
 
-    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+    @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,
             translationPrefix = "rotation", as = UIVectorElement.class)
     public final Vector3fValue rotation = new Vector3fValue("rotation");
 
-    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesTransformation.class,
+    @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,
             translationPrefix = "scale", as = UIVectorElement.class)
     public final Vector3fValue scale = new Vector3fValue("scale");
 
     @InUIGroup(key = "base_object.visibility", as = UIAccordion.class)
-    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_viewport", as = UICheckBox.class)
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,
+            translationPrefix = "visible_viewport", as = UICheckBox.class)
     public final BooleanValue viewportVisibility = new BooleanValue("visible_viewport", true);
 
     @InUIGroup(key = "base_object.visibility", as = UIAccordion.class)
-    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesVisibility.class, translationPrefix = "visible_render", as = UICheckBox.class)
+    @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,
+            translationPrefix = "visible_render", as = UICheckBox.class)
     public final BooleanValue renderVisibility = new BooleanValue("visible_render", true);
 
     public final ObjectParentPointer parent;
