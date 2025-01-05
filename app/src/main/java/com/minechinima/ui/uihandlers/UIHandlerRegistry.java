@@ -1,13 +1,14 @@
 package com.minechinima.ui.uihandlers;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import com.minechinima.ui.annotation.IUIHandler;
 
 import java.util.ArrayList;
 import java.util.ServiceLoader;
 
 public final class UIHandlerRegistry {
-    private final ArrayListMultimap<Class<? extends IUIHandler<?>>, IUIHandler<?>> entryPoints = ArrayListMultimap.create();
+    private final Multimap<Class<? extends IUIHandler<?>>, IUIHandler<?>> entryPoints = LinkedListMultimap.create();
 
     public <E,F extends IUIHandler<E>> Iterable<F> getEntryPoints(Class<F> clazz) {
         if (entryPoints.containsKey(clazz)) {

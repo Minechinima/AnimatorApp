@@ -1,7 +1,9 @@
 package com.minechinima.ui.annotation;
 
 import com.google.auto.service.AutoService;
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import com.minechinima.ui.UIContext;
 import com.palantir.javapoet.*;
 
@@ -19,16 +21,13 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SupportedAnnotationTypes({"com.minechinima.ui.annotation.InGui"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public class UIAnnotationProcessor extends AbstractProcessor {
-    private ArrayListMultimap<String, String> services = ArrayListMultimap.create();
+    private Multimap<String, String> services = LinkedListMultimap.create();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -42,8 +41,8 @@ public class UIAnnotationProcessor extends AbstractProcessor {
     }
 
     private void generateEntryPointClasses(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        ArrayListMultimap<String, VariableElement> entryPoints = ArrayListMultimap.create();
-        HashMap<String, TypeMirror> entryPointTypes = new HashMap<>();
+        Multimap<String, VariableElement> entryPoints = LinkedListMultimap.create();
+        Map<String, TypeMirror> entryPointTypes = new LinkedHashMap<>();
 
         for (Element element : roundEnv.getElementsAnnotatedWith(InGui.class)) {
             TypeElement type = (TypeElement) element.getEnclosingElement();
@@ -57,8 +56,8 @@ public class UIAnnotationProcessor extends AbstractProcessor {
         }
 
         for (String key : entryPoints.keySet()) {
-            ArrayListMultimap<String, String> elementGroups = ArrayListMultimap.create();
-            HashMap<String, TypeMirror> groupTypes = new HashMap<>();
+            Multimap<String, String> elementGroups = LinkedListMultimap.create();
+            Map<String, TypeMirror> groupTypes = new LinkedHashMap<>();
 
             try {
                 ArrayList<FieldSpec> fields = new ArrayList<>();
