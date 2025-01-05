@@ -1,9 +1,10 @@
 package com.minechinima.ui;
 
+import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
+import com.minechinima.ui.adapters.lwjgl.ImGuiImplGlfw;
 import imgui.*;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
-import imgui.glfw.ImGuiImplGlfw;
 import imgui.internal.ImGuiContext;
 import org.lwjgl.opengl.GL32;
 
@@ -20,7 +21,7 @@ public class ImguiLoader {
      * Might help with compatibility when other mods also use imgui?
      */
     protected ImGuiContext oldContext;
-    protected ImGuiImplGlfw imGuiGlfw = new ImGuiImplGlfw();
+    protected ImGuiImplGlfw imGuiGlfw;
     protected ImGuiImplGl3 imGuiGl3 = new ImGuiImplGl3();
     protected ImGuiIO io;
     protected boolean beginFrame;
@@ -30,10 +31,12 @@ public class ImguiLoader {
         return this.font;
     }
 
-    public void init(long windowID) {
+    public void init(long windowID, LWJGLInputEventManager inputEventManager) {
         if (this.initialized) {
             throw new IllegalStateException("Imgui is already initialized, wtf are you doing!?");
         }
+
+        imGuiGlfw = new ImGuiImplGlfw(inputEventManager);
 
         this.windowID = windowID;
         ImGuiContext oldImGuiContext = ImGui.getCurrentContext();
