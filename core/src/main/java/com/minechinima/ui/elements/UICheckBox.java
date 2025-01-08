@@ -1,10 +1,13 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.controller.Controller;
+import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
+
+import java.util.Locale;
 
 public class UICheckBox extends UIValueElement<Boolean, BooleanValue> {
     private final String label;
@@ -17,7 +20,7 @@ public class UICheckBox extends UIValueElement<Boolean, BooleanValue> {
     @Override
     protected void drawElement(UIContext context) {
         this.ptr.set(this.value.get());
-        if (ImGui.checkbox(this.label, this.ptr)) {
+        if (ImGui.checkbox(context.getRegisteredObj(TranslationBackpack.class).getTranslation(this.label + ".title", Locale.getDefault()), this.ptr)) {
             if (this.ptr.get() != this.value.get()) {
                 Controller controller = context.getWindowManager().getController();
                 if (controller.isActive()) {

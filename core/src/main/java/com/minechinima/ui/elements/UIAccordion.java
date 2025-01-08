@@ -1,9 +1,11 @@
 package com.minechinima.ui.elements;
 
+import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 
 import java.util.LinkedList;
+import java.util.Locale;
 
 public class UIAccordion extends UIGroup {
     private final String label;
@@ -19,7 +21,7 @@ public class UIAccordion extends UIGroup {
 
     @Override
     protected void draw(UIContext context) {
-        if (ImGui.collapsingHeader(this.label)) {
+        if (ImGui.collapsingHeader(context.getRegisteredObj(TranslationBackpack.class).getTranslation(this.label + ".title", Locale.getDefault()))) {
             for (UIElement child : this.children) {
                 child.draw(context);
             }
