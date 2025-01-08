@@ -10,6 +10,7 @@ import com.minechinima.operator.OperatorContext;
 import com.minechinima.operator.OperatorFactory;
 import com.minechinima.operator.OperatorManager;
 import com.minechinima.rendering.IWindow;
+import com.minechinima.ui.elements.UIElement;
 import com.minechinima.ui.elements.UIWindow;
 import com.minechinima.ui.input.IOEventManager;
 import imgui.flag.ImGuiKey;
@@ -34,14 +35,15 @@ public class UIManager<C extends OperatorContext> {
     private UIWindow<C> active = null;
     private UIWindow<C> hovered = null;
 
-    public UIManager(IWindow renderingWindow, ImguiLoader imguiLoader,
-                     OperatorConfiguration<C> configuration, OperatorFactory<C> factory,
-                     Controller controller) {
+    public UIElement test;
+
+    public UIManager(IWindow renderingWindow, ImguiLoader imguiLoader, OperatorManager<C> operatorManager) {
         this.historyManager = new HistoryManager();
         this.renderingWindow = renderingWindow;
         this.loader = imguiLoader;
         this.ioEventManager = new IOEventManager();
-        this.operatorManager = new OperatorManager<>(this, factory, configuration, controller);
+        this.operatorManager = operatorManager;
+        this.operatorManager.setUIManager(this);
         this.ioEventManager.registerListener(this.operatorManager);
     }
 
@@ -80,6 +82,7 @@ public class UIManager<C extends OperatorContext> {
         for (UIWindow<C> window : this.windows) {
             context.setWindow(window);
             window.render(context);
+            if (this.test != null) this.test.render(context);
         }
         this.loader.endFrame();
     }

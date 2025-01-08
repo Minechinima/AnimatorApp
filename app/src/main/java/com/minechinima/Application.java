@@ -16,8 +16,6 @@ import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.scene.Scene;
 import com.minechinima.operator.*;
-import com.minechinima.operator.defaults.RedoOperator;
-import com.minechinima.operator.defaults.UndoOperator;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.BBOperatorContext;
@@ -40,6 +38,7 @@ import org.lwjgl.system.*;
 
 import java.nio.*;
 import java.util.Locale;
+import java.util.logging.Logger;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -57,14 +56,17 @@ public class Application {
     };
     /* ui layer*/
     private final UIManager<BBOperatorContext> uiManager;
+    private final OperatorManager<BBOperatorContext> operatorManager;
     /* data layer */
     private final Controller controller;
     private final BBDataTreeManager dataTree;
     private LWJGLInputEventManager inputEventManager;
     private final UIHandlerRegistry handlerRegistry;
     private final TranslationBackpack translationBackpack;
+    private final Logger logger;
 
     public Application() {
+        this.logger = Logger.getLogger("test");
         EventTypeRegistry dataEventTypes = new EventTypeRegistry();
         EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
         this.dataTree = new BBDataTreeManager(dataEventTypes);
@@ -73,22 +75,19 @@ public class Application {
         translationBackpack = new TranslationBackpack();
 
         this.controller = new Controller(this.dataTree);
-        OperatorFactory<BBOperatorContext> opFactory = new OperatorFactory<>();
+        OperatorFactory opFactory = new OperatorFactory(this.logger);
         OperatorConfiguration<BBOperatorContext> opConfig = new OperatorConfiguration<>();
 
-        OTDeleteObject delOT = new OTDeleteObject("delete", "a");
-        opFactory.register(delOT, OperatorDeleteObject::new);
-        opConfig.keyConfig.put(Input.KEY_DELETE, delOT);
+        OTTranslateObject tr = new OTTranslateObject("translate", "move object");
+        opFactory.register(tr, TranslateObject::new);
+        opConfig.keyConfig.put(Input.KEY_G, tr);
 
-        OTDeleteObject undoT = new OTDeleteObject("undo", "a");
-        opFactory.register(undoT, UndoOperator::new);
-        opConfig.keyConfig.put(Input.KEY_Z, undoT);
+        OTDeleteObject del = new OTDeleteObject("delete", "delete object");
+        opFactory.register(del, DeleteObject::new);
+        opConfig.keyConfig.put(Input.KEY_DELETE, del);
 
-        OTDeleteObject redoT = new OTDeleteObject("redo", "a");
-        opFactory.register(redoT, RedoOperator::new);
-        opConfig.keyConfig.put(Input.KEY_Y, redoT);
-
-        this.uiManager = new UIManager<>(this.windowProvider, new ImguiLoader(), opConfig, opFactory, this.controller);
+        this.operatorManager = new OperatorManager<>(opFactory, opConfig, this.controller);
+        this.uiManager = new UIManager<>(this.windowProvider, new ImguiLoader(), this.operatorManager);
     }
 
     public void init() {
@@ -134,7 +133,6 @@ public class Application {
 
         this.uiManager.init(inputEventManager);
         BBOperatorContext ctx = new BBOperatorContext(new UIOperatorContext(),new BBContext("context", this.dataTree.getRoot().data));
-        ctx.uiManager = this.uiManager;
         this.uiManager.windows.add(new BBUIWindow(ctx));
 
         BBDatabase db = this.dataTree.getRoot().data;
