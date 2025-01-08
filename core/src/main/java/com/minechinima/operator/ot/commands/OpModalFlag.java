@@ -1,11 +1,11 @@
-package com.minechinima.operator.flags;
+package com.minechinima.operator.ot.commands;
 
 public enum OpModalFlag {
     CANCELLED,
     FINISHED,
     MODAL_RUNNING;
 
-    public OpModalFlag from(OpExecuteFlag flag) {
+    public static OpModalFlag from(OpExecuteFlag flag) {
         return switch (flag) {
             case FINISHED -> FINISHED;
             case CANCELLED -> CANCELLED;

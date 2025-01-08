@@ -1,4 +1,4 @@
-package com.minechinima.operator.flags;
+package com.minechinima.operator.ot.commands;
 
 public enum OpInvokeFlag {
     /**
@@ -22,7 +22,7 @@ public enum OpInvokeFlag {
      */
     MODAL_RUNNING;
 
-    public OpInvokeFlag from(OpExecuteFlag flag) {
+    public static OpInvokeFlag from(OpExecuteFlag flag) {
         return switch (flag) {
             case FINISHED -> FINISHED;
             case CANCELLED -> CANCELLED;

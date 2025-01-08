@@ -1,14 +1,19 @@
 package com.minechinima.operator;
 
 import com.minechinima.controller.Controller;
-import com.minechinima.controller.ControllerResult;
-import com.minechinima.model.base.BaseValueHierarchy;
+import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.ot.AbstractOperatorType;
+import com.minechinima.operator.ot.UIOperatorType;
+import com.minechinima.operator.ot.commands.IOperator;
+import com.minechinima.operator.ot.commands.IPropertyOperator;
 import com.minechinima.ui.UIManager;
 import com.minechinima.ui.elements.UIWindow;
 import com.minechinima.ui.input.IOEventListener;
 import com.minechinima.ui.input.events.IOEvent;
 import com.minechinima.ui.input.events.IOKeyboardEvent;
 import com.minechinima.ui.input.events.IOMouseEvent;
+import com.minechinima.utils.Pair;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Manages running operators, handles triggering them and state changes.
@@ -16,77 +21,149 @@ import com.minechinima.ui.input.events.IOMouseEvent;
  * This is the only place an Operator can be instantiated and triggered correctly.
  */
 public class OperatorManager<C extends OperatorContext> implements IOEventListener {
-    private final OperatorFactory<C> factory;
+    private final OperatorFactory factory;
     private final OperatorConfiguration<C> config;
-    private final UIManager<C> uiManager;
+    @Nullable
+    private UIManager<C> uiManager;
     /**
      * Do not expose it, as it would violate layered architecture.
      */
     private final Controller controller;
 
-    public OperatorManager(UIManager<C> uiManager, OperatorFactory<C> factory, OperatorConfiguration<C> config, Controller controller) {
-        this.uiManager = uiManager;
+    private Pair<UIOperatorType, IOperator<UIOperatorContext>> runningUIOp;
+    private Pair<AbstractOperatorType<C, ?>, IOperator<C>> runningAppOp;
+
+    public OperatorManager(OperatorFactory factory, OperatorConfiguration<C> config, Controller controller) {
+        this(null, factory, config, controller);
+    }
+
+    public OperatorManager(UIManager<C> uiManager, OperatorFactory factory, OperatorConfiguration<C> config, Controller controller) {
         this.config = config;
         this.controller = controller;
         this.factory = factory;
+        this.uiManager = uiManager;
     }
 
-    public <T extends OperatorProperties> void execute(OperatorType<C, T> type) {
-        if (!this.factory.hasType(type)) return;
+    public void setUIManager(UIManager<C> uiManager) {
+        this.uiManager = uiManager;
+    }
 
+    private boolean poll(AbstractOperatorType<?, ?> type) throws UserException {
         final UIWindow<C> hovered;
-        final Operator<T, C> op;
 
-        if ((hovered = this.uiManager.getCurrentlyHoveredWindow()) == null
-                || (op = this.factory.createOperator(type)) == null) {
+        if ((hovered = this.uiManager.getCurrentlyHoveredWindow()) == null) {
+            return false;
+        }
+
+        if (type instanceof UIOperatorType uiOT) {
+            return uiOT.poll(hovered.context.uiContext);
+        } else {
+            return ((AbstractOperatorType<C, ?>) type).poll(hovered.context);
+        }
+    }
+
+    /*
+     * EXECUTE
+     */
+
+    public <OT extends AbstractOperatorType<C, AbstractOperatorType<C, ?>>> void execute(OT type) {
+        this._executeOT(type, null);
+    }
+
+    public <P extends OperatorProperties,
+            OT extends AbstractOperatorType<C, AbstractOperatorType<C, ?>> & AbstractOperatorType.PropertyProvider<P>>
+    void execute(OT type, P props) {
+        this._executeOT(type, props);
+    }
+
+    public void execute(UIOperatorType type) {
+        this._executeOT(type, null);
+    }
+
+    public <P extends OperatorProperties,
+            OT extends UIOperatorType & AbstractOperatorType.PropertyProvider<P>>
+    void execute(OT type, P props) {
+        this._executeOT(type, props);
+    }
+
+    private <CTX,
+            P extends OperatorProperties,
+            OTP extends AbstractOperatorType<CTX, ?> & AbstractOperatorType.PropertyProvider<P>,
+            OT extends AbstractOperatorType<CTX, ?>>
+    void _executeOT(OT type, P props) {
+        try {
+            if (!this.poll(type)) return;
+        } catch (UserException e) {
+            e.printStackTrace();
+        }
+
+        this._execute(type, props == null ? this.factory.getOperator(type) : this.factory.getOperator((OTP) type, props));
+    }
+
+    private void _execute(AbstractOperatorType type, @Nullable IOperator op) {
+        if (op == null) return;
+        final UIWindow<C> hovered;
+
+        if (op == null || (hovered = this.uiManager.getCurrentlyHoveredWindow()) == null) {
             return;
         }
 
-        this.uiManager.setActiveWindow(hovered);
-
-        ControllerResult result = this.controller.executeNewTransaction(this.uiManager.getHistoryManager(),
-                type.title,
-                () -> op.execute(hovered.context));
-        System.out.println(result.userMessage());
-        if (result.exception() != null)
-        result.exception().printStackTrace();
+        try {
+            op.execute(hovered.context);
+        } catch (UserException e) {
+            e.printStackTrace();
+        }
     }
 
-    public <T extends OperatorProperties> void execute(OperatorType<C, T> type, T props) {
-        if (!this.factory.hasType(type)) return;
+    /*
+     * INVOKE
+     */
 
+    public <P extends OperatorProperties,
+            OT extends AbstractOperatorType<C, AbstractOperatorType<C, ?>> & AbstractOperatorType.PropertyProvider<P>>
+    void invoke(OT type, P props) {
+        this._invokeOT(type, props);
+    }
+
+    public <OT extends AbstractOperatorType<C, ?>> void invoke(OT type) {
+        this._invokeOT(type);
+    }
+
+    public void invoke(UIOperatorType type) {
+        this._invokeOT(type);
+    }
+
+    public <P extends OperatorProperties,
+            OT extends UIOperatorType & AbstractOperatorType.PropertyProvider<P>>
+    void invoke(OT type, P props) {
+        this._invokeOT(type, props);
+    }
+
+    private <CTX> void _invokeOT(AbstractOperatorType<CTX, ?> type) {
+        this._invoke(type, this.factory.getOperator(type));
+    }
+
+    private <CTX,
+            P extends OperatorProperties,
+            OTP extends AbstractOperatorType<CTX, ?> & AbstractOperatorType.PropertyProvider<P>,
+            OT extends AbstractOperatorType<CTX, ?>>
+    void _invokeOT(OT type, @Nullable P props) {
+        this._invoke(type, props == null ? this.factory.getOperator(type) : this.factory.getOperator((OTP) type, props));
+    }
+
+    private void _invoke(AbstractOperatorType type, @Nullable IOperator op) {
+        if (op == null) return;
         final UIWindow<C> hovered;
-        final Operator<T, C> op;
 
-        if ((hovered = this.uiManager.getCurrentlyHoveredWindow()) == null
-                || (op = this.factory.createOperator(type, props)) == null) {
+        if (op == null || (hovered = this.uiManager.getCurrentlyHoveredWindow()) == null) {
             return;
         }
 
-        ControllerResult result = this.controller.executeNewTransaction(this.uiManager.getHistoryManager(),
-                type.title,
-                () -> op.execute(hovered.context));
-        System.out.println(result.userMessage());
-    }
-
-    public <T extends OperatorProperties> void invoke(OperatorType<C, T> type, T props) {
-
-    }
-
-    public void undo() {
-        this.uiManager.getHistoryManager().undo(this.controller, this.controller.getDataTree().getRoot());
-    }
-
-    public void undo(BaseValueHierarchy<?> relative) {
-        this.uiManager.getHistoryManager().undo(this.controller, relative);
-    }
-
-    public void redo(BaseValueHierarchy<?> relative) {
-        this.uiManager.getHistoryManager().redo(this.controller, relative);
-    }
-
-    public void redo() {
-        this.uiManager.getHistoryManager().redo(this.controller, this.controller.getDataTree().getRoot());
+        try {
+            op.invoke(hovered.context);
+        } catch (UserException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -96,15 +173,18 @@ public class OperatorManager<C extends OperatorContext> implements IOEventListen
 
     @Override
     public void onMouseIOEvent(IOMouseEvent event) {
-
+        if (this.runningAppOp != null) {
+            //on mouse movethis.runningAppOp.getB().modal();
+        }
     }
 
     @Override
     public void onKeyIOEvent(IOKeyboardEvent event) {
-        OperatorType<C, ?> type;
-        if ((type = config.keyConfig.get(event.key())) == null) {
+        AbstractOperatorType<C, ?> type;
+        if ((type = this.config.keyConfig.get(event.key())) == null) {
             return;
         }
-        this.execute(type);
+
+        this.invoke(type);
     }
 }
