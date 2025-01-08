@@ -22,6 +22,8 @@ public class IOEventManager {
         IOKeyboardEvent event = null;
         if (ImGui.isKeyPressed(Input.KEY_DELETE.imguiCode())) {
             event = new IOKeyboardEvent(Input.KEY_DELETE);
+        } else if (ImGui.isKeyPressed(Input.KEY_G.imguiCode())) {
+            event = new IOKeyboardEvent(Input.KEY_G);
         } else if (ImGui.isKeyPressed(Input.KEY_Z.imguiCode())) {
             event = new IOKeyboardEvent(Input.KEY_Z);
         } else if (ImGui.isKeyPressed(Input.KEY_Y.imguiCode())) {
