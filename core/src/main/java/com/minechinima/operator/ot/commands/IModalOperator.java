@@ -1,5 +1,6 @@
 package com.minechinima.operator.ot.commands;
 
+import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.CursorInfo;
 import com.minechinima.utils.Pair;
@@ -30,7 +31,7 @@ public interface IModalOperator<C> extends IOperator<C> {
      *
      * @throws UserException
      */
-    default Pair<Modal, Queue<Object>> modal(C context, CursorInfo cursorInfo) throws UserException {
+    default Pair<Modal, Queue<IControllerCommand>> modal(C context, CursorInfo cursorInfo) throws UserException {
         /*
          * throw exception by default to debug incorrect handling / implementation of the states
          * e.g. invoke() returning MODAL without modal implementation
