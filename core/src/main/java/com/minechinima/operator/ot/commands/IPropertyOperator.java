@@ -1,5 +1,6 @@
 package com.minechinima.operator.ot.commands;
 
+import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.OperatorProperties;
@@ -28,7 +29,7 @@ public interface IPropertyOperator<C, P extends OperatorProperties> extends IOpe
      * @return
      * @throws UserException
      */
-    Pair<OpExecuteFlag, Queue<Object>> executeOnPropChange(C context, BaseStructure changedProp) throws UserException;
+    Pair<OpExecuteFlag, Queue<IControllerCommand>> executeOnPropChange(C context, BaseStructure changedProp) throws UserException;
 
     /**
      * Called when the Operator was running in UI Mode but the UI and Operator are canceled.

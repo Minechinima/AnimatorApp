@@ -1,5 +1,6 @@
 package com.minechinima.operator.ot.commands;
 
+import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.OperatorContext;
 import com.minechinima.utils.Pair;
@@ -15,5 +16,5 @@ public interface IRepeatableOperator<C> extends IOperator<C> {
      * Called when the operator is repeated from the history
      * @param context
      */
-    Pair<OpExecuteFlag, Queue<Object>> repeat(C context) throws UserException;
+    Pair<OpExecuteFlag, Queue<IControllerCommand>> repeat(C context) throws UserException;
 }

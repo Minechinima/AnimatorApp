@@ -1,5 +1,6 @@
 package com.minechinima.operator.ot.commands;
 
+import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.OperatorContext;
@@ -21,7 +22,7 @@ public interface IAdjustableOperator<C, P extends OperatorProperties> extends IP
      * @param context
      * @param prop the property that was changed
      */
-    Pair<OpExecuteFlag, Queue<Object>> adjust(C context, BaseStructure prop) throws UserException;
+    Pair<OpExecuteFlag, Queue<IControllerCommand>> adjust(C context, BaseStructure prop) throws UserException;
 
     /**
      * Called when the adjust last action is confirmed and the UI is closed.
@@ -30,7 +31,7 @@ public interface IAdjustableOperator<C, P extends OperatorProperties> extends IP
      * @param context
      * @return
      */
-    Pair<OpExecuteFlag, Queue<Object>> confirmAdjustment(C context) throws UserException;
+    Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmAdjustment(C context) throws UserException;
 
     /**
      * Called when the adjust last action is canceled and the UI is closed.
