@@ -1,6 +1,5 @@
 package com.minechinima.ui.elements;
 
-import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
 import com.minechinima.ui.UIContext;
 import imgui.internal.ImGui;
@@ -18,7 +17,7 @@ public class UIVectorElement extends UIValueElement<Vector3f, Vector3fValue> {
 
     @Override
     protected void drawElement(UIContext context) {
-        ImGui.text(this.title);
+        ImGui.text(context.getTranslationBackpack().getTranslation(this.title + ".title", context.getLocale()));
         this.x.init(this.value.x).render(context);
         this.y.init(this.value.y).render(context);
         this.z.init(this.value.z).render(context);
