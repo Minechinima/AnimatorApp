@@ -5,7 +5,6 @@ import com.minechinima.ui.IchBinEinsParentUIHandler;
 import com.minechinima.ui.UIContext;
 import com.minechinima.ui.annotation.IUIHandler;
 import com.minechinima.ui.elements.UIElement;
-import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 
 public abstract class UIPropertyContext<T extends BaseStructure> extends UIElement implements IUIPropertyContext {
     private T context;
@@ -46,13 +45,13 @@ public abstract class UIPropertyContext<T extends BaseStructure> extends UIEleme
     protected abstract void drawBody(UIContext context);
 
     protected final void drawFromEntryPoint(Class<? extends IUIHandler<T>> entryPointClass, UIContext context) {
-        for (IUIHandler<T> entryPoint : context.getRegisteredObj(UIHandlerRegistry.class).getHandlersFor(entryPointClass)) {
+        for (IUIHandler<T> entryPoint : context.getUiHandlerRegistry().getHandlersFor(entryPointClass)) {
             entryPoint.draw(context, this.context);
         }
     }
 
     protected final void drawFromObject(UIContext context) {
-        Iterable<IchBinEinsParentUIHandler> handlers = context.getRegisteredObj(UIHandlerRegistry.class).getHandlersFor(IchBinEinsParentUIHandler.class, this.context);
+        Iterable<IchBinEinsParentUIHandler> handlers = context.getUiHandlerRegistry().getHandlersFor(IchBinEinsParentUIHandler.class, this.context);
         for (IchBinEinsParentUIHandler entryPoint : handlers) {
             entryPoint.draw(context, this.context);
         }
