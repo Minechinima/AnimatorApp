@@ -13,6 +13,7 @@ import com.minechinima.ui.UIContext;
 import com.minechinima.ui.WindowManager;
 import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.*;
+import com.minechinima.ui.panels.UIViewport;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
@@ -114,6 +115,7 @@ public class Application {
 
         context.getPanelFactory().registerUIPanel("properties", () -> new UIPropertiesPanel("properties"));
         context.getPanelFactory().registerUIPanel("outliner", () -> new UIOutlinerPanel("outliner"));
+        context.getPanelFactory().registerUIPanel("viewport", () -> new UIViewport("viewport"));
 
         while ( !glfwWindowShouldClose(window[0]) ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
