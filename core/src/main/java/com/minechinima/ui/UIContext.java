@@ -3,6 +3,7 @@ package com.minechinima.ui;
 import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import imgui.ImGui;
 import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiMouseButton;
@@ -21,6 +22,7 @@ public class UIContext {
     private final HashMap<Class<?>, Object> registry = new HashMap<>();
     private final TranslationBackpack translationBackpack;
     private Locale locale = Locale.getDefault();
+    private final UIHandlerRegistry uiHandlerRegistry;
     private float mouseX;
     private float mouseY;
     private float mouseMoveX;
@@ -31,10 +33,11 @@ public class UIContext {
     private final Set<Integer> mouseKeysDown = new HashSet<>();
     private float partialTicks;
 
-    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack) {
+    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack, UIHandlerRegistry uiHandlerRegistry) {
         this.window = window;
         this.manager = manager;
         this.imguiContext = imguiContext;
+        this.uiHandlerRegistry = uiHandlerRegistry;
         this.translationBackpack = translationBackpack;
     }
 
@@ -106,6 +109,10 @@ public class UIContext {
 
     public void setLocale(Locale locale) {
         this.locale = locale;
+    }
+  
+    public UIHandlerRegistry getUiHandlerRegistry() {
+        return this.uiHandlerRegistry;
     }
 
     /**

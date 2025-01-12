@@ -15,6 +15,7 @@ import com.minechinima.ui.UIContext;
 import com.minechinima.ui.WindowManager;
 import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.*;
+import com.minechinima.ui.panels.UIViewport;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
@@ -112,14 +113,11 @@ public class Application {
 
     public void loop() {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader, translationBackpack);
+        
+        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader, translationBackpack, new UIHandlerRegistry());
         context.register(new PropertyContextRegistry());
-        // Register EntryPointRegistry
-        context.register(handlerRegistry);
-        context.register(translationBackpack);
-
         context.setLocale(Locale.GERMAN);
-
+      
         PropertyContextRegistry propertyPanelRegistry = context.getRegisteredObj(PropertyContextRegistry.class);
         propertyPanelRegistry.registerUIPropertyContext(new UICameraProperties());
         propertyPanelRegistry.registerUIPropertyContext(new UIEntityProperties());
@@ -128,6 +126,7 @@ public class Application {
 
         context.getPanelFactory().registerUIPanel("properties", () -> new UIPropertiesPanel("properties"));
         context.getPanelFactory().registerUIPanel("outliner", () -> new UIOutlinerPanel("outliner"));
+        context.getPanelFactory().registerUIPanel("viewport", () -> new UIViewport("viewport"));
 
         while ( !glfwWindowShouldClose(window[0]) ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
