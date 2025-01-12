@@ -2,6 +2,7 @@ package com.minechinima.ui;
 
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import imgui.ImGui;
 import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiMouseButton;
@@ -17,6 +18,7 @@ public class UIContext {
     private UIWindow currentWindow;
     private final UIPanelFactory panelFactory = new UIPanelFactory();
     private final HashMap<Class<?>, Object> registry = new HashMap<>();
+    private final UIHandlerRegistry uiHandlerRegistry;
     private float mouseX;
     private float mouseY;
     private float mouseMoveX;
@@ -27,10 +29,11 @@ public class UIContext {
     private final Set<Integer> mouseKeysDown = new HashSet<>();
     private float partialTicks;
 
-    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext) {
+    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext, UIHandlerRegistry uiHandlerRegistry) {
         this.window = window;
         this.manager = manager;
         this.imguiContext = imguiContext;
+        this.uiHandlerRegistry = uiHandlerRegistry;
     }
 
     void setWindow(UIWindow window) {
@@ -89,6 +92,10 @@ public class UIContext {
 
     public UIPanelFactory getPanelFactory() {
         return this.panelFactory;
+    }
+
+    public UIHandlerRegistry getUiHandlerRegistry() {
+        return this.uiHandlerRegistry;
     }
 
     /**

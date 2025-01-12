@@ -102,10 +102,8 @@ public class Application {
 
     public void loop() {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader);
+        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader, new UIHandlerRegistry());
         context.register(new PropertyContextRegistry());
-        // Register EntryPointRegistry
-        context.register(new UIHandlerRegistry());
 
         PropertyContextRegistry propertyPanelRegistry = context.getRegisteredObj(PropertyContextRegistry.class);
         propertyPanelRegistry.registerUIPropertyContext(new UICameraProperties());

@@ -1,5 +1,7 @@
 package com.minechinima.ui.elements.properties;
 
+import com.minechinima.model.base.BaseStructure;
+
 import java.util.*;
 
 /**
@@ -42,7 +44,7 @@ public class PropertyContextRegistry {
         return collected;
     }
 
-    public <T> Set<UIPropertyContext<? super T>> getReadyToShowContexts(T context) {
+    public <T extends BaseStructure> Set<UIPropertyContext<? super T>> getReadyToShowContexts(T context) {
         Set<UIPropertyContext<? super T>> collected = Collections.newSetFromMap(new IdentityHashMap<>());
 
         if (context == null) return collected;
