@@ -20,7 +20,7 @@ public class UICheckBox extends UIValueElement<Boolean, BooleanValue> {
     @Override
     protected void drawElement(UIContext context) {
         this.ptr.set(this.value.get());
-        if (ImGui.checkbox(context.getRegisteredObj(TranslationBackpack.class).getTranslation(this.label + ".title", Locale.getDefault()), this.ptr)) {
+        if (ImGui.checkbox(context.getTranslationBackpack().getTranslation(this.label + ".title", context.getLocale()), this.ptr)) {
             if (this.ptr.get() != this.value.get()) {
                 Controller controller = context.getWindowManager().getController();
                 if (controller.isActive()) {

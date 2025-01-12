@@ -1,5 +1,6 @@
 package com.minechinima.ui;
 
+import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIWindow;
 import imgui.ImGui;
@@ -8,6 +9,7 @@ import imgui.flag.ImGuiMouseButton;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public class UIContext {
@@ -17,6 +19,8 @@ public class UIContext {
     private UIWindow currentWindow;
     private final UIPanelFactory panelFactory = new UIPanelFactory();
     private final HashMap<Class<?>, Object> registry = new HashMap<>();
+    private final TranslationBackpack translationBackpack;
+    private Locale locale = Locale.getDefault();
     private float mouseX;
     private float mouseY;
     private float mouseMoveX;
@@ -27,10 +31,11 @@ public class UIContext {
     private final Set<Integer> mouseKeysDown = new HashSet<>();
     private float partialTicks;
 
-    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext) {
+    public UIContext(IWindow window, WindowManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack) {
         this.window = window;
         this.manager = manager;
         this.imguiContext = imguiContext;
+        this.translationBackpack = translationBackpack;
     }
 
     void setWindow(UIWindow window) {
@@ -87,8 +92,20 @@ public class UIContext {
         return this.imguiContext;
     }
 
+    public TranslationBackpack getTranslationBackpack() {
+        return this.translationBackpack;
+    }
+
     public UIPanelFactory getPanelFactory() {
         return this.panelFactory;
+    }
+
+    public Locale getLocale() {
+        return this.locale;
+    }
+
+    public void setLocale(Locale locale) {
+        this.locale = locale;
     }
 
     /**

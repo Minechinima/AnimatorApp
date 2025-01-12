@@ -55,8 +55,8 @@ public class Application {
     }
 
     public void init() {
-        Locale.setDefault(Locale.GERMANY);
-        translationBackpack.loadTranslations(new ClasspathBundleProvider("com/minechinima/base", getClass()), Locale.getDefault());
+        translationBackpack.loadTranslations(new ClasspathBundleProvider("com/minechinima/base", getClass()), Locale.GERMANY);
+        translationBackpack.loadTranslations(new ClasspathBundleProvider("com/minechinima/base", getClass()), Locale.US);
 
         GLFWErrorCallback.createPrint(System.err).set();
 
@@ -112,11 +112,13 @@ public class Application {
 
     public void loop() {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader);
+        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader, translationBackpack);
         context.register(new PropertyContextRegistry());
         // Register EntryPointRegistry
         context.register(handlerRegistry);
         context.register(translationBackpack);
+
+        context.setLocale(Locale.GERMAN);
 
         PropertyContextRegistry propertyPanelRegistry = context.getRegisteredObj(PropertyContextRegistry.class);
         propertyPanelRegistry.registerUIPropertyContext(new UICameraProperties());

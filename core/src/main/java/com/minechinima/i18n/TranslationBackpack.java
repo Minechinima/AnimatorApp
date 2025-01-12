@@ -13,19 +13,23 @@ public class TranslationBackpack {
         assert provider != null;
         assert locale != null;
 
-        Locale desiredLocale = locale;
-
-        ResourceBundle bundle = provider.load(desiredLocale);
+        ResourceBundle bundle = provider.load(locale);
         assert bundle != null;
+
+        loadTranslations(bundle, locale);
+        if (locale.getCountry() != null) {
+            loadTranslations(bundle, Locale.forLanguageTag(locale.getLanguage()));
+        }
+    }
+
+    private void loadTranslations(@NotNull ResourceBundle bundle, @NotNull Locale locale) {
+        assert bundle != null;
+        assert locale != null;
 
         TranslationList translationList = bundles.get(locale);
         if (translationList == null) {
-            desiredLocale = locale.stripExtensions();
-            translationList = bundles.get(desiredLocale);
-        }
-        if (translationList == null) {
             translationList = new TranslationList();
-            bundles.put(desiredLocale, translationList);
+            bundles.put(locale, translationList);
         }
 
         translationList.addTranslations(bundle);
