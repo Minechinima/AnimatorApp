@@ -8,7 +8,6 @@ import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.UICheckBox;
 import com.minechinima.ui.elements.UIPointerTargetSelector;
 import imgui.ImGui;
-import imgui.flag.ImGuiTreeNodeFlags;
 
 public class UIObjectProperties extends UIPropertyContext<BaseObject> {
     private final UICheckBox viewportHidden = new UICheckBox("viewport visibility");
@@ -32,6 +31,7 @@ public class UIObjectProperties extends UIPropertyContext<BaseObject> {
     @Override
     protected void drawBody(UIContext context) {
         drawFromEntryPoint(UIObjectPropertiesHandler.class, context);
+        drawFromObject(context);
 
         if (ImGui.collapsingHeader("Relations")) {
             this.parent.setSourceList(((BBUIWindow)context.getCurrentWindow()).context.database.objects);
