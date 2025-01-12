@@ -1,8 +1,6 @@
 package com.minechinima.ui.adapters.lwjgl;
 
-import com.minechinima.input.raw.IInputEventListener;
-import com.minechinima.input.raw.InputEvent;
-import com.minechinima.input.raw.InputType;
+import com.minechinima.input.raw.*;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import imgui.*;
 import imgui.callback.*;
@@ -14,7 +12,7 @@ import org.lwjgl.system.Callback;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public class ImGuiImplGlfw implements IInputEventListener {
+public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IScrollEventListener {
     protected static final String OS = System.getProperty("os.name", "generic").toLowerCase();
     protected static final boolean IS_WINDOWS;
     protected static final boolean IS_APPLE;
@@ -37,7 +35,9 @@ public class ImGuiImplGlfw implements IInputEventListener {
     public ImGuiImplGlfw(LWJGLInputEventManager inputEventManager) {
         this.inputEventManager = inputEventManager;
 
-        inputEventManager.addListener(this);
+        inputEventManager.addListener((IKeyEventListener) this);
+        inputEventManager.addListener((IMouseEventListener) this);
+        inputEventManager.addListener((IScrollEventListener) this);
     }
 
     protected ImStrSupplier getClipboardTextFn() {
@@ -486,15 +486,15 @@ public class ImGuiImplGlfw implements IInputEventListener {
         }
     }
 
-    protected void updateKeyModifiers(InputEvent event) {
+    protected void updateKeyModifiers(KeyEvent event) {
         ImGuiIO io = ImGui.getIO();
-        io.addKeyEvent(641, event.ctrlPressed());
-        io.addKeyEvent(642, event.shiftPressed());
-        io.addKeyEvent(643, event.altPressed());
-        io.addKeyEvent(644, event.superPressed());
+        //io.addKeyEvent(641, event.ctrlPressed());
+        //io.addKeyEvent(642, event.shiftPressed());
+        //io.addKeyEvent(643, event.altPressed());
+        //io.addKeyEvent(644, event.superPressed());
     }
 
-    public void mouseButtonCallback(InputEvent event) {
+    public void mouseButtonCallback(KeyEvent event) {
         /*
         if (this.data.prevUserCallbackMousebutton != null && window == this.data.window) {
             this.data.prevUserCallbackMousebutton.invoke(window, button, action, mods);
@@ -552,7 +552,7 @@ public class ImGuiImplGlfw implements IInputEventListener {
         }
     }
 
-    public void keyCallback(InputEvent event) {
+    public void keyCallback(KeyEvent event) {
         /*
         if (this.data.prevUserCallbackKey != null && window == this.data.window) {
             this.data.prevUserCallbackKey.invoke(window, keycode, scancode, action, mods);
@@ -1036,11 +1036,8 @@ public class ImGuiImplGlfw implements IInputEventListener {
     }
 
     @Override
-    public void onInputEvent(InputEvent event) {
+    public void onKey(KeyEvent event) {
         switch (event.inputType()) {
-            case MOVE -> {
-                this.cursorPosCallback(event.window(), event.x(), event.y());
-            }
             case PRESS, RELEASE, REPEAT -> {
                 if (event.currentKey().isMouse()) {
                     this.mouseButtonCallback(event);
@@ -1048,10 +1045,17 @@ public class ImGuiImplGlfw implements IInputEventListener {
                     this.keyCallback(event);
                 }
             }
-            case SCROLL -> {
-                this.scrollCallback(event.window(), event.x(), event.y());
-            }
         }
+    }
+
+    @Override
+    public void onMouse(MouseEvent event) {
+        this.cursorPosCallback(event.window(), event.x(), event.y());
+    }
+
+    @Override
+    public void onScroll(ScrollEvent event) {
+        this.scrollCallback(event.window(), event.xOffset(), event.yOffset());
     }
 
     protected static class Data {

@@ -1,7 +1,6 @@
 package com.minechinima;
 
-import com.minechinima.input.raw.IInputEventManager;
-import com.minechinima.input.raw.InputEvent;
+import com.minechinima.input.raw.KeyEvent;
 import com.minechinima.input.raw.InputType;
 import com.minechinima.input.raw.Key;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
@@ -136,7 +135,7 @@ public class Application {
         glfwSetErrorCallback(null).free();
     }
 
-    private void closeOnEscape(InputEvent event) {
+    private void closeOnEscape(KeyEvent event) {
         if (event.currentKey() != Key.KEY_ESCAPE) {
             return;
         }
@@ -148,7 +147,7 @@ public class Application {
         glfwSetWindowShouldClose(window[0], true);
     }
 
-    private void debugInputEvent(InputEvent event) {
+    private void debugInputEvent(KeyEvent event) {
         //System.out.println(event.toString());
     }
 }

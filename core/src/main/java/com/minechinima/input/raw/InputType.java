@@ -20,12 +20,4 @@ public enum InputType {
      * Represents a key repeat (keyboard)
      */
     REPEAT,
-    /**
-     * Represents a mouse scroll
-     */
-    SCROLL,
-    /**
-     * Represents a mouse move
-     */
-    MOVE;
 }

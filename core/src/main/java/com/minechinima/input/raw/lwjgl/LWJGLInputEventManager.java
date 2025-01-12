@@ -1,9 +1,6 @@
 package com.minechinima.input.raw.lwjgl;
 
-import com.minechinima.input.raw.AbstractInputEventManager;
-import com.minechinima.input.raw.InputEvent;
-import com.minechinima.input.raw.InputType;
-import com.minechinima.input.raw.Key;
+import com.minechinima.input.raw.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -22,62 +19,17 @@ public class LWJGLInputEventManager extends AbstractInputEventManager {
 
     public void onKey(long window, int key, int scancode, int action, int mods) {
         Key currentKey = getKeyboardKey(key);
-
-        InputType inputType = switch (action) {
-            case GLFW_PRESS -> InputType.PRESS;
-            case GLFW_RELEASE -> InputType.RELEASE;
-            case GLFW_REPEAT -> InputType.REPEAT;
-            default -> InputType.UNKNOWN;
-        };
-
-        InputEvent event = new InputEvent(
-                currentKey,
-                inputType,
-                0, 0,
-                testControl(mods),
-                testShift(mods),
-                testAlt(mods),
-                testSuper(mods),
-                testCapsLock(mods),
-                testNumLock(mods),
-                window
-        );
-
-        notifyListeners(event);
+        sendInputEvent(window, action, currentKey);
     }
 
     public void onMouseButton(long window, int button, int action, int mods) {
         Key currentKey = getMouseButton(button);
-
-        InputType inputType = switch (action) {
-            case GLFW_PRESS -> InputType.PRESS;
-            case GLFW_RELEASE -> InputType.RELEASE;
-            case GLFW_REPEAT -> InputType.REPEAT;
-            default -> InputType.UNKNOWN;
-        };
-
-        InputEvent event = new InputEvent(
-                currentKey,
-                inputType,
-                0, 0,
-                testControl(mods),
-                testShift(mods),
-                testAlt(mods),
-                testSuper(mods),
-                testCapsLock(mods),
-                testNumLock(mods),
-                window
-        );
-
-        notifyListeners(event);
+        sendInputEvent(window, action, currentKey);
     }
 
-    public void onCursor(long window, double xpos, double ypos) {
-        InputEvent event = new InputEvent(
-                Key.KEY_UNKNOWN,
-                InputType.MOVE,
-                xpos, ypos,
-                false, false, false, false, false, false,
+    public void onCursor(long window, double x, double y) {
+        MouseEvent event = new MouseEvent(
+                x, y,
                 window
         );
 
@@ -85,43 +37,29 @@ public class LWJGLInputEventManager extends AbstractInputEventManager {
     }
 
     public void onScroll(long window, double xOffset, double yOffset) {
-        InputEvent event = new InputEvent(
-                Key.KEY_UNKNOWN,
-                InputType.SCROLL,
+        ScrollEvent event = new ScrollEvent(
                 xOffset, yOffset,
-                false, false, false, false, false, false,
                 window
         );
 
         notifyListeners(event);
     }
 
-    private boolean testControl(int mods) {
-        return testBit(mods, GLFW_MOD_CONTROL);
-    }
+    private void sendInputEvent(long window, int action, Key currentKey) {
+        InputType inputType = switch (action) {
+            case GLFW_PRESS -> InputType.PRESS;
+            case GLFW_RELEASE -> InputType.RELEASE;
+            case GLFW_REPEAT -> InputType.REPEAT;
+            default -> InputType.UNKNOWN;
+        };
 
-    private boolean testShift(int mods) {
-        return testBit(mods, GLFW_MOD_SHIFT);
-    }
+        KeyEvent event = new KeyEvent(
+                currentKey,
+                inputType,
+                window
+        );
 
-    private boolean testAlt(int mods) {
-        return testBit(mods, GLFW_MOD_ALT);
-    }
-
-    private boolean testSuper(int mods) {
-        return testBit(mods, GLFW_MOD_SUPER);
-    }
-
-    private boolean testCapsLock(int mods) {
-        return testBit(mods, GLFW_MOD_CAPS_LOCK);
-    }
-
-    private boolean testNumLock(int mods) {
-        return testBit(mods, GLFW_MOD_NUM_LOCK);
-    }
-
-    private boolean testBit(int value, int bit) {
-        return (value & bit) == bit;
+        notifyListeners(event);
     }
 
     private Key getMouseButton(int key) {
