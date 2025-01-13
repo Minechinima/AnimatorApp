@@ -66,8 +66,8 @@ public class Application {
             throw new RuntimeException("Failed to create the GLFW window");
 
         inputEventManager = new LWJGLInputEventManager(window[0]);
-        inputEventManager.addListener(this::closeOnEscape);
-        inputEventManager.addListener(this::debugInputEvent);
+        inputEventManager.addListener(this::closeOnEscape, KeyEvent.class);
+        inputEventManager.addListener(this::debugInputEvent, KeyEvent.class);
 
         try ( MemoryStack stack = stackPush() ) {
             IntBuffer pWidth = stack.mallocInt(1);
@@ -136,11 +136,11 @@ public class Application {
     }
 
     private void closeOnEscape(KeyEvent event) {
-        if (event.currentKey() != Key.KEY_ESCAPE) {
+        if (event.getCurrentKey() != Key.KEY_ESCAPE) {
             return;
         }
 
-        if (event.inputType() != InputType.RELEASE) {
+        if (event.getInputType() != InputType.RELEASE) {
             return;
         }
 

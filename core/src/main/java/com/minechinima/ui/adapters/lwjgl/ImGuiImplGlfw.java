@@ -12,7 +12,7 @@ import org.lwjgl.system.Callback;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IScrollEventListener {
+public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
     protected static final String OS = System.getProperty("os.name", "generic").toLowerCase();
     protected static final boolean IS_WINDOWS;
     protected static final boolean IS_APPLE;
@@ -35,9 +35,7 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
     public ImGuiImplGlfw(LWJGLInputEventManager inputEventManager) {
         this.inputEventManager = inputEventManager;
 
-        inputEventManager.addListener((IKeyEventListener) this);
-        inputEventManager.addListener((IMouseEventListener) this);
-        inputEventManager.addListener((IScrollEventListener) this);
+        inputEventManager.addListener(this, InputEvent.class);
     }
 
     protected ImStrSupplier getClipboardTextFn() {
@@ -503,7 +501,7 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
 
         this.updateKeyModifiers(event);
         ImGuiIO io = ImGui.getIO();
-        int button = switch (event.currentKey()) {
+        int button = switch (event.getCurrentKey()) {
             case MOUSE_BUTTON_1 -> 0;
             case MOUSE_BUTTON_2 -> 1;
             case MOUSE_BUTTON_3 -> 2;
@@ -514,7 +512,7 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
         };
 
         if (button >= 0 && button < 5) {
-            io.addMouseButtonEvent(button, event.inputType() == InputType.PRESS);
+            io.addMouseButtonEvent(button, event.getInputType() == InputType.PRESS);
         }
     }
 
@@ -559,7 +557,7 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
         }
          */
 
-        if (event.inputType() == InputType.PRESS || event.inputType() == InputType.RELEASE) {
+        if (event.getInputType() == InputType.PRESS || event.getInputType() == InputType.RELEASE) {
             this.updateKeyModifiers(event);
             /*
             if (keycode >= 0 && keycode < this.data.keyOwnerWindows.length) {
@@ -569,8 +567,8 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
 
             //int key = this.translateUntranslatedKey(keycode, scancode);
             ImGuiIO io = ImGui.getIO();
-            int imguiKey = this.glfwKeyToImGuiKey(event.currentKey().imguiCode());
-            io.addKeyEvent(imguiKey, event.inputType() == InputType.PRESS);
+            int imguiKey = this.glfwKeyToImGuiKey(event.getCurrentKey().imguiCode());
+            io.addKeyEvent(imguiKey, event.getInputType() == InputType.PRESS);
             //io.setKeyEventNativeData(imguiKey, k, scancode);
         }
     }
@@ -1036,10 +1034,20 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
     }
 
     @Override
+    public void onEvent(InputEvent event) {
+        if (event instanceof KeyEvent) {
+            this.onKey((KeyEvent) event);
+        } else if (event instanceof MouseEvent) {
+            this.onMouse((MouseEvent) event);
+        } else if (event instanceof ScrollEvent) {
+            this.onScroll((ScrollEvent) event);
+        }
+    }
+
     public void onKey(KeyEvent event) {
-        switch (event.inputType()) {
+        switch (event.getInputType()) {
             case PRESS, RELEASE, REPEAT -> {
-                if (event.currentKey().isMouse()) {
+                if (event.getCurrentKey().isMouse()) {
                     this.mouseButtonCallback(event);
                 } else {
                     this.keyCallback(event);
@@ -1048,14 +1056,12 @@ public class ImGuiImplGlfw implements IKeyEventListener, IMouseEventListener, IS
         }
     }
 
-    @Override
     public void onMouse(MouseEvent event) {
-        this.cursorPosCallback(event.window(), event.x(), event.y());
+        this.cursorPosCallback(event.getWindow(), event.getX(), event.getY());
     }
 
-    @Override
     public void onScroll(ScrollEvent event) {
-        this.scrollCallback(event.window(), event.xOffset(), event.yOffset());
+        this.scrollCallback(event.getWindow(), event.getXOffset(), event.getYOffset());
     }
 
     protected static class Data {

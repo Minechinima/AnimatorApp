@@ -1,61 +1,34 @@
 package com.minechinima.input.raw;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 
 public abstract class AbstractInputEventManager implements IInputEventManager {
-    private final List<IKeyEventListener> listeners = new ArrayList<>();
-    private final List<IMouseEventListener> mouseListeners = new ArrayList<>();
-    private final List<IScrollEventListener> scrollListeners = new ArrayList<>();
+    private final Multimap<Class<? extends InputEvent>, IInputEventListener<InputEvent>> listeners = LinkedListMultimap.create();
 
     @Override
-    public void addListener(IKeyEventListener listener) {
-        listeners.add(listener);
+    public <E extends InputEvent, F extends IInputEventListener<E>> void addListener(F listener, Class<E> clazz) {
+        IInputEventListener<InputEvent> theListener = (IInputEventListener<InputEvent>) listener;
+        listeners.put(clazz, theListener);
     }
 
     @Override
-    public void addListener(IMouseEventListener listener) {
-        mouseListeners.add(listener);
+    public <E extends InputEvent, F extends IInputEventListener<E>> void removeListener(F listener) {
+        listeners.values().remove(listener);
     }
 
     @Override
-    public void addListener(IScrollEventListener listener) {
-        scrollListeners.add(listener);
+    public <E extends InputEvent, F extends IInputEventListener<E>> void removeListener(F listener, Class<E> clazz) {
+        listeners.get(clazz).remove(listener);
     }
 
     @Override
-    public void removeListener(IKeyEventListener listener) {
-        listeners.remove(listener);
-    }
-
-    @Override
-    public void removeListener(IMouseEventListener listener) {
-        mouseListeners.remove(listener);
-    }
-
-    @Override
-    public void removeListener(IScrollEventListener listener) {
-        scrollListeners.remove(listener);
-    }
-
-    @Override
-    public void notifyListeners(KeyEvent event) {
-        for (IKeyEventListener listener : listeners) {
-            listener.onKey(event);
+    public void notifyListeners(InputEvent event) {
+        for (IInputEventListener<InputEvent> listener : listeners.get(event.getClass())) {
+            listener.onEvent(event);
         }
-    }
-
-    @Override
-    public void notifyListeners(MouseEvent event) {
-        for (IMouseEventListener listener : mouseListeners) {
-            listener.onMouse(event);
-        }
-    }
-
-    @Override
-    public void notifyListeners(ScrollEvent event) {
-        for (IScrollEventListener listener : scrollListeners) {
-            listener.onScroll(event);
+        for (IInputEventListener<InputEvent> listener : listeners.get(InputEvent.class)) {
+            listener.onEvent(event);
         }
     }
 }
