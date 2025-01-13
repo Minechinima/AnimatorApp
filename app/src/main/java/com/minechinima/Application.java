@@ -4,6 +4,8 @@ import com.minechinima.input.raw.KeyEvent;
 import com.minechinima.input.raw.InputType;
 import com.minechinima.input.raw.Key;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
+import com.minechinima.i18n.ClasspathBundleProvider;
+import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.model.BBContext;
 import com.minechinima.model.BBDataTreeManager;
 import com.minechinima.model.app.BBDatabase;
@@ -17,6 +19,7 @@ import com.minechinima.ui.UIContext;
 import com.minechinima.ui.WindowManager;
 import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.*;
+import com.minechinima.ui.panels.UIViewport;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
@@ -25,6 +28,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.nio.*;
+import java.util.Locale;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -43,15 +47,23 @@ public class Application {
     private final WindowManager windowManager;
     private final BBDataTreeManager dataTree;
     private LWJGLInputEventManager inputEventManager;
+    private final UIHandlerRegistry handlerRegistry;
+    private final TranslationBackpack translationBackpack;
 
     public Application() {
         EventTypeRegistry dataEventTypes = new EventTypeRegistry();
         EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
         this.dataTree = new BBDataTreeManager(dataEventTypes);
         this.windowManager = new WindowManager(this.windowProvider, new ImguiLoader(), this.dataTree);
+
+        handlerRegistry = new UIHandlerRegistry();
+        translationBackpack = new TranslationBackpack();
     }
 
     public void init() {
+        translationBackpack.loadTranslations(new ClasspathBundleProvider("com/minechinima/base", getClass()), Locale.GERMANY);
+        translationBackpack.loadTranslations(new ClasspathBundleProvider("com/minechinima/base", getClass()), Locale.US);
+
         GLFWErrorCallback.createPrint(System.err).set();
 
         if ( !glfwInit() )
@@ -105,11 +117,11 @@ public class Application {
 
     public void loop() {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader);
+        
+        UIContext context = new UIContext(this.windowProvider, this.windowManager, this.windowManager.loader, translationBackpack, new UIHandlerRegistry());
         context.register(new PropertyContextRegistry());
-        // Register EntryPointRegistry
-        context.register(new UIHandlerRegistry());
-
+        context.setLocale(Locale.GERMAN);
+      
         PropertyContextRegistry propertyPanelRegistry = context.getRegisteredObj(PropertyContextRegistry.class);
         propertyPanelRegistry.registerUIPropertyContext(new UICameraProperties());
         propertyPanelRegistry.registerUIPropertyContext(new UIEntityProperties());
@@ -118,6 +130,7 @@ public class Application {
 
         context.getPanelFactory().registerUIPanel("properties", () -> new UIPropertiesPanel("properties"));
         context.getPanelFactory().registerUIPanel("outliner", () -> new UIOutlinerPanel("outliner"));
+        context.getPanelFactory().registerUIPanel("viewport", () -> new UIViewport("viewport"));
 
         while ( !glfwWindowShouldClose(window[0]) ) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

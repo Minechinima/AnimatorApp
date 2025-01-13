@@ -19,7 +19,7 @@ public class UIAccordion extends UIGroup {
 
     @Override
     protected void draw(UIContext context) {
-        if (ImGui.collapsingHeader(this.label)) {
+        if (ImGui.collapsingHeader(context.getTranslationBackpack().getTranslation(this.label + ".title", context.getLocale()))) {
             for (UIElement child : this.children) {
                 child.draw(context);
             }

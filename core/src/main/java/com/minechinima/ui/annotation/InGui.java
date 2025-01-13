@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
 public @interface InGui {
-    Class<? extends IUIHandler<?>> entrypoint();
+    Class<? extends IUIHandler> entrypoint() default UnnamedUIHandler.class;
     Class<? extends UIElement> as();
     String translationPrefix();
 }
