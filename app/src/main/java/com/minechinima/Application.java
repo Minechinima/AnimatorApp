@@ -1,5 +1,9 @@
 package com.minechinima;
 
+import com.minechinima.input.raw.KeyEvent;
+import com.minechinima.input.raw.InputType;
+import com.minechinima.input.raw.Key;
+import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import com.minechinima.i18n.ClasspathBundleProvider;
 import com.minechinima.i18n.TranslationBackpack;
 import com.minechinima.model.BBContext;
@@ -42,6 +46,7 @@ public class Application {
     };
     private final WindowManager windowManager;
     private final BBDataTreeManager dataTree;
+    private LWJGLInputEventManager inputEventManager;
     private final UIHandlerRegistry handlerRegistry;
     private final TranslationBackpack translationBackpack;
 
@@ -72,10 +77,9 @@ public class Application {
         if ( window[0] == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
-        glfwSetKeyCallback(window[0], (window, key, scancode, action, mods) -> {
-            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
-                glfwSetWindowShouldClose(window, true);
-        });
+        inputEventManager = new LWJGLInputEventManager(window[0]);
+        inputEventManager.addListener(this::closeOnEscape, KeyEvent.class);
+        inputEventManager.addListener(this::debugInputEvent, KeyEvent.class);
 
         try ( MemoryStack stack = stackPush() ) {
             IntBuffer pWidth = stack.mallocInt(1);
@@ -96,7 +100,7 @@ public class Application {
         glfwSwapInterval(1);
         glfwShowWindow(window[0]);
         GL.createCapabilities();
-        this.windowManager.init();
+        this.windowManager.init(inputEventManager);
         this.windowManager.windows.add(new BBUIWindow(new BBContext("context", this.dataTree.getRoot().data)));
 
         BBDatabase db = this.dataTree.getRoot().data;
@@ -142,5 +146,21 @@ public class Application {
         glfwDestroyWindow(window[0]);
         glfwTerminate();
         glfwSetErrorCallback(null).free();
+    }
+
+    private void closeOnEscape(KeyEvent event) {
+        if (event.getCurrentKey() != Key.KEY_ESCAPE) {
+            return;
+        }
+
+        if (event.getInputType() != InputType.RELEASE) {
+            return;
+        }
+
+        glfwSetWindowShouldClose(window[0], true);
+    }
+
+    private void debugInputEvent(KeyEvent event) {
+        //System.out.println(event.toString());
     }
 }

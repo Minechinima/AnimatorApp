@@ -2,6 +2,7 @@ package com.minechinima.ui;
 
 import com.minechinima.controller.Controller;
 import com.minechinima.controller.HistoryManager;
+import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import com.minechinima.model.DataTreeManager;
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIScreen;
@@ -41,8 +42,8 @@ public class WindowManager {
         return historyManager;
     }
 
-    public void init() {
-        this.loader.init(this.renderingWindow.ptr());
+    public void init(LWJGLInputEventManager inputEventManager) {
+        this.loader.init(this.renderingWindow.ptr(), inputEventManager);
         for (UIWindow window : this.windows) {
             window.onShow();
         }
