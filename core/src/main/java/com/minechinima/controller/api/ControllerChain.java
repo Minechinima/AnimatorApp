@@ -8,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Allows to reuse other controllers in a composition of controller commands.
+ */
 public class ControllerChain implements IControllerCommand {
     @NotNull
     private final IControllerCommand command;
