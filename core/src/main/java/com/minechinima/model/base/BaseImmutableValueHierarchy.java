@@ -42,8 +42,8 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
     @Override
     void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
         /* for safety to prevent and debug when we forget to initialize a node before adding it */
-        if (!this.initializedChildren) {
-            throw new SetParentNotAllowed("Cannot add an immutable value hierarchy that is not initialized to the tree.");
+        if (!this.initializedChildren && this.getParent() != null) {
+            throw new SetParentNotAllowed("Cannot add a not initialized BaseImmutableValueHierarchy to the data tree.");
         }
     }
 
@@ -118,6 +118,9 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
         this.initializedChildren = true;
 
         for (Map.Entry<String, T> mapping : this.mappingBuffer.entrySet()) {
+            if (mapping.getValue() instanceof BaseImmutableValueHierarchy<?> ih && !ih.isInitialized()) {
+                throw new RuntimeException("Trying to add a not initialized BaseImmutableValueHierarchy mapping{" + mapping.getKey() + "}");
+            }
             BaseOperationsUtils.addChildOrThrow(mapping.getValue(), this, this.children);
         }
     }
