@@ -140,7 +140,8 @@ public class DataOperationLog {
     protected static abstract class AbstractEntry {
         protected final long timetamp;
         /**
-         * @implNote Never expose this instance directly, so no one outside the log can change it.
+         * @implNote Never expose this instance directly, so no one outside the log
+         * can change the original {@link DataOperationLog} path.
          * Always copy it.
          */
         protected final ValuePath path;
@@ -175,7 +176,7 @@ public class DataOperationLog {
          */
         @NotNull
         public ValuePath getPath() {
-            return this.path;
+            return this.path.copy();
         }
 
         @Override
@@ -202,7 +203,7 @@ public class DataOperationLog {
          */
         @Nullable
         public ValuePath getRelativePath() {
-            return this.path;
+            return this.path.copy();
         }
 
         @Override
