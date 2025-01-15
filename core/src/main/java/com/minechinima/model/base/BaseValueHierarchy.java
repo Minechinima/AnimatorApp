@@ -42,19 +42,28 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * <b>ONLY OVERRIDE THE TEMPLATE METHODS IF YOU CAN GUARANTEE THE PATH SEGMENTS WILL BE UNIQUE.</b>
      * <br>
      * Get a path segment for building the path for a given direct child of this BaseValueHierarchy element.
-     * The path segment will be inserted directly after the id and {@link #format} of this node.
-     * The path format from this method therefore influences the child and this {@link #format} is for the path segment returned by this.
+     * The path segment will be inserted directly after this node's id and {@link #format}.<br>
+     * The path format from this method therefore influences the child and this node's {@link #format} is for the path segment
+     * returned by this method.
      * <br><br>
      * @return a path segment for the given child. When the ID part is null, it means the child was not found.
      * @throws ContractViolatedException if {@link #getIDPrefixForChild} is not null but {@link #getPathFormatPrefixForChildren} is null,
      * violating this method contract.
+     * Or if {@link #isDirectChild(BaseStructure)} is true
+     * and {@link #getPathFormatPrefixForChildren()} is overridden but no id was given.
      */
     protected final Pair<ID, ValuePath.Format> getPathSegmentPrefixForChild(BaseStructure child) {
+        ValuePath.Format prefix = this.getPathFormatPrefixForChildren();
         ID id = this.getIDPrefixForChild(child);
-        if (id != null && this.getPathFormatPrefixForChildren() == null) {
-            throw new ContractViolatedException("PathFormat for prefixing a child is null while the id was not.");
+        boolean overriddenFormat = prefix != null;
+
+        if (id != null && !overriddenFormat) {
+            throw new ContractViolatedException("getPathFormatPrefixForChildren() is not overridden but getIDPrefixForChild() is.");
+        } else if (id == null && overriddenFormat && this.isDirectChild(child)) {
+            throw new ContractViolatedException("getPathFormatPrefixForChildren() is overridden, but getIDPrefixForChild() returns null for a direct child.");
         }
-        return new Pair<>(id, this.getPathFormatPrefixForChildren());
+
+        return new Pair<>(id, prefix);
     }
 
     /**
