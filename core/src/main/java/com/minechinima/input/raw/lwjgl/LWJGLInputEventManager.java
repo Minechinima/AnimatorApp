@@ -5,26 +5,18 @@ import com.minechinima.input.raw.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class LWJGLInputEventManager extends AbstractInputEventManager {
-    public LWJGLInputEventManager(long window) {
+    public LWJGLInputEventManager() {
         super();
-        registerCallbacks(window);
-    }
-
-    private void registerCallbacks(long window) {
-        glfwSetKeyCallback(window, this::onKey);
-        glfwSetMouseButtonCallback(window, this::onMouseButton);
-        glfwSetCursorPosCallback(window, this::onCursor);
-        glfwSetScrollCallback(window, this::onScroll);
     }
 
     public void onKey(long window, int key, int scancode, int action, int mods) {
         Key currentKey = getKeyboardKey(key);
-        sendInputEvent(window, action, currentKey);
+        this.sendInputEvent(window, action, currentKey);
     }
 
     public void onMouseButton(long window, int button, int action, int mods) {
         Key currentKey = getMouseButton(button);
-        sendInputEvent(window, action, currentKey);
+        this.sendInputEvent(window, action, currentKey);
     }
 
     public void onCursor(long window, double x, double y) {
@@ -33,7 +25,7 @@ public class LWJGLInputEventManager extends AbstractInputEventManager {
                 window
         );
 
-        notifyListeners(event);
+        this.notifyListeners(event);
     }
 
     public void onScroll(long window, double xOffset, double yOffset) {
@@ -42,7 +34,13 @@ public class LWJGLInputEventManager extends AbstractInputEventManager {
                 window
         );
 
-        notifyListeners(event);
+        this.notifyListeners(event);
+    }
+
+    public void onChar(long window, int unicode) {
+        TextInputEvent event = new TextInputEvent((char) unicode, window);
+
+        this.notifyListeners(event);
     }
 
     private void sendInputEvent(long window, int action, Key currentKey) {
@@ -59,7 +57,7 @@ public class LWJGLInputEventManager extends AbstractInputEventManager {
                 window
         );
 
-        notifyListeners(event);
+        this.notifyListeners(event);
     }
 
     private Key getMouseButton(int key) {

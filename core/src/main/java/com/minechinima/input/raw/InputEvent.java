@@ -3,7 +3,7 @@ package com.minechinima.input.raw;
 /**
  * Represents an input event that can be sent by the input event manager
  */
-public class InputEvent {
+public abstract class InputEvent {
     /**
      * The window that the event was sent from
      */
