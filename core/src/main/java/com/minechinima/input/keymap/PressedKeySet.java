@@ -1,24 +1,24 @@
 package com.minechinima.input.keymap;
 
-import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyType;
 import com.minechinima.input.raw.Key;
 import com.minechinima.utils.ImmutableVector2d;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2d;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 /**
- * A set of pressed Keys by storing the KeyEvent that was triggered by the press.
+ * A set of Keys that are held down / pressed by storing the KeyEvent that was triggered.
+ * The event instance is directly stored which allows custom event data to persist in this Set.
+ * <br><br>
  * Every KeyEvent has a list of mouse positions, which allows keeping track
  * of where the mouse position moved while pressing a key.
+ * Use {@link #appendMousePos(double, double)} to add a mouse position
+ * <br><br>
  * The Set will not store KeyEvents that are triggered by a key that is already in the Set.
  * This means that this Set contains unique keys.
- * KeyEvents that or are not a PRESS/REPEAT Event will not be stored.
  */
 public class PressedKeySet implements Set<KeyMapKeyEvent> {
     /**
@@ -35,10 +35,56 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
         this.keys.putAll(c.keys);
     }
 
+    /* +-----------------------------+
+     * | PRESS utility check methods |
+     * +-----------------------------+ */
+
+    public boolean ctrlPressed() {
+        return this.leftctrlPressed() || this.rightctrlPressed() || this.getEventByKey(Key.MOD_CONTROL) != null;
+    }
+
+    public boolean leftctrlPressed() {
+        return this.getEventByKey(Key.KEY_LEFT_CONTROL) != null;
+    }
+
+    public boolean rightctrlPressed() {
+        return this.getEventByKey(Key.KEY_RIGHT_CONTROL) != null;
+    }
+
+    public boolean altPressed() {
+        return this.leftaltPressed() || this.rightaltPressed() || this.getEventByKey(Key.MOD_ALT) != null;
+    }
+
+    public boolean leftaltPressed() {
+        return this.getEventByKey(Key.KEY_LEFT_ALT) != null;
+    }
+
+    public boolean rightaltPressed() {
+        return this.getEventByKey(Key.KEY_RIGHT_ALT) != null;
+    }
+
+    public boolean shiftPressed() {
+        return this.leftshiftPressed() || this.rightshiftPressed() || this.getEventByKey(Key.MOD_SHIFT) != null;
+    }
+
+    public boolean leftshiftPressed() {
+        return this.getEventByKey(Key.KEY_LEFT_ALT) != null;
+    }
+
+    public boolean rightshiftPressed() {
+        return this.getEventByKey(Key.KEY_RIGHT_ALT) != null;
+    }
+
+
+
+
+
+
+
     /**
      * Adds the given mouse position to all pressed keys.
      */
-    public void addMousePos(double mouseX, double mouseY) {
+    public void appendMousePos(double mouseX, double mouseY) {
         for (Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> entry : this.keys.entrySet()) {
             entry.getValue().add(new ImmutableVector2d(mouseX, mouseY));
         }
@@ -58,7 +104,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     }
 
     @Nullable
-    public KeyMapKeyEvent getKey(Key key) {
+    public KeyMapKeyEvent getEventByKey(Key key) {
         for (KeyMapKeyEvent event : this.keys.keySet()) {
             if (event.key() == key) return event;
         }
@@ -103,9 +149,8 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     }
 
     /**
-     * Adds only events that are press type.
-     * @param keyEvent element whose presence in this collection is to be ensured
-     * @return
+     * Adds only events that are press/repeat type.
+     * @return true if it was added
      */
     @Override
     public boolean add(KeyMapKeyEvent keyEvent) {
@@ -114,6 +159,10 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
         return true;
     }
 
+    /**
+     * Removes all events triggered by the equal key.
+     * @param event
+     */
     public void removeEqualKeys(KeyMapKeyEvent event) {
         Iterator<Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>>> it = this.keys.entrySet().iterator();
         while (it.hasNext()) {
@@ -126,7 +175,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     }
 
     /**
-     * Replaces the event instance while keeping the mouse positions.
+     * Replaces the event instance triggered by the equal key, while keeping the mouse positions.
      * @param event
      */
     public void replaceEqualKeys(KeyMapKeyEvent event) {
@@ -143,7 +192,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
         this.keys.putAll(temp);
     }
 
-    private boolean canBeAdded(KeyMapKeyEvent event) {
+    protected boolean canBeAdded(KeyMapKeyEvent event) {
         if ((event.type() != KeyType.PRESS && event.type() != KeyType.REPEAT) || this.contains(event)) return false;
         return true;
     }
