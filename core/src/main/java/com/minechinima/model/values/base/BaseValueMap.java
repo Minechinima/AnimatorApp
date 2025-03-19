@@ -206,6 +206,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
 
     @Override
     public void fromData(BaseType<?> data) {
+        //TODO revisit serialization, something is sus... especially instantiate vs valueToData/valueFromData
         MapType mapType;
         if ((mapType = data.asMapType()) == null) return;
 
@@ -228,7 +229,7 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
             MapType value = this.valueToData(child);
             /* optimize space, no need to store id twice. */
             value.getValue().remove("id");
-            children.put(child.getIdentifier(), this.valueToData(child));
+            children.put(child.getIdentifier(), value);
         }
         return new MapType(children);
     }

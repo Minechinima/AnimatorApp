@@ -21,6 +21,7 @@ import java.util.*;
  * methods.
  * Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
  */
+//TODO maybe rewrite eventbus to directly subscribe to an eventbus instead of separate eventbusmanager, check if referencemanagement allows
 public abstract class EventBus {
     /**
      * Maps subscribers and their event type to the event bus.

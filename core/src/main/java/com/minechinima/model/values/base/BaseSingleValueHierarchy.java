@@ -105,6 +105,13 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         return this.get() == child;
     }
 
+    /**
+     * Instantiate the value from the serialized data with an optional UUID.
+     * @param id
+     * @param uuid optional UUID for the data node if parsed.
+     * @param data data to instantiate the value from.
+     * @return
+     */
     @NotNull
     protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
 

@@ -43,7 +43,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * <br>
      * Get a path segment for building the path for a given direct child of this BaseValueHierarchy element.
      * The path segment will be inserted directly after this node's id and {@link #format}.<br>
-     * The path format from this method therefore influences the child and this node's {@link #format} is for the path segment
+     * The path format from this method therefore influences the child while this node's {@link #format} is for the path segment
      * returned by this method.
      * <br><br>
      * @return a path segment for the given child. When the ID part is null, it means the child was not found.
@@ -77,6 +77,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
     }
 
     /**
+     * For {@link #getPathSegmentPrefixForChild(BaseStructure)}<br>
      * If this is overridden, you also need to override {@link #getPathFormatPrefixForChildren()}.
      * @param child
      * @return null if the child is not found or if it is not overridden.
@@ -119,7 +120,6 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
 
     @Nullable
     public final BaseStructure getChildByValuePath(String relativePath) {
-        //TODO rename child to node when it is any child of the subtree
         if (relativePath.isEmpty()) return null;
         try {
             return this.getChildByValuePath(new ValuePath(relativePath));
