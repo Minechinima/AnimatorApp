@@ -257,6 +257,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     }
 
     public T getReference() {
+        //TODO try and get the value if path is cached
         return this.referenced;
     }
 
