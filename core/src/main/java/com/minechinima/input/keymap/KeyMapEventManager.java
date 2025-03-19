@@ -18,6 +18,7 @@ import org.joml.Vector2d;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class KeyMapEventManager implements IInputEventListener<InputEvent> {
@@ -37,7 +38,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
      * Map of KeyEvents that were released and not consumed, meaning they were clicked, mapped to the time
      * for triggering a double click.
      */
-    private final HashMap<KeyMapKeyEvent, Long> clicks = new HashMap<>();
+    private final Map<KeyMapKeyEvent, Long> releasedKeys = new HashMap<>();
     private double doubleClickmsTimer = 350;
 
     public KeyMapEventManager(UIManager<?> manager) {
@@ -74,7 +75,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
             this.prevMouseY = this.mouseY;
             this.mouseX = pos.x;
             this.mouseY = pos.y;
-            this.pressedKeys.addMousePos(this.mouseX, this.mouseY);
+            this.pressedKeys.appendMousePos(this.mouseX, this.mouseY);
         }
 
         builder.setMousePos(this.prevMouseX, this.prevMouseY, this.mouseX, this.mouseY);
@@ -96,6 +97,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
         }
 
         builder.reset();
+        this.cleanupCachedReleasedKeys();
     }
 
     private void handleEvent(IKeyMapEventBuilder builder, KeyMapEvent result) {
@@ -117,14 +119,14 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
 
         if (keyEvent.type() == KeyType.RELEASE && !consumed) {
             /* a released keyevent that was not consumed becomes a click event, or double-click */
-            KeyMapKeyEvent prevClick = this.getClickEqualKey(keyEvent);
+            KeyMapKeyEvent prevClick = this.getReleasedKeyByEqualKey(keyEvent);
 
             Collection<? extends KeyMapKeyEvent> clicks = null;
 
             if (builder instanceof IKeyEventBuilder<?, ?> keyEventBuilder) {
                 keyEventBuilder.setPressedKeys(new PressedKeySet(this.pressedKeys));
 
-                if (prevClick != null && System.currentTimeMillis() - this.clicks.get(prevClick) <= this.doubleClickmsTimer) {
+                if (prevClick != null && System.currentTimeMillis() - this.releasedKeys.get(prevClick) <= this.doubleClickmsTimer) {
                     keyEventBuilder.setKeyMapType(KeyType.DOUBLECLICK);
                     clicks = keyEventBuilder.getResult();
                 } else if (prevClick == null) {
@@ -136,18 +138,28 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
             if (clicks != null) {
                 for (KeyMapKeyEvent click : clicks) {
                     if (!this.notifyListeners(click) && prevClick == null) {
-                        this.clicks.put(keyEvent, System.currentTimeMillis());
+                        this.releasedKeys.put(keyEvent, System.currentTimeMillis());
                     } else {
-                        this.clicks.remove(prevClick);
+                        this.releasedKeys.remove(prevClick);
                     }
                 }
             }
         }
     }
 
+    private void cleanupCachedReleasedKeys() {
+        Iterator<Map.Entry<KeyMapKeyEvent, Long>> it = this.releasedKeys.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<KeyMapKeyEvent, Long> entry = it.next();
+            if (System.currentTimeMillis() - entry.getValue() > this.doubleClickmsTimer + 100) {
+                it.remove();
+            }
+        }
+    }
+
     @Nullable
-    private KeyMapKeyEvent getClickEqualKey(KeyMapKeyEvent target) {
-        for (KeyMapKeyEvent key : this.clicks.keySet()) {
+    private KeyMapKeyEvent getReleasedKeyByEqualKey(KeyMapKeyEvent target) {
+        for (KeyMapKeyEvent key : this.releasedKeys.keySet()) {
             if (key.equalKey(target)) return key;
         }
         return null;
