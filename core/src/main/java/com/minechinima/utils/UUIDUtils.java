@@ -42,6 +42,7 @@ public class UUIDUtils {
      * @return the data with the uuid inserted as bytearray.
      */
     public static MapType putUUID(MapType data, String key, UUID uuid) {
+        //TODO deprecate and use UUIDType
         data.getValue().put(key, new ByteArrayType(UUIDUtils.convertUUIDToBytes(uuid)));
         return data;
     }
