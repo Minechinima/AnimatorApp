@@ -153,18 +153,56 @@ public abstract class BaseType<T> {
         return this instanceof UUIDType type ? type : null;
     }
 
-    public static BaseType<?> readFromData(IDataReader reader) throws IOException {
-        if (!reader.hasNext()) {
-            throw new IllegalArgumentException("Type not set");
+
+
+    /* +--------------------------------------------+
+     * | Registry and serialization utility methods |
+     * +--------------------------------------------+ */
+
+    /**
+     * @param baseType
+     * @return
+     * @throws IllegalStateException when the type is unexpected and could not be resolved.
+     */
+    public static byte getTypeID(BaseType<?> baseType) {
+        if (baseType instanceof ByteType) {
+            return BYTE;
+        } else if (baseType instanceof ShortType) {
+            return SHORT;
+        } else if (baseType instanceof IntType) {
+            return INT;
+        } else if (baseType instanceof LongType) {
+            return LONG;
+        } else if (baseType instanceof FloatType) {
+            return FLOAT;
+        } else if (baseType instanceof DoubleType) {
+            return DOUBLE;
+        } else if (baseType instanceof ByteArrayType) {
+            return BYTE_ARRAY;
+        } else if (baseType instanceof StringType) {
+            return STRING;
+        } else if (baseType instanceof ListType) {
+            return LIST;
+        } else if (baseType instanceof MapType) {
+            return MAP;
+        } else if (baseType instanceof IntArrayType) {
+            return INT_ARRAY;
+        } else if (baseType instanceof LongArrayType) {
+            return LONG_ARRAY;
+        } else if (baseType instanceof UUIDType) {
+            return UUID;
+        } else {
+            throw new IllegalArgumentException("Unknown type");
         }
+    }
 
-        byte type = reader.readNextType();
-
-        if (!reader.hasNext()) {
-            throw new IllegalArgumentException("No data to read");
-        }
-
-        BaseType<?> baseType = switch (type) {
+    /**
+     * @param type
+     * @return
+     * @throws IllegalStateException when the type is unexpected and could not be resolved.
+     */
+    public static BaseType<?> getBaseType(byte type) {
+        return switch (type) {
             case BYTE -> new ByteType();
             case SHORT -> new ShortType();
             case INT -> new IntType();
@@ -180,6 +218,20 @@ public abstract class BaseType<T> {
             case UUID -> new UUIDType();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
+    }
+
+    public static BaseType<?> readFromData(IDataReader reader) throws IOException {
+        if (!reader.hasNext()) {
+            throw new IllegalArgumentException("Type not set");
+        }
+
+        byte type = reader.readNextType();
+
+        if (!reader.hasNext()) {
+            throw new IllegalArgumentException("No data to read");
+        }
+
+        BaseType<?> baseType = getBaseType(type);
 
         baseType.fromData(reader);
 
@@ -187,36 +239,7 @@ public abstract class BaseType<T> {
     }
     
     public static void writeToData(IDataWriter writer, BaseType<?> baseType) throws IOException {
-        if (baseType instanceof ByteType) {
-            writer.writeType(BYTE);
-        } else if (baseType instanceof ShortType) {
-            writer.writeType(SHORT);
-        } else if (baseType instanceof IntType) {
-            writer.writeType(INT);
-        } else if (baseType instanceof LongType) {
-            writer.writeType(LONG);
-        } else if (baseType instanceof FloatType) {
-            writer.writeType(FLOAT);
-        } else if (baseType instanceof DoubleType) {
-            writer.writeType(DOUBLE);
-        } else if (baseType instanceof ByteArrayType) {
-            writer.writeType(BYTE_ARRAY);
-        } else if (baseType instanceof StringType) {
-            writer.writeType(STRING);
-        } else if (baseType instanceof ListType) {
-            writer.writeType(LIST);
-        } else if (baseType instanceof MapType) {
-            writer.writeType(MAP);
-        } else if (baseType instanceof IntArrayType) {
-            writer.writeType(INT_ARRAY);
-        } else if (baseType instanceof LongArrayType) {
-            writer.writeType(LONG_ARRAY);
-        } else if (baseType instanceof UUIDType) {
-            writer.writeType(UUID);
-        } else {
-            throw new IllegalArgumentException("Unknown type");
-        }
-
+        writer.writeType(getTypeID(baseType));
         baseType.toData(writer);
     }
 
