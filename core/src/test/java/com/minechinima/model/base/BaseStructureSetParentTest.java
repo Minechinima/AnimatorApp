@@ -264,7 +264,7 @@ public class BaseStructureSetParentTest {
         EventBusManager busManager = new EventBusManager(manager, registry);
 
         int[] called = new int[3];
-        busManager.subscribe(root.getEventBus(), new Object() {
+        root.getEventBus().subscribe(new Object() {
             @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
             public void onRemoveFrom(RemoveFromTreeEvent event) {
                 called[0]++;
@@ -329,7 +329,7 @@ public class BaseStructureSetParentTest {
         EventBusManager busManager2 = new EventBusManager(manager2, registry);
 
         int[] called = new int[3];
-        busManager.subscribe(root.getEventBus(), new Object() {
+        root.getEventBus().subscribe(new Object() {
             @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
             public void onRemoveFrom(RemoveFromTreeEvent event) {
                 called[0]++;
@@ -347,7 +347,7 @@ public class BaseStructureSetParentTest {
         });
 
         int[] called2 = new int[3];
-        busManager2.subscribe(root2.getEventBus(), new Object() {
+        root2.getEventBus().subscribe(new Object() {
             @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
             public void onRemoveFrom(RemoveFromTreeEvent event) {
                 called2[0]++;

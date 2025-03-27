@@ -8,6 +8,7 @@ import com.minechinima.model.events.types.changes.*;
 
 import java.util.*;
 
+@Deprecated(forRemoval = true)
 public class EventTypeRegistry {
     private final Set<Class<? extends Event>> availableEvents = new HashSet<>();
 

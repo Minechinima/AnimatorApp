@@ -9,6 +9,7 @@ import java.util.Set;
  * For compiling the event hierarchy
  * @param <T>
  */
+@Deprecated(forRemoval = true)
 public class EventTypeNode<T extends Event> {
     /**
      * Subclasses of this event type.

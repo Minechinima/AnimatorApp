@@ -26,7 +26,7 @@ public class ReferenceManager {
     }
 
     public void initEventSubscription(EventBusManager busManager) {
-        busManager.subscribe(this.root.getEventBus(), this);
+        this.root.getEventBus().subscribe(this);
     }
 
     @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)

@@ -5,15 +5,13 @@ import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.types.Event;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * The base EventBus class for a {@link BaseStructure} node to dispatch events through.
  * An EventBus always belongs to one {@link BaseStructure} node.
- * <br><br>
- * The only purpose of this bus it dispatch events through, no management of listeners or anything else.
  * <br><br>
  * This acts as a bridge between the secure package-private definitions in this package
  * and the implementations that want to dispatch events.
@@ -25,12 +23,9 @@ import java.util.Set;
  */
 public abstract class EventBus {
     /**
-     * The EventBusManager that manages this EventBus. The manager is what receives the events,
-     * as it manages the listeners.
-     * <br><br>
-     * @implNote Do not expose this attribute.
+     * Maps subscribers and their event type to the event bus.
      */
-    private final Set<EventBusManager> managers = new HashSet<>();
+    private final Map<Object, Set<EventMethodHandler>> subscribers = new IdentityHashMap<>();
     /**
      * Important to define what the owner of the eventbus is, so no one else
      * can dispatch events through it.
@@ -53,20 +48,52 @@ public abstract class EventBus {
     }
 
     /**
-     * @param manager
-     * @implNote Package-private so only the {@link EventBusManager} can set the manager. This makes it more secure against
-     * bad manager changes and memory leaks, in theory...
+     * Subscribe an object to an EventBus. The Object must declare methods with annotations that want to receive events.
+     * @param subscriber
      */
-    final void addManager(EventBusManager manager) {
-        this.managers.add(manager);
+    public void subscribe(Object subscriber) {
+        /* overwrite old mappings */
+        this.subscribers.remove(subscriber);
+
+        Set<EventMethodHandler> methodHandlers = new HashSet<>();
+        /* go through the class and all its superclasses, collecting all annotated methods and check them */
+        //TODO possible optimization (cache methodhandlers for classes?)
+        Class clazz = subscriber.getClass();
+        while (clazz != null) {
+            /* go through methods and search for subscribe annotation */
+            for (Method method : clazz.getDeclaredMethods()) {
+                SubscribeEvent annotation = method.getAnnotation(SubscribeEvent.class);
+
+                if (annotation != null) {
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+
+                    /* validate subscription method */
+                    if (parameterTypes.length != 1) {
+                        throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, but declares " +
+                                parameterTypes.length + " arguments.  Event handler methods must require a single argument.");
+                    }
+
+                    if (!Event.class.isAssignableFrom(parameterTypes[0])) {
+                        throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, " +
+                                "but the method argument is not a subclass or the same as Event.class");
+                    }
+
+                    Class<Event> eventType = (Class<Event>) parameterTypes[0];
+                    SubscribeEvent.Type listenType = annotation.type();
+
+                    methodHandlers.add(new EventMethodHandler(method, listenType, eventType));
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+
+        if (!methodHandlers.isEmpty()) {
+            this.subscribers.put(subscriber, methodHandlers);
+        }
     }
 
-    /**
-     * @param manager
-     * @implNote Package-private so only the {@link EventBusManager} can remove itself.
-     */
-    final void removeManager(EventBusManager manager) {
-        this.managers.remove(manager);
+    public void unsubscribe(Object subscriber) {
+        this.subscribers.remove(subscriber);
     }
 
     /**
@@ -77,12 +104,13 @@ public abstract class EventBus {
      * dispatch events through it.
      */
     protected final void dispatchEventOnThis(Event event) {
-        if (this.managers.isEmpty()) return;
-
         if (event.getTrigger() != this.owner) {
             throw new IllegalArgumentException("Cannot dispatch an event with a different trigger node than the bus owner.");
         }
-        this.managers.forEach(m -> m.dispatchEvent(this, EventOrigin.NODE, event));
+
+        this.subscribers.forEach((subscriber, handlers) -> {
+            handlers.forEach(handler -> handler.handleEvent(subscriber, EventOrigin.NODE, event));
+        });
     }
 
     /**
@@ -93,11 +121,47 @@ public abstract class EventBus {
      * dispatch events through it.
      */
     protected final void dispatchEventFromChildNode(Event event) {
-        if (this.managers.isEmpty()) return;
-
         if (!(this.owner instanceof BaseValueHierarchy<?> hierarchy) || !event.getTrigger().isChildOf(hierarchy)) {
             throw new IllegalArgumentException("Cannot dispatch a child event from a node that is not child of the bus owner.");
         }
-        this.managers.forEach(m -> m.dispatchEvent(this, EventOrigin.CHILDREN, event));
+
+        this.subscribers.forEach((subscriber, handlers) -> {
+            handlers.forEach(handler -> handler.handleEvent(subscriber, EventOrigin.CHILDREN, event));
+        });
+    }
+
+    private static class EventMethodHandler {
+        private final Method method;
+        private final SubscribeEvent.Type listenType;
+        private final Class<? extends Event> eventType;
+
+        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Class<? extends Event> eventtype) {
+            this.listenType = listenType;
+            this.method = method;
+            this.eventType = eventtype;
+            method.setAccessible(true);
+        }
+
+        public void handleEvent(Object subscriber, EventOrigin origin, Event event) {
+            switch (this.listenType) {
+                case ALL:
+                    break;
+                case ON_NODE:
+                    if (origin == EventOrigin.CHILDREN) return;
+                    break;
+                case IN_CHILDREN:
+                    if (origin == EventOrigin.NODE) return;
+                    break;
+            }
+
+            //TODO possible optimization (this would be called for all parent nodes when event bubbles up)
+            if (!this.eventType.isAssignableFrom(event.getClass())) return;
+
+            try {
+                this.method.invoke(subscriber, event);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
