@@ -16,6 +16,7 @@ import java.util.*;
 /**
  * This manages all available event buses for a data tree and their subscribers.
  */
+@Deprecated(forRemoval = true)
 public class EventBusManager extends BaseStructureReferences {
     /* keep the mappings as simple as possible to easily clear references */
     /**
@@ -61,7 +62,7 @@ public class EventBusManager extends BaseStructureReferences {
         }
 
         this.subscribers.put(bus, new IdentityHashMap<>());
-        bus.addManager(this);
+        //bus.addManager(this);
         this.afterAddReference(bus.getOwner());
     }
 
@@ -116,6 +117,8 @@ public class EventBusManager extends BaseStructureReferences {
         if (!methodHandlers.isEmpty()) {
             handlers.put(subscriber, methodHandlers);
             if (subscriber instanceof BaseStructure referencedNode) {
+                //TODO this is the only reason for a separate eventbusmanager...... maybe unecessary
+                // deprecating this and the eventtype tree build stuff would make working with events a lot simpler
                 this.afterAddReference(referencedNode);
             }
         }
@@ -200,7 +203,7 @@ public class EventBusManager extends BaseStructureReferences {
     protected void finalizeClearReferences() {
         for (EventBus bus : this.cachedRemoval.keySet()) {
             if (!this.subscribers.containsKey(bus)) {
-                bus.removeManager(this);
+                //bus.removeManager(this);
             }
         }
 

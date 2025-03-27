@@ -26,7 +26,7 @@ public class EventSubscriptionTest {
         EventSubscriber tester = new EventSubscriber();
 
 
-        tree.getEventBusManager().subscribe(val.getEventBus(), tester);
+        val.getEventBus().subscribe(tester);
 
         val._triggerEvent(new ValueChangeEvent(val, val.valueToData(), val.valueToData()));
         Assertions.assertEquals(1, tester.onEventAll);
@@ -35,7 +35,7 @@ public class EventSubscriptionTest {
         Assertions.assertEquals(1, tester.onValueChangeEventOnNode);
         Assertions.assertEquals(1, tester.onChangeEventOnNode);
 
-        tree.getEventBusManager().subscribe(root.getEventBus(), tester);
+        tree.getRoot().getEventBus().subscribe(tester);
 
         val._triggerEvent(new IdentifierChangeEvent(val, "a", "b"));
         Assertions.assertEquals(3, tester.onEventAll);
