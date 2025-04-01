@@ -29,7 +29,7 @@ public class MouseKeyEnumValue extends AbstractEnumValue<MouseKeyEnum> {
 
     @Override
     public BaseType<?> valueToData() {
-        return RegistryUtils.serialize(this.get());
+        return RegistryUtils.serialize(MouseKeyEnum.REGISTRY, this.get());
     }
 
     @Override

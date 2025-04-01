@@ -4,6 +4,8 @@ import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.base.ValuePointer;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.UIOperatorContext;
 
 public class BBContext extends ValueGroup {
     public final ValuePointer<BaseObject> activeObject;

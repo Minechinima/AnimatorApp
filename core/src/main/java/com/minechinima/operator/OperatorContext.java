@@ -1,14 +1,12 @@
 package com.minechinima.operator;
 
-import com.minechinima.ui.UIManager;
-
 /**
- * The context in which an Operator executes.
+ * The context information for the operators.
+ * Allows differentiating between the context the operator
+ * was triggered in and the current context that might be different.
+ * @param triggered
+ * @param current
+ * @param <C>
  */
-public class OperatorContext {
-    public final UIOperatorContext uiContext;
-
-    public OperatorContext(UIOperatorContext uiContext) {
-        this.uiContext = uiContext;
-    }
+public record OperatorContext<C extends IContext>(C triggered, C current) {
 }

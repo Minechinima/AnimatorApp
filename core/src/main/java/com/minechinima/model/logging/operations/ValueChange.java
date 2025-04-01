@@ -39,6 +39,7 @@ public class ValueChange implements IDataOperation<IValue<?>> {
             Object value = change.valueFromData(this.oldValue);
             if (change.canSet(value)) {
                 change.set(value);
+                return true;
             }
         } catch (BaseTypeCannotBeParsed e) {
             throw new RuntimeException(e);

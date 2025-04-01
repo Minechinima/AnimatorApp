@@ -1,17 +1,18 @@
 package com.minechinima.ui.elements;
 
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
+import com.minechinima.ui.annotation.IUIElement;
 import imgui.ImGui;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
 
-public abstract class UIElement {
+public abstract class UIElement<C extends IContext> implements IUIElement<UIContext<C>> {
     private boolean shown;
     /**
      * Mainly used for eventlisteners and not for rendering.
      */
-    protected final List<UIElement> children = new ArrayList<>();
+    protected final LinkedHashSet<UIElement<C>> children = new LinkedHashSet<>();
 
     public boolean isShown() {
         return this.shown;
@@ -35,26 +36,26 @@ public abstract class UIElement {
      * This gets called when the UIElement is rendered for the first time
      * or is rendered again after being closed.
      */
-    public void onShow() {
-        this._onShow();
-        this.children.forEach(UIElement::onShow);
+    public void onShow(UIContext<C> context) {
+        this._onShow(context);
+        this.children.forEach(e -> e.onShow(context));
     }
 
     /**
      * This method is supposed to be overridden to define logic to happen when the UI is shown.
      */
-    protected void _onShow() { }
+    protected void _onShow(UIContext<C> context) { }
 
-    public void render(UIContext context) {
+    public void render(UIContext<C> context) {
         if (!context.getImguiContext().isBeginFrame()) return;
-        if (!this.shown) this.onShow();
+        if (!this.shown) this.onShow(context);
         this.shown = true;
         ImGui.pushID(this.hashCode());
         this.draw(context);
         ImGui.popID();
     }
 
-    protected abstract void draw(UIContext context);
+    public abstract void draw(UIContext<C> context);
 
     public void triggerEvent() {
 

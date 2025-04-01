@@ -39,18 +39,12 @@ public class DataOperationLog {
         return copy;
     }
 
-    /**
-     *
-     * @param relative
-     * @return a copy of the log where only data operations
-     * are included that are on the relative node or on children of the relative node.
-     */
-    public Stack<RelativeEntry> getLogRelativeTo(BaseValueHierarchy<?> relative) {
+    public static Stack<RelativeEntry> getStackRelativeTo(BaseValueHierarchy<?> relative, Stack<Entry> stack) {
         Stack<RelativeEntry> copy = new Stack<>();
 
         ValuePath relativeFullPath = relative.getFullPath();
 
-        for (Entry entry : this.log) {
+        for (Entry entry : stack) {
             if (entry.path.equals(relativeFullPath)) {
                 copy.push(new RelativeEntry(entry.timetamp, null, entry.operation));
             } else {
@@ -62,6 +56,16 @@ public class DataOperationLog {
         }
 
         return copy;
+    }
+
+    /**
+     *
+     * @param relative
+     * @return a copy of the log where only data operations
+     * are included that are on the relative node or on children of the relative node.
+     */
+    public Stack<RelativeEntry> getLogRelativeTo(BaseValueHierarchy<?> relative) {
+        return getStackRelativeTo(relative, this.log);
     }
 
     /**

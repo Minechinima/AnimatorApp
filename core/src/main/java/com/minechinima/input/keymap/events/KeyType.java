@@ -5,5 +5,5 @@ public enum KeyType {
     RELEASE,
     CLICK,
     DOUBLECLICK,
-    REPEAT
+    REPEAT;
 }

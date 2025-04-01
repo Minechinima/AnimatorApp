@@ -26,17 +26,26 @@ public class ImguiLoader {
     protected ImGuiIO io;
     protected boolean beginFrame;
     protected ImFont font;
+    protected final LWJGLInputEventManager lwjglInputEventManager;
+
+    public ImguiLoader(LWJGLInputEventManager lwjglInputEventManager) {
+        this.lwjglInputEventManager = lwjglInputEventManager;
+    }
 
     public ImFont getFont() {
         return this.font;
     }
 
-    public void init(long windowID, LWJGLInputEventManager inputEventManager) {
+    public ImGuiImplGlfw getGLFWBackend() {
+        return this.imGuiGlfw;
+    }
+
+    public void init(long windowID) {
         if (this.initialized) {
             throw new IllegalStateException("Imgui is already initialized, wtf are you doing!?");
         }
 
-        imGuiGlfw = new ImGuiImplGlfw(inputEventManager);
+        imGuiGlfw = new ImGuiImplGlfw(this.lwjglInputEventManager);
 
         this.windowID = windowID;
         ImGuiContext oldImGuiContext = ImGui.getCurrentContext();

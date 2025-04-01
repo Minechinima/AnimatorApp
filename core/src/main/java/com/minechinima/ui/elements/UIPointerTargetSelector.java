@@ -3,6 +3,7 @@ package com.minechinima.ui.elements;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.base.ValuePointer;
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 import imgui.flag.ImGuiComboFlags;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class UIPointerTargetSelector<T extends BaseStructure> extends UIValueElement<T, ValuePointer<T>> {
+public class UIPointerTargetSelector<T extends BaseStructure, C extends IContext> extends UIValueElement<T, ValuePointer<T>, C> {
     private BaseValueHierarchy<T> sourceList = null;
     private final Predicate<T> filter;
     private final String defaultLabel;
@@ -51,6 +52,7 @@ public class UIPointerTargetSelector<T extends BaseStructure> extends UIValueEle
                         boolean isSelected = child == currentTarget;
                         if (ImGui.selectable(child.getIdentifier(), isSelected)) {
                             if (this.setCallback != null) this.setCallback.accept(child);
+                            context.getUIManager().getOperatorManager().executeTransaction("Set ptr", this.value.controller().set(child), true);
                         }
                         if (isSelected) ImGui.setItemDefaultFocus();
                     }

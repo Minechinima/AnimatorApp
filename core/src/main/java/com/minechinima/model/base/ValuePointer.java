@@ -1,5 +1,6 @@
 package com.minechinima.model.base;
 
+import com.minechinima.controller.api.defaults.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.StringType;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
@@ -40,6 +41,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
      * @implNote important because generics suck :3
      */
     private final Class<T> type;
+    private final ValueControllerFactory<T, ValuePointer<T>> controller = new ValueControllerFactory<>(this);
 
     public ValuePointer(String id, Class<T> type, @NotNull BaseValueHierarchy<? extends BaseStructure> referenceFrame) {
         super(id);
@@ -50,6 +52,10 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
         this.referenceFrame = referenceFrame;
         this.type = type;
+    }
+
+    public ValueControllerFactory<T, ValuePointer<T>> controller() {
+        return this.controller;
     }
 
     public boolean isInitialized() {
@@ -257,7 +263,10 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     }
 
     public T getReference() {
-        //TODO try and get the value if path is cached
+        if (this.referenced == null && this.cachedUniquePath != null) {
+            T newValue = this.getTargetFromPath(this.cachedUniquePath);
+            if (newValue != null) this.set(newValue);
+        }
         return this.referenced;
     }
 
@@ -330,7 +339,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         //TODO serialization is just placeholder, we need to check nulls in serialization and how to deal with them
         StringType value;
         if ((value = data.asStringType()) == null) throw new BaseTypeCannotBeParsed("ValuePointer expects stringtype.");
-
+        if (value.getValue() == null) return null;
         try {
             BaseStructure target = this.referenceFrame.getChildByUniquePath(new ValuePath(value.getValue()));
             if (target == null) {
@@ -343,6 +352,17 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         } catch (PathParsingException e) {
             throw new BaseTypeCannotBeParsed(e);
         }
+    }
+
+    protected @Nullable T getTargetFromPath(String path) {
+        BaseStructure target = this.referenceFrame.getChildByUniquePath(path);
+        if (target == null) {
+            return null;
+        } else if (this.type.isAssignableFrom(target.getClass())) {
+            return (T) target;
+        }
+
+        return null;
     }
 
     @Override

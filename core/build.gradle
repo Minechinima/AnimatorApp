@@ -8,6 +8,13 @@ repositories {
 }
 
 dependencies {
+    implementation platform("org.apache.logging.log4j:log4j-bom:${project.log4j_version}")
+    runtimeOnly 'org.apache.logging.log4j:log4j-core'
+    implementation 'org.apache.logging.log4j:log4j-api:${log4j-api.version}'
+
+    implementation project(":ui")
+    annotationProcessor project(":ui")
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 

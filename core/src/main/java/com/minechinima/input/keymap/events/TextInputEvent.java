@@ -1,7 +1,6 @@
 package com.minechinima.input.keymap.events;
 
 import com.minechinima.input.keymap.PressedKeySet;
-import com.minechinima.input.raw.KeyEvent;
 import com.minechinima.ui.elements.UIWindow;
 
 import java.util.Objects;

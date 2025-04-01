@@ -1,5 +1,6 @@
 package com.minechinima.model.app.object;
 
+import com.minechinima.controller.ObjectDataManagerController;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 public class ObjectDataManager extends BaseValueMap<BaseObject> {
     private final BBDatabase database;
+    private final ObjectDataManagerController controller = new ObjectDataManagerController(this);
 
     public ObjectDataManager(String id, BBDatabase database) {
         super(id);
@@ -25,8 +27,13 @@ public class ObjectDataManager extends BaseValueMap<BaseObject> {
     @Override
     protected @NotNull BaseObject instantiate(String id, UUID uuid, BaseType<?> data) {
         BaseObject obj = uuid == null ? new BaseObject(id, this.database) : new BaseObject(id, uuid, this.database);
-        obj.initChildren();
         obj.fromData(data);
+        obj.initChildren();
+        //TODO ptr exception is not initialized when doing fromData after init
         return obj;
+    }
+
+    public ObjectDataManagerController controllers() {
+        return this.controller;
     }
 }

@@ -36,7 +36,7 @@ public abstract class UIPropertyContext<T extends BaseStructure> extends UIEleme
     }
 
     @Override
-    protected final void draw(UIContext context) {
+    public final void draw(UIContext context) {
         if (this.context == null) return;
         this.drawBody(context);
         this.context = null;

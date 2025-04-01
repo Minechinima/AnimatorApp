@@ -16,6 +16,10 @@ public class KeyMapKeyEvent extends KeyMapEvent {
         this.type = type;
     }
 
+    /**
+     * @return
+     * @implNote Do not use this value to compare if two events were fired by the same key, use {@link #equalKey(KeyMapKeyEvent)}
+     */
     public Key key() {
         return this.key;
     }
@@ -30,16 +34,5 @@ public class KeyMapKeyEvent extends KeyMapEvent {
      */
     public boolean equalKey(KeyMapKeyEvent event) {
         return this.key == event.key;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof KeyMapKeyEvent keyEvent)) return false;
-        return key == keyEvent.key;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(key);
     }
 }

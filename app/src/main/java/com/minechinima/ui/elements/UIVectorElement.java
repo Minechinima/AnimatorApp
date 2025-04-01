@@ -1,11 +1,12 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.model.values.vectors.Vector3fValue;
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 import imgui.internal.ImGui;
 import org.joml.Vector3f;
 
-public class UIVectorElement extends UIValueElement<Vector3f, Vector3fValue> {
+public class UIVectorElement<C extends IContext> extends UIValueElement<Vector3f, Vector3fValue, C> {
     private final UIDragFloat x = new UIDragFloat("X");
     private final UIDragFloat y = new UIDragFloat("Y");
     private final UIDragFloat z = new UIDragFloat("Z");

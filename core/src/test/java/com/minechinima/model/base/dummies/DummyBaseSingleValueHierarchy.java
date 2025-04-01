@@ -1,6 +1,7 @@
 package com.minechinima.model.base.dummies;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.NotNull;
@@ -17,9 +18,13 @@ public class DummyBaseSingleValueHierarchy extends BaseSingleValueHierarchy<Base
         super(id, uuid);
     }
 
-    @NotNull
     @Override
-    protected BaseStructure instantiate(String id, @Nullable UUID uuid, BaseType data) {
+    public BaseType<?> valueToData() {
+        return null;
+    }
+
+    @Override
+    public @Nullable BaseStructure valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
         return null;
     }
 }
