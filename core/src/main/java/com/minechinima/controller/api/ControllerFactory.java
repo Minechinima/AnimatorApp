@@ -15,31 +15,19 @@ public class ControllerFactory<T extends BaseStructure> {
     }
 
     public Optional<IControllerCommand> setID(String newID) {
-        if (this.owner instanceof IDMutable) {
-            return Optional.of(new ControllerSetID(this.owner, newID));
+        if (this.owner instanceof IDMutable idMutable) {
+            return Optional.of(new IControllerCommand() {
+                @Override
+                public void execute() throws UserException {
+                    idMutable.setID(newID);
+                }
+
+                @Override
+                public List<BaseStructure> getAffectedNodes() {
+                    return List.of(ControllerFactory.this.owner);
+                }
+            });
         }
         return Optional.empty();
-    }
-
-    public class ControllerSetID implements IControllerCommand {
-        private final BaseStructure owner;
-        private final String val;
-
-        public ControllerSetID(BaseStructure owner, String val) {
-            this.owner = owner;
-            this.val = val;
-        }
-
-        @Override
-        public void execute() throws UserException {
-            if (this.owner instanceof IDMutable mutable) {
-                mutable.setID(this.val);
-            }
-        }
-
-        @Override
-        public List<BaseStructure> getAffectedNodes() {
-            return this.owner instanceof IDMutable ? List.of(this.owner) : List.of();
-        }
     }
 }
