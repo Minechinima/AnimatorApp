@@ -330,6 +330,15 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                     .returns(ParameterizedTypeName.get(ClassName.get(Class.class), renderTarget))
                     .addStatement("return $T.class", renderTarget);
 
+            ClassName className = ClassName.get("com.minechinima.ui.renderers", key + "Renderer");
+
+            // Generate newInstance method
+            MethodSpec.Builder newInstanceBuilder = MethodSpec.methodBuilder("newInstance")
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(className)
+                    .addStatement("return new $T()", className);
+
 
             // Generate type
             TypeSpec typeSpec = TypeSpec.classBuilder(key + "Renderer")
@@ -339,6 +348,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                     .addMethod(drawMethodBuilder.build())
                     .addMethod(constructorBuilder.build())
                     .addMethod(renderTargetBuilder.build())
+                    .addMethod(newInstanceBuilder.build())
                     .build();
 
             // Generate file
