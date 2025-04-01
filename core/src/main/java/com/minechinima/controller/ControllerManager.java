@@ -7,16 +7,33 @@ import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DataOperationLog;
 import com.minechinima.model.logging.operations.IDataOperation;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
 public class ControllerManager {
     private Transaction currentTransaction;
     private final DataTreeManager<?> dataTree;
+    private final Logger logger;
+    /**
+     * 0 means this controller is not called.
+     */
+    private int nestedLevel = 0;
+    /**
+     * The exception that terminated a nested execution. This is cached here
+     * so it can be used by all other nested calls and returned to let every stage of the call stack
+     * know the reason for termination.
+     */
+    @Nullable
+    private Exception e;
 
-    public ControllerManager(DataTreeManager<?> app) {
+    public ControllerManager(DataTreeManager<?> app, Logger logger) {
         this.dataTree = app;
+        this.logger = logger;
     }
 
     public boolean isActive() {
@@ -33,18 +50,12 @@ public class ControllerManager {
     public ControllerResult executeTransaction(String name, Queue<IControllerCommand> commands) {
         this.startTransaction();
         ControllerResult r0 = this.writeToTransaction(commands);
-        ControllerResult r1 = this.commitTransaction(name);
 
         if (r0.state() == ControllerResult.State.ERROR) {
             return r0;
         }
 
-        if (r1.state() == ControllerResult.State.ERROR) {
-            this.abortTransaction();
-            return r1;
-        }
-
-        return r1;
+        return this.commitTransaction(name);
     }
 
     /**
@@ -64,34 +75,50 @@ public class ControllerManager {
      * @return
      * @throws UnsupportedOperationException when no transaction was started.
      */
-    public ControllerResult writeToTransaction(Queue<IControllerCommand> commands) {
+    public ControllerResult writeToTransaction(@NotNull Queue<IControllerCommand> commands) {
         if (this.currentTransaction == null) {
             throw new UnsupportedOperationException("Cannot write to transaction when none is started.");
         }
 
+        if (commands == null) {
+            throw new IllegalArgumentException("Commands cannot be null");
+        }
+
+        commands = new LinkedList<>(commands);
+
         this.dataTree.getReferenceManager().startCachingClearedReferences();
         this.currentTransaction.getLog().resume();
+        this.nestedLevel++;
 
         try {
-            while (!commands.isEmpty()) {
+            /*ATTENTION: while this is running, writeToTransaction could be called again */
+            while (!commands.isEmpty() && this.e == null) {
                 IControllerCommand command = commands.poll();
                 command.execute();
             }
         } catch (Exception e) {
+            if (this.nestedLevel > 1) this.e = e;
             this.abortTransaction();
             this.dataTree.getReferenceManager().reapplyCachedClearedReferences();
 
             if (e instanceof UserException userException) {
-                return new ControllerResult(ControllerResult.State.ERROR, userException.getUserMessage(), e);
+                return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, userException.getUserMessage(), e);
             }
 
-            return new ControllerResult(ControllerResult.State.ERROR, "An unexpected error happened.", e);
+            return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "An unexpected error happened.", e);
+        } finally {
+            this.nestedLevel--;
+        }
+
+        if (this.currentTransaction == null) {
+            this.dataTree.getReferenceManager().stopCachingClearedReferences();
+            return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "", new Exception(this.e));
         }
 
         this.currentTransaction.getLog().pause();
         this.dataTree.getReferenceManager().stopCachingClearedReferences();
 
-        return new ControllerResult(ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
+        return new ControllerResult(this.currentTransaction, ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
 
     /**
@@ -103,53 +130,64 @@ public class ControllerManager {
             throw new UnsupportedOperationException("Cannot commit transaction when none is started.");
         }
 
+        if (this.nestedLevel > 1) {
+            /* this is illegal, needs to be caught to let dev know that committing during change events is bad. */
+            throw new UnsupportedOperationException("Cannot commit a transaction from within the controller commands execution loop.");
+        }
+
         this.currentTransaction.setTitle(name);
         this.dataTree.getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
+        ControllerResult result = new ControllerResult(this.currentTransaction, ControllerResult.State.SUCCESS, name);
         this.currentTransaction = null;
-        return new ControllerResult(ControllerResult.State.SUCCESS, name);
+        return result;
     }
 
     /**
      * Revert the current active transaction.
      * @throws UnsupportedOperationException when no transaction is active.
+     * @throws Error when anything wrong happens during reverting the transaction.
+     * This is important to catch critical bugs and let the app terminate to prevent incorrect data.
      */
     public void abortTransaction() {
         if (this.currentTransaction == null) {
-            throw new UnsupportedOperationException("Cannot commit transaction when none is started.");
+            throw new UnsupportedOperationException("Cannot abort transaction when none is started.");
         }
 
-        this.currentTransaction.getLog().close();
-        this.currentTransaction.abortedState();
+        try {
+            this.currentTransaction.getLog().close();
+            this.currentTransaction.abortedState();
 
-        BaseValueHierarchy<?> root = this.dataTree.getRoot();
-        Stack<DataOperationLog.RelativeEntry> log = this.currentTransaction.getLog().getLogRelativeTo(root);
-        while (!log.isEmpty()) {
-            DataOperationLog.RelativeEntry step = log.pop();
-            BaseStructure context;
-            IDataOperation operation = step.getOperation();
+            BaseValueHierarchy<?> root = this.dataTree.getRoot();
+            Stack<DataOperationLog.RelativeEntry> log = this.currentTransaction.getLog().getLogRelativeTo(root);
+            while (!log.isEmpty()) {
+                DataOperationLog.RelativeEntry step = log.pop();
+                BaseStructure context;
+                IDataOperation operation = step.getOperation();
 
-            if (step.getRelativePath() == null) {
-                context = root;
-            } else {
-                context = root.getChildByUniquePath(step.getRelativePath());
+                if (step.getRelativePath() == null) {
+                    context = root;
+                } else {
+                    context = root.getChildByUniquePath(step.getRelativePath());
+                }
+
+                if (context == null) {
+                    throw new Error("Cannot revert transaction as one element cannot be found.");
+                }
+
+                if (!operation.isCorrectType(context)) {
+                    throw new Error("Cannot revert transaction as the type of an element is not applicable.");
+                }
+
+
+                if (!operation.undo(context)) {
+                    throw new Error("Could not revert the operation " + operation);
+                }
             }
 
-            if (context == null) {
-                throw new Error("Cannot revert transaction as one element cannot be found.");
-            }
-
-            if (!operation.isCorrectType(context)) {
-                throw new Error("Cannot revert transaction as the type of an element is not applicable.");
-            }
-
-            try {
-                operation.undo(context);
-            } catch (Exception e) {
-                throw new Error(e);
-            }
+            this.currentTransaction = null;
+        } catch (Exception e) {
+            throw new Error(e);
         }
-
-        this.currentTransaction = null;
     }
 }
