@@ -8,15 +8,15 @@ import org.jetbrains.annotations.Nullable;
  * @param userMessage
  * @param exception
  */
-public record ControllerResult(State state, String userMessage, @Nullable Exception exception) {
+public record ControllerResult(Transaction transaction, State state, String userMessage, @Nullable Exception exception) {
     public ControllerResult {
         if (state != State.ERROR && exception != null) {
             throw new IllegalArgumentException("Argument value mismatch: Exceptions can only happen with ERROR status");
         }
     }
 
-    public ControllerResult(State result, String userMessage) {
-        this(result, userMessage, null);
+    public ControllerResult(Transaction transaction, State result, String userMessage) {
+        this(transaction, result, userMessage, null);
     }
 
     public static enum State {
