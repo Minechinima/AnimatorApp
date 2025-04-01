@@ -1,19 +1,21 @@
 package com.minechinima.operator;
 
+import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.commands.IOperator;
-import com.minechinima.operator.ot.AbstractOperatorType;
+import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
+//TODO create base operatorTypRegistry, give it to OperatorFactory
 public class OperatorFactory {
-    private final Map<AbstractOperatorType<?, ?>, PropertyOperatorEntry<?, ?, ?, ?>> propRegistry = new HashMap<>();
-    private final Map<AbstractOperatorType<?, ?>, Supplier<IOperator<?>>> opRegistry = new HashMap<>();
+    private final Map<OperatorType<?>, PropertyOperatorEntry<?, ?, ?, ?>> propRegistry = new HashMap<>();
+    private final Map<OperatorType<?>, Supplier<IOperator<?>>> opRegistry = new HashMap<>();
     private final Logger logger;
 
     public OperatorFactory(Logger logger) {
@@ -21,8 +23,8 @@ public class OperatorFactory {
     }
 
     @Nullable
-    public <C, OP extends IOperator<C>,
-            OT extends AbstractOperatorType<C, ?>>
+    public <C extends IContext, OP extends IOperator<C>,
+            OT extends OperatorType<C>>
     OP getOperator(OT type) {
         Supplier<OP> supplier;
         PropertyOperatorEntry<C, ?, ?, ?> prop;
@@ -32,14 +34,14 @@ public class OperatorFactory {
                 return supplier.get();
             }
 
-            if (type instanceof AbstractOperatorType.PropertyProvider propOT
+            if (type instanceof IOTPropertyProvider propOT
                     && (prop= (PropertyOperatorEntry) this.propRegistry.get(type)) != null) {
                 /* cast exception theoretically impossible because registering process takes care of type safety... */
                 Function f = prop.init;
                 return (OP) f.apply(propOT.createProps());
             }
         } catch (ClassCastException e) {
-            //TODO I am not sure if class cast is possible...
+            //TODO not sure if ClassCastException is even possible with the safety measures in the registration...
             return null;
         }
 
@@ -47,9 +49,10 @@ public class OperatorFactory {
     }
 
     @Nullable
-    public <C, P extends OperatorProperties,
-            OP extends IOperator<C> & IPropertyOperator<C, P>,
-            OT extends AbstractOperatorType<C, ?> & AbstractOperatorType.PropertyProvider<P>>
+    public <C extends IContext,
+            P extends OperatorProperties,
+            OP extends IPropertyOperator<C, P> & IOperator<C>,
+            OT extends OperatorType<C> & IOTPropertyProvider<P>>
     OP getOperator(OT type, @NotNull P props) {
         PropertyOperatorEntry<C, P, OT, OP> entry;
         try {
@@ -61,23 +64,25 @@ public class OperatorFactory {
         return entry.init.apply(props);
     }
 
-    public <C, P extends OperatorProperties,
-            OP extends IOperator<C> & IPropertyOperator<C, P>,
-            OT extends AbstractOperatorType<C, ? extends AbstractOperatorType<C, ?>> & AbstractOperatorType.PropertyProvider<P>>
+    public <C extends IContext,
+            P extends OperatorProperties,
+            OP extends IPropertyOperator<C, P> & IOperator<C>,
+            OT extends OperatorType<C> & IOTPropertyProvider<P>>
     void register(OT type, Function<P, OP> init) {
         PropertyOperatorEntry<C, P, OT, OP> entry = new PropertyOperatorEntry<>(type, init);
         this.replacement(type, this.opRegistry);
         this.propRegistry.put(type, entry);
     }
 
-    public <C, OP extends IOperator<C>,
-            OT extends AbstractOperatorType<C, ? extends AbstractOperatorType<C, ?>>>
+    public <C extends IContext,
+            OP extends IOperator<C>,
+            OT extends OperatorType<C>>
     void register(OT type, Supplier<OP> init) {
         this.replacement(type, this.propRegistry);
         this.opRegistry.put(type, (Supplier<IOperator<?>>) init);
     }
 
-    private void replacement(AbstractOperatorType type, Map other) {
+    private void replacement(OperatorType type, Map other) {
         if (this.opRegistry.containsKey(type) || this.propRegistry.containsKey(type)) {
             this.logger.info("Replacing the Operator of OperatorType[" + type.title + "] instance that was already registered.");
             /* only one operator type instance in this whole registry */
@@ -92,9 +97,11 @@ public class OperatorFactory {
      * @param <OT> operator type
      * @param <OP> operator
      */
-    private class PropertyOperatorEntry<C, P extends OperatorProperties,
-            OT extends AbstractOperatorType<C, ? extends AbstractOperatorType<C, ?>> & AbstractOperatorType.PropertyProvider<P>,
-            OP extends IOperator<C> & IPropertyOperator<C, P>> {
+    private class PropertyOperatorEntry
+            <C extends IContext,
+            P extends OperatorProperties,
+            OT extends OperatorType<C> & IOTPropertyProvider<P>,
+            OP extends IPropertyOperator<C, P> & IOperator<C>> {
         private final OT type;
         private final Function<P, OP> init;
 

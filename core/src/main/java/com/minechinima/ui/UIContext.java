@@ -1,7 +1,12 @@
 package com.minechinima.ui;
 
 import com.minechinima.i18n.TranslationBackpack;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.UIOperatorContext;
 import com.minechinima.rendering.IWindow;
+import com.minechinima.ui.elements.UIElement;
+import com.minechinima.ui.elements.UIScreen;
+import com.minechinima.ui.elements.UISpace;
 import com.minechinima.ui.elements.UIWindow;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import imgui.ImGui;
@@ -12,13 +17,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.logging.Logger;
 
-public class UIContext {
+public class UIContext<C extends IContext> {
     private final ImguiLoader imguiContext;
     private final IWindow window;
-    private final UIManager manager;
-    private UIWindow currentWindow;
-    private final UIPanelFactory panelFactory = new UIPanelFactory();
+    private final UIOperatorContextBuilder<C> builder = new UIOperatorContextBuilder<>();
+    private final UIManager<C> manager;
+    private UIWindow<C> currentWindow;
+    private C operatorContext;
+    private final Logger logger;
+    private final UIPanelFactory<C> panelFactory = new UIPanelFactory<>();
     private final HashMap<Class<?>, Object> registry = new HashMap<>();
     private final TranslationBackpack translationBackpack;
     private Locale locale = Locale.getDefault();
@@ -33,19 +42,36 @@ public class UIContext {
     private final Set<Integer> mouseKeysDown = new HashSet<>();
     private float partialTicks;
 
-    public UIContext(IWindow window, UIManager manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack, UIHandlerRegistry uiHandlerRegistry) {
+    public UIContext(IWindow window, UIManager<C> manager, ImguiLoader imguiContext, TranslationBackpack translationBackpack, UIHandlerRegistry uiHandlerRegistry) {
         this.window = window;
         this.manager = manager;
         this.imguiContext = imguiContext;
         this.uiHandlerRegistry = uiHandlerRegistry;
         this.translationBackpack = translationBackpack;
+        this.logger = Logger.getLogger("UI");
     }
 
-    void setWindow(UIWindow window) {
+    public Logger getLogger() {
+        return this.logger;
+    }
+
+    void setOperatorContext(C context) {
+        this.operatorContext = context;
+    }
+
+    public UIOperatorContextBuilder<C> getContextBuilder() {
+        return this.builder;
+    }
+
+    public C getOperatorContext() {
+        return this.operatorContext;
+    }
+
+    void setWindow(UIWindow<C> window) {
         this.currentWindow = window;
     }
 
-    public UIWindow getCurrentWindow() {
+    public UIWindow<C> getCurrentWindow() {
         return this.currentWindow;
     }
 
@@ -87,7 +113,7 @@ public class UIContext {
         return this.window;
     }
 
-    public UIManager getWindowManager() {
+    public UIManager<C> getUIManager() {
         return this.manager;
     }
 
@@ -99,7 +125,7 @@ public class UIContext {
         return this.translationBackpack;
     }
 
-    public UIPanelFactory getPanelFactory() {
+    public UIPanelFactory<C> getPanelFactory() {
         return this.panelFactory;
     }
 
@@ -209,5 +235,117 @@ public class UIContext {
 
     public boolean isAnyCtrlDown() {
         return ImGui.isKeyDown(ImGuiKey.LeftCtrl) | ImGui.isKeyDown(ImGuiKey.RightCtrl);
+    }
+
+    /**
+     * Intermediate {@link UIOperatorContext} so the UI can set the correct values
+     * and later build an immutable version of this.
+     * @param <C>
+     */
+    public class UIOperatorContextBuilder<C extends IContext> {
+        private UIWindow<C> clickedWindow;
+        private UIScreen<C> clickedUIScreen;
+        private UISpace<C> clickedUISpace;
+        private UIElement<C> clickedWidget;
+        private UIWindow<C> currentHoveredWindow;
+        private UIScreen<C> currentHoveredUIScreen;
+        private UISpace<C> currentHoveredUISpace;
+        private UIElement<C> currentHoveredWidget;
+
+        public void reset() {
+            this.clickedWindow = null;
+            this.clickedUIScreen = null;
+            this.clickedUISpace = null;
+            this.clickedWidget = null;
+            this.currentHoveredWindow = null;
+            this.currentHoveredUIScreen = null;
+            this.currentHoveredUISpace = null;
+            this.currentHoveredWidget = null;
+        }
+
+        public UIWindow<C> getClickedWindow() {
+            return clickedWindow;
+        }
+
+        public void setClickedWindow(UIWindow<C> clickedWindow) {
+            if (this.clickedWindow != null) return;
+            this.clickedWindow = clickedWindow;
+        }
+
+        public UIScreen<C> getClickedUIScreen() {
+            return clickedUIScreen;
+        }
+
+        public void setClickedUIScreen(UIScreen<C> clickedUIScreen) {
+            if (this.clickedUIScreen != null) return;
+            this.clickedUIScreen = clickedUIScreen;
+        }
+
+        public UISpace<C> getClickedUISpace() {
+            return clickedUISpace;
+        }
+
+        public void setClickedUISpace(UISpace<C> clickedUISpace) {
+            if (this.clickedUISpace != null) return;
+            this.clickedUISpace = clickedUISpace;
+        }
+
+        public UIElement<C> getClickedWidget() {
+            return clickedWidget;
+        }
+
+        public void setClickedWidget(UIElement<C> clickedWidget) {
+            if (this.clickedWidget != null) return;
+            this.clickedWidget = clickedWidget;
+        }
+
+        public UIWindow<C> getCurrentHoveredWindow() {
+            return currentHoveredWindow;
+        }
+
+        public void setCurrentHoveredWindow(UIWindow<C> currentHoveredWindow) {
+            if (this.currentHoveredWindow != null) return;
+            this.currentHoveredWindow = currentHoveredWindow;
+        }
+
+        public UIScreen<C> getCurrentHoveredUIScreen() {
+            return currentHoveredUIScreen;
+        }
+
+        public void setCurrentHoveredUIScreen(UIScreen<C> currentHoveredUIScreen) {
+            if (this.currentHoveredUIScreen != null) return;
+            this.currentHoveredUIScreen = currentHoveredUIScreen;
+        }
+
+        public UISpace<C> getCurrentHoveredUISpace() {
+            return currentHoveredUISpace;
+        }
+
+        public void setCurrentHoveredUISpace(UISpace<C> currentHoveredUISpace) {
+            if (this.currentHoveredUISpace != null) return;
+            this.currentHoveredUISpace = currentHoveredUISpace;
+        }
+
+        public UIElement<C> getCurrentHoveredWidget() {
+            return currentHoveredWidget;
+        }
+
+        public void setCurrentHoveredWidget(UIElement<C> currentHoveredWidget) {
+            if (this.currentHoveredWidget != null) return;
+            this.currentHoveredWidget = currentHoveredWidget;
+        }
+
+        public UIOperatorContext build() {
+            return new UIOperatorContext(
+                    this.clickedWindow,
+                    this.clickedUIScreen,
+                    this.clickedUISpace,
+                    this.clickedWidget,
+                    this.currentHoveredWindow,
+                    this.currentHoveredUIScreen,
+                    this.currentHoveredUISpace,
+                    this.currentHoveredWidget,
+                    UIContext.this.manager);
+        }
     }
 }

@@ -23,6 +23,7 @@ public class KeyModEnumValue extends AbstractEnumValue<KeyModEnum> {
 
     @Override
     public void fromData(BaseType<?> data) {
+        if (data == null) return; //TODO think about null in serialization....
         KeyModEnum v = RegistryUtils.deserialize(data, KeyModEnum.REGISTRY);
         if (v != null) this.set(v);
     }

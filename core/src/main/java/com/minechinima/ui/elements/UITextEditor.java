@@ -1,8 +1,8 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.model.values.StringValue;
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
-import com.minechinima.utils.MathUtils;
 import imgui.ImGui;
 import imgui.ImGuiInputTextCallbackData;
 import imgui.callback.ImGuiInputTextCallback;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class UITextEditor extends UIValueElement<String, StringValue> {
+public class UITextEditor<C extends IContext> extends UIValueElement<String, StringValue, C> {
     private ImString textBuffer = new ImString("", 1024*16);
     private boolean isEditing = false;
     /**
@@ -48,7 +48,7 @@ public class UITextEditor extends UIValueElement<String, StringValue> {
     }
 
     @Override
-    protected void drawElement(UIContext context) {
+    protected void drawElement(UIContext<C> context) {
         this.textBuffer.set(this.value.get());
         TextInputCallbackAdapter callback = new TextInputCallbackAdapter((data) -> {
             /*
@@ -71,7 +71,7 @@ public class UITextEditor extends UIValueElement<String, StringValue> {
         ImGui.inputTextMultiline(this.label, this.textBuffer, flags, callback);
     }
 
-    private void callbackActiveNotEditing(UIContext context, ImGuiInputTextCallbackData data) {
+    private void callbackActiveNotEditing(UIContext<C> context, ImGuiInputTextCallbackData data) {
         if (data.getCursorPos() != this.prevCursorPosition) {
             /* when user changes the cursor for the first time while not editing, store the last text as undo */
             if (!this.changedCursorNotEditing) {
@@ -100,7 +100,7 @@ public class UITextEditor extends UIValueElement<String, StringValue> {
         this.prevCursorPosition = data.getCursorPos();
     }
 
-    private void callbackEditing(UIContext context, ImGuiInputTextCallbackData data) {
+    private void callbackEditing(UIContext<C> context, ImGuiInputTextCallbackData data) {
         Operation prevOperation = this.currentOperation;
 
         if (data.getBufTextLen() < this.value.get().length()) {

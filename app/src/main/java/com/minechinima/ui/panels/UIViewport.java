@@ -1,7 +1,8 @@
 package com.minechinima.ui.panels;
 
+import com.minechinima.model.BBContext;
+import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.UIContext;
-import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.UISpace;
 import com.minechinima.ui.elements.UIWindow;
 import imgui.ImGui;
@@ -97,14 +98,16 @@ public class UIViewport extends UISpace {
         glScaled(1, -1, 1);
 
         UIWindow window = context.getCurrentWindow();
-        if (window instanceof BBUIWindow bbwindow) {
-            bbwindow.context.database.objects.getChildren().forEach(object -> {
-                glPushMatrix();
-                glTranslatef(-2, -2, -2);
-                this.renderCube();
-                glPopMatrix();
-            });
-        }
+        BBContext ctx = ((BBOperatorContext) context.getOperatorContext()).bbContext();
+        ctx.database.objects.getChildren().forEach(object -> {
+            glPushMatrix();
+            glTranslatef(object.translation.x.get(), object.translation.y.get(), object.translation.z.get());
+            glRotatef((float) object.rotation.x.get(), 1, 0, 0);
+            glRotatef((float) object.rotation.y.get(), 0, 1, 0);
+            glRotatef((float) object.rotation.z.get(), 0, 0, 1);
+            this.renderCube();
+            glPopMatrix();
+        });
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

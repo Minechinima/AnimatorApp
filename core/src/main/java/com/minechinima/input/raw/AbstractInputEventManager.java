@@ -24,7 +24,7 @@ public abstract class AbstractInputEventManager implements IInputEventManager {
 
     @Override
     public void notifyListeners(InputEvent event) {
-        //TODO proper inheritance of events....
+        //TODO proper inheritance of events, do this together with eventbus refactor so they can use the same code and annotation system....
         for (IInputEventListener<InputEvent> listener : this.listeners.get(event.getClass())) {
             listener.onEvent(event);
         }

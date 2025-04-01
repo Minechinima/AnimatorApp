@@ -3,12 +3,15 @@ package com.minechinima.operator.ot.commands;
 import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorContext;
 import com.minechinima.operator.OperatorProperties;
-import com.minechinima.ui.elements.UIElement;
+import com.minechinima.ui.elements.UIModal;
 import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.Queue;
 
 /**
@@ -18,9 +21,18 @@ import java.util.Queue;
  * @implNote Important why this is an interface: force subclasses that
  * implement {@link IAdjustableOperator} to also implement this interface.
  */
-public interface IPropertyOperator<C, P extends OperatorProperties> extends IOperator<C> {
+public abstract class IPropertyOperator<C extends IContext, P extends OperatorProperties> implements IOperator<C> {
     @NotNull
-    P props();
+    protected final P props;
+
+    public IPropertyOperator(P props) {
+        this.props = Objects.requireNonNull(props);
+    }
+
+    @NotNull
+    public final P props() {
+        return this.props;
+    }
 
     /**
      * Called when Operator is running in UI Mode and the UI changes a property.
@@ -29,21 +41,13 @@ public interface IPropertyOperator<C, P extends OperatorProperties> extends IOpe
      * @return
      * @throws UserException
      */
-    Pair<OpExecuteFlag, Queue<IControllerCommand>> executeOnPropChange(C context, BaseStructure changedProp) throws UserException;
-
-    /**
-     * Called when the Operator was running in UI Mode but the UI and Operator are canceled.
-     * <br><br>
-     * This can be used to undo operations that are not part of the database.
-     * @param context
-     */
-    void cancelUIMode(C context);
+    public abstract Pair<OpExecuteFlag, Queue<IControllerCommand>> onUIPropChange(OperatorContext<C> context, BaseStructure changedProp) throws UserException;
 
     /**
      * @return if null the auto generated UI will be taken.
      */
     @Nullable
-    default UIElement propUI() {
+    public UIModal propUI() {
         return null;
     }
 }
