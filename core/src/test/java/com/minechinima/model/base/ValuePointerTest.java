@@ -443,6 +443,36 @@ public class ValuePointerTest {
     }
 
     @Test
+    public void getReferenceUsingCachedPath() {
+        DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root", ValuePath.Format.PATH);
+        DummyBaseStructure target = new DummyBaseStructure("test");
+        DummyBaseMutableHierarchy map = new DummyBaseMutableHierarchy("test", ValuePath.Format.MAP);
+        ValuePointer<DummyBaseStructure> ptr = new ValuePointer<>("ptr", DummyBaseStructure.class, root);
+
+        root.addChild("map", map);
+        root.addChild("ptr", ptr);
+        root.initChildren();
+
+        map.add(target);
+        ptr.set(target);
+
+        BaseType ptrSerialized = ptr.toData();
+
+        assertEquals(target, ptr.getReference());
+
+        map.removeChild(target);
+        assertNull(ptr.getReference());
+
+        ptr.fromData(ptrSerialized);
+        assertNotNull(ptr.getCachedUniquePath());
+        assertNull(ptr.getReference());
+
+        map.add(target);
+        assertEquals(target, ptr.getReference());
+
+    }
+
+    @Test
     public void undoSetNonNullToNullOnConstrainedRemoveOnCallback() throws UserException {
         /*
          * Test scenario: a pointer is part of a struct that does not allow null pointers.

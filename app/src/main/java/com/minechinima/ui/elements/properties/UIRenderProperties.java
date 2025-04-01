@@ -18,7 +18,7 @@ public class UIRenderProperties extends UIElement implements IUIPropertyContext 
     }
 
     @Override
-    protected void draw(UIContext context) {
+    public void draw(UIContext context) {
         //this.text.init(context.getCurrentWindow().context.database.text).render(context);
     }
 }

@@ -1,11 +1,15 @@
 package com.minechinima.model.values.base;
 
+import com.minechinima.controller.api.defaults.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.input.hotkey.HotKeyConfig;
+import com.minechinima.input.hotkey.HotKeyConfigSelectorEnum;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
+import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
@@ -16,6 +20,7 @@ import com.minechinima.utils.UUIDUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
 /**
@@ -23,7 +28,9 @@ import java.util.*;
  * @param <T>
  */
 public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T> {
-    private final LimitedSizeSet<T> proxySet = new LimitedSizeSet<>(1, new HashSet<>());
+    @Nullable
+    private T value = null;
+    private final ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controller = new ValueControllerFactory<>(this);
 
     public BaseSingleValueHierarchy(String id) {
         super(id, ValuePath.Format.PATH);
@@ -35,22 +42,21 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public final Set<T> getChildren() {
-        if (this.proxySet.size() > 1) throw new IllegalStateException("Proxy Set size is greater than 1");
-        return Set.copyOf(this.proxySet);
+        return this.value == null ? Set.of() : Set.of(this.value);
     }
 
     @Override
     public final boolean isDirectChild(BaseStructure child) {
-        return child != null && this.proxySet.contains(child);
+        return child != null && this.value == child;
     }
 
+    @Nullable
     public final T get() {
-        if (this.proxySet.size() > 1) throw new IllegalStateException("Proxy Set size is greater than 1");
-        return this.proxySet.isEmpty() ? null : this.proxySet.iterator().next();
+        return this.value;
     }
 
     @Override
-    public void set(T value) {
+    public void set(@Nullable T value) {
         if (this.get() == value) return;
         final T prevValue = this.get();
         final BaseType<?> valueBefore = this.valueToData();
@@ -60,33 +66,45 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
          * Perform valueAfter serialization in case it causes an exception, so we can recover.
          */
         try {
-            this.proxySet.clear();
-            if (value != null) this.proxySet.add(value);
+            this.value = value;
             valueAfter = this.valueToData();
-        } finally {
-            /* in case of exception: revert
-             * in case serialization was successful,
-             * put old value back, so it can be removed from the tree */
-            this.proxySet.clear();
-            if (prevValue != null) this.proxySet.add(prevValue);
+        } catch (Exception e){
+            /* in case of exception: revert */
+            this.value = prevValue;
+            throw new UnsupportedOperationException(e);
         }
 
+        /* try to remove prevValue from tree */
         if (prevValue != null) {
-            BaseOperationsUtils.removeChildOrThrow(prevValue, this.proxySet);
+            try {
+                prevValue.setParent(null);
+            } catch (SetParentNotAllowed e) {
+                this.value = prevValue;
+                throw new UnsupportedOperationException(e);
+            }
         }
 
         if (value != null) {
             try {
-                BaseOperationsUtils.addChildOrThrow(value, this, this.proxySet);
-            } catch (Exception e) {
-                //TODO what to do with null in serialization?
-                /* the only successful operation until here was the removal -> we need to trigger this to allow undoing it */
-                this.triggerEvent(new ValueChangeEvent(this, valueBefore, null));
-                throw e;
+                value.setParent(this);
+            } catch (SetParentNotAllowed e) {
+                this.value = prevValue;
+                if (prevValue != null) {
+                    try {
+                        prevValue.setParent(this);
+                    } catch (SetParentNotAllowed e1) {
+                        throw new Error("Could not recover from failed tree method.", e1);
+                    }
+                }
+                throw new UnsupportedOperationException(e);
             }
         }
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
+    }
+
+    public ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controllers() {
+        return this.controller;
     }
 
     @Override
@@ -97,50 +115,11 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         return this.get() == null;
     }
 
-    @Override
     public final boolean addChild(T child) {
         if (child == null || this.get() != null) return false;
 
         this.set(child);
         return this.get() == child;
-    }
-
-    /**
-     * Instantiate the value from the serialized data with an optional UUID.
-     * @param id
-     * @param uuid optional UUID for the data node if parsed.
-     * @param data data to instantiate the value from.
-     * @return
-     */
-    @NotNull
-    protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
-
-    @Override
-    public BaseType<?> valueToData() {
-        //TODO what to do with null in serialization... add unit tests to BaseType and think about design again
-        T value = this.get();
-        if (value == null) return null;
-
-        MapType map = new MapType(new HashMap<>());
-        map.getValue().put("id", new StringType(value.getIdentifier()));
-        map.getValue().put("data", value.toData());
-        if (value instanceof IDMutable mutable) {
-            return UUIDUtils.putUUID(map, "uuid", mutable.getUUID());
-        }
-
-        return map;
-    }
-
-    @Override
-    public T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
-        MapType mapType;
-        if (((mapType = data.asMapType()) == null) || mapType.getStringType("id") == null) {
-            throw new BaseTypeCannotBeParsed("");
-        }
-
-        String id = mapType.getStringType("id").getValue();
-        UUID uuid = UUIDUtils.readUUIDorNull(mapType, "uuid");
-        return this.instantiate(id, uuid, mapType.get("data"));
     }
 
     @Override

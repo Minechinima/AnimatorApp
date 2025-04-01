@@ -1,6 +1,6 @@
 package com.minechinima.model.values.base;
 
-import com.minechinima.controller.api.ValueControllerFactory;
+import com.minechinima.controller.api.defaults.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.datainterfaces.IValue;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders;
 public abstract class BaseValue<T> extends BaseStructure implements IValue<T> {
     private T value;
     private final T defaultValue;
-    private final ValueControllerFactory<T> controllers = new ValueControllerFactory<>(this);
+    private final ValueControllerFactory<T, BaseValue<T>> controllers = new ValueControllerFactory<>(this);
 
     public BaseValue(String id) {
         this(id, null);
@@ -62,7 +62,7 @@ public abstract class BaseValue<T> extends BaseStructure implements IValue<T> {
         return (this.value == null && this.defaultValue != null) || (this.value != null && !this.value.equals(this.defaultValue));
     }
 
-    public ValueControllerFactory<T> controllers() {
+    public ValueControllerFactory<T, BaseValue<T>> controllers() {
         return this.controllers;
     }
 }

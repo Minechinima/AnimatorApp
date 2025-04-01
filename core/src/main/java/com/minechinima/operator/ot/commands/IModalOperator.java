@@ -1,8 +1,10 @@
 package com.minechinima.operator.ot.commands;
 
 import com.minechinima.controller.api.IControllerCommand;
+import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.CursorInfo;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorContext;
 import com.minechinima.utils.Pair;
 
 import javax.annotation.Nullable;
@@ -12,14 +14,13 @@ import java.util.Queue;
  * For Operators that support modal mode.
  * @param <C>
  */
-public interface IModalOperator<C> extends IOperator<C> {
+public interface IModalOperator<C extends IContext> extends IOperator<C> {
     /**
      * Interactive mode of the operator.
      * @param context
-     * @param cursorInfo
      * @return <li>
      *     <ul>
-     *         {@link OpModalFlag#MODAL_RUNNING} to continue the operator and call this method in the next update cycle.
+     *         {@link OpModalFlag#MODAL_RUNNING} to continue the operator and call this method for the next event.
      *     </ul>
      *     <ul>
      *         {@link OpModalFlag#FINISHED} operator finished its job successfully and should end.
@@ -31,21 +32,17 @@ public interface IModalOperator<C> extends IOperator<C> {
      *
      * @throws UserException
      */
-    default Pair<Modal, Queue<IControllerCommand>> modal(C context, CursorInfo cursorInfo) throws UserException {
-        /*
-         * throw exception by default to debug incorrect handling / implementation of the states
-         * e.g. invoke() returning MODAL without modal implementation
-         */
-        throw new UnsupportedOperationException("Method modal() not implemented.");
-    }
+    Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<C> context, KeyMapEvent event) throws UserException;
 
     /**
-     * Called when the Operator modal mode is canceled from external systems, e.g. right click, during modal mode.
-     * <br><br>
-     * This can be used to undo operations that are not part of the database.
+     * Called when the operator is confirmed by an external system. The FINISHED flag does not trigger this.
      * @param context
+     * @param event
+     * @return
+     * @throws UserException
      */
-    default void cancelModal(C context) {
+    default Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmModal(OperatorContext<C> context, KeyMapEvent event) throws UserException {
+        return new Pair<>(OpExecuteFlag.FINISHED, null);
     }
 
     /**

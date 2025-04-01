@@ -2,4 +2,5 @@ rootProject.name = 'AnimatorApp'
 include 'core'
 include 'app'
 include 'ui'
+include 'ui'
 

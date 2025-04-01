@@ -4,10 +4,10 @@ import com.minechinima.model.BBContext;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.BBIconUnicodes;
 import com.minechinima.ui.UIContext;
 import com.minechinima.ui.elements.UISpace;
-import com.minechinima.ui.elements.BBUIWindow;
 import imgui.ImGui;
 
 import java.util.Comparator;
@@ -30,8 +30,8 @@ public class UIOutlinerPanel extends UISpace {
 
     @Override
     public void drawBody(UIContext context) {
-        BBDatabase data = ((BBUIWindow)context.getCurrentWindow()).context.database;
-        BBContext ctx = ((BBUIWindow)context.getCurrentWindow()).context;
+        BBDatabase data = ((BBOperatorContext) context.getOperatorContext()).bbContext().database;
+        BBContext ctx = ((BBOperatorContext) context.getOperatorContext()).bbContext();
 
         data.scenes.getChildren().forEach(scene -> {
             if (ImGui.treeNode(scene.getUUID().toString(), scene.getIdentifier())) {

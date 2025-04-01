@@ -7,25 +7,25 @@ import com.minechinima.ui.annotation.IUIHandler;
 import com.minechinima.ui.annotation.UnnamedUIHandler;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.*;
 
+/**
+ * Registry of UIHandlers that can render a data object.
+ */
 public final class UIHandlerRegistry {
     private final Multimap<Class<? extends IUIHandler<? extends BaseStructure>>, IUIHandler<? extends BaseStructure>> entryPoints = LinkedListMultimap.create();
     private final LinkedList<IUIHandler<? extends BaseStructure>> unnamedUIHandlers = new LinkedList<>();
     private boolean unnamedHandlersInitialized = false;
 
-    public <E extends BaseStructure,F extends IUIHandler<E>> Iterable<F> getHandlersFor(Class<F> clazz) {
+    public <E extends BaseStructure,F extends IUIHandler<E>> Collection<F> getHandlersFor(Class<F> clazz) {
         if (entryPoints.containsKey(clazz)) {
-            return (Iterable<F>) entryPoints.get(clazz);
+            return (Collection<F>) entryPoints.get(clazz);
         }
 
         return registerEntryPoints(clazz);
     }
 
-    public <E extends BaseStructure, F extends IUIHandler<E>> Iterable<F> getHandlersFor(Class<F> clazz, E baseStructure) {
+    public <E extends BaseStructure, F extends IUIHandler<E>> Collection<F> getHandlersFor(Class<F> clazz, E baseStructure) {
         assert baseStructure != null;
 
         if (entryPoints.containsKey(clazz)) {
@@ -36,13 +36,17 @@ public final class UIHandlerRegistry {
                 }
             }
 
+            uiHandlers.sort(Comparator.comparing(o -> getClassDepth(o.getRenderTarget())));
+
             return uiHandlers;
         }
 
-        return registerEntryPoints(clazz);
+        List<F> handlers = registerEntryPoints(clazz);
+        handlers.sort(Comparator.comparing(o -> getClassDepth(o.getRenderTarget())));
+        return handlers;
     }
 
-    public <E extends BaseStructure, F extends IUIHandler<E>> Iterable<F> getHandlersForDirectType(Class<F> clazz, E baseStructure) {
+    public <E extends BaseStructure, F extends IUIHandler<E>> Collection<F> getHandlersForDirectType(Class<F> clazz, E baseStructure) {
         assert baseStructure != null;
 
         if (entryPoints.containsKey(clazz)) {
@@ -59,22 +63,24 @@ public final class UIHandlerRegistry {
         return registerEntryPoints(clazz);
     }
 
-    public <E extends BaseStructure, F extends IUIHandler<E>> Iterable<F> getUnnamedHandlersFor(@NotNull E baseStructure) {
+    public <E extends BaseStructure, F extends IUIHandler<E>> Collection<F> getUnnamedHandlersFor(@NotNull E baseStructure) {
         assert baseStructure != null;
 
         registerUnnamedUIHandlers();
 
         List<F> uiHandlers = new LinkedList<>();
         for (IUIHandler<? extends BaseStructure> uiHandler : unnamedUIHandlers) {
-            if (uiHandler.getRenderTarget() != null && baseStructure.getClass().isAssignableFrom(uiHandler.getRenderTarget())) {
+            if (uiHandler.getRenderTarget() != null && uiHandler.getRenderTarget().isAssignableFrom(baseStructure.getClass())) {
                 uiHandlers.add((F) uiHandler);
             }
         }
 
+        uiHandlers.sort(Comparator.comparing(o -> getClassDepth(o.getRenderTarget())));
+
         return uiHandlers;
     }
 
-    public <E extends BaseStructure, F extends IUIHandler<E>> Iterable<F> getUnnamedHandlersForDirectType(@NotNull E baseStructure) {
+    public <E extends BaseStructure, F extends IUIHandler<E>> Collection<F> getUnnamedHandlersForDirectType(@NotNull E baseStructure) {
         assert baseStructure != null;
 
         registerUnnamedUIHandlers();
@@ -89,6 +95,15 @@ public final class UIHandlerRegistry {
         return uiHandlers;
     }
 
+    private int getClassDepth(Class<?> clazz) {
+        int depth = 0;
+        while (clazz != Object.class) {
+            clazz = clazz.getSuperclass();
+            depth++;
+        }
+        return depth;
+    }
+
     private void registerUnnamedUIHandlers() {
         if (unnamedHandlersInitialized) {
             return;
@@ -97,7 +112,7 @@ public final class UIHandlerRegistry {
         registerEntryPoints(UnnamedUIHandler.class);
     }
 
-    private <E extends BaseStructure,F extends IUIHandler<E>> Iterable<F> registerEntryPoints(Class<F> clazz) {
+    private <E extends BaseStructure,F extends IUIHandler<E>> List<F> registerEntryPoints(Class<F> clazz) {
         ArrayList<F> entryPoints = new ArrayList<>();
         ServiceLoader<F> serviceLoader = ServiceLoader.load(clazz);
 

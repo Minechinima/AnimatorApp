@@ -2,9 +2,10 @@ package com.minechinima.ui.panels;
 
 import com.minechinima.model.BBContext;
 import com.minechinima.model.app.object.BaseObject;
+import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.UIContext;
+import com.minechinima.ui.elements.UIHotKeyConfiguration;
 import com.minechinima.ui.elements.UISpace;
-import com.minechinima.ui.elements.BBUIWindow;
 import com.minechinima.ui.elements.properties.IUIPropertyContext;
 import com.minechinima.ui.elements.properties.PropertyContextRegistry;
 import imgui.ImColor;
@@ -19,6 +20,7 @@ import java.util.Set;
 
 public class UIPropertiesPanel extends UISpace {
     private IUIPropertyContext currentContext;
+    private UIHotKeyConfiguration test = new UIHotKeyConfiguration();
 
     public UIPropertiesPanel(String windowTitle) {
         super(windowTitle);
@@ -36,8 +38,9 @@ public class UIPropertiesPanel extends UISpace {
 
     @Override
     public void drawBody(UIContext context) {
-        PropertyContextRegistry registry = context.getRegisteredObj(PropertyContextRegistry.class);
-        BBContext uiContext = ((BBUIWindow)context.getCurrentWindow()).context;
+        PropertyContextRegistry registry = (PropertyContextRegistry) context.getRegisteredObj(PropertyContextRegistry.class);
+        //TODO pass the C context type to everything in the UI?? Context tpye not very safe atm... raw types
+        BBContext uiContext = ((BBOperatorContext) context.getOperatorContext()).bbContext();
         BaseObject active;
         Set<IUIPropertyContext> bodies = registry.getStandardBodies();
 
@@ -57,6 +60,9 @@ public class UIPropertiesPanel extends UISpace {
         ImGui.sameLine();
         ImGui.beginChild("body");
         if (this.currentContext != null) this.currentContext.render(context);
+
+        test.render(context);
+
 
         ImGui.endChild();
     }

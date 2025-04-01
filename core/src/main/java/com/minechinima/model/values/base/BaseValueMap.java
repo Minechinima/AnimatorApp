@@ -123,7 +123,6 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
         return true;
     }
 
-    @Override
     public final boolean addChild(T child) {
         return this.add(child);
     }

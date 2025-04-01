@@ -77,6 +77,12 @@ another BaseStructure node and cause a memory leak.
     Try to avoid creating lots of layers of nodes and keep the tree shallow.
   - `setID()`
   - all the methods that retrieve a node with a path.
+- BaseImmutableHierarchy
+  - Is a BaseValueHierarchy that is initialized once and never changes children after that.
+  - Important when implementing a subclass: do not call initChildren() in the constructor, to leave the
+  possibility open for further subclasses to add more nodes.
+  - When adding an immutable hierarchy node to the tree, you need to call initChildren() on that node.
+
 
 ### Events module
 The `events` module contains standard event types,

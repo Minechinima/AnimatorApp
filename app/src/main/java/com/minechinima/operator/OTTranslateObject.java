@@ -1,18 +1,17 @@
 package com.minechinima.operator;
 
+import com.minechinima.model.BBContext;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.ot.AbstractOperatorType;
-import com.minechinima.operator.ot.AppOperatorType;
-import com.minechinima.ui.BBOperatorContext;
+import com.minechinima.operator.ot.OperatorTypePropertyProvider;
 
-public class OTTranslateObject extends AppOperatorType<BBOperatorContext> implements AbstractOperatorType.PropertyProvider<TranslateProps> {
-    public OTTranslateObject(String title, String description) {
-        super(title, description, UNDO | ADJUSTLAST | REPEATLAST);
+public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, BBOperatorContext> {
+    public OTTranslateObject(String id, String title, String description) {
+        super(id, title, description, UNDO | ADJUSTLAST | REPEATLAST);
     }
 
     @Override
     public boolean poll(BBOperatorContext context) throws UserException {
-        return context.context.activeObject.getReference() != null;
+        return context.bbContext().activeObject.getReference() != null;
     }
 
     @Override

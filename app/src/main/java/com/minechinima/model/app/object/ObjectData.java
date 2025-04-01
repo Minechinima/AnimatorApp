@@ -26,12 +26,6 @@ public class ObjectData extends BaseSingleValueHierarchy<ObjectType> {
         super(id);
     }
 
-    @NotNull
-    @Override
-    protected ObjectType instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
-        return null;
-    }
-
     @Override
     public BaseType<?> valueToData() {
         MapType map = new MapType(new HashMap<>());

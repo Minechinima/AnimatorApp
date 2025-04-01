@@ -6,7 +6,6 @@ import com.minechinima.input.raw.IInputEventListener;
 import com.minechinima.input.raw.InputEvent;
 import com.minechinima.ui.elements.UIWindow;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2d;
 
 import javax.annotation.Nullable;
 import java.util.Collection;

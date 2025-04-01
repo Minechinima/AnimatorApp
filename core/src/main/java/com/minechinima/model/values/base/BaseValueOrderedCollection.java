@@ -169,7 +169,6 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         return this.addListElement(index, new ListElement<>(UUID.randomUUID(), element));
     }
 
-    @Override
     public final boolean addChild(T child) {
         return this.add(child);
     }

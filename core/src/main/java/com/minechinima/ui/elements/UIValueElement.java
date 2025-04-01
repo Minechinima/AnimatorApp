@@ -1,6 +1,7 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 
 import java.util.function.Consumer;
@@ -10,7 +11,7 @@ import java.util.function.Consumer;
  * otherwise nothing will be drawn.
  * @param <T>
  */
-public abstract class UIValueElement<J, T extends BaseStructure> extends UIElement {
+public abstract class UIValueElement<J, T extends BaseStructure, C extends IContext> extends UIElement<C> {
     protected T value;
     protected Consumer<J> setCallback;
 
@@ -21,24 +22,24 @@ public abstract class UIValueElement<J, T extends BaseStructure> extends UIEleme
         return this.value;
     }
 
-    public UIValueElement<J, T> init(T value) {
+    public UIValueElement<J, T, C> init(T value) {
         this.value = value;
         return this;
     }
 
-    public UIValueElement<J, T> init(T value, Consumer<J> callback) {
+    public UIValueElement<J, T, C> init(T value, Consumer<J> callback) {
         this.value = value;
         this.setCallback = callback;
         return this;
     }
 
     @Override
-    protected final void draw(UIContext context) {
+    public final void draw(UIContext<C> context) {
         if (this.value == null) return;
         this.drawElement(context);
-        this.value = null;
+        //this.value = null;
         this.setCallback = null;
     }
 
-    protected abstract void drawElement(UIContext context);
+    protected abstract void drawElement(UIContext<C> context);
 }

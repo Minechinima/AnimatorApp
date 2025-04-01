@@ -34,8 +34,6 @@ public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
 
     public ImGuiImplGlfw(LWJGLInputEventManager inputEventManager) {
         this.inputEventManager = inputEventManager;
-
-        inputEventManager.addListener(this, InputEvent.class);
     }
 
     protected ImStrSupplier getClipboardTextFn() {
@@ -617,9 +615,9 @@ public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
     }
 
     public void charCallback(long window, int c) {
-        if (this.data.prevUserCallbackChar != null && window == this.data.window) {
-            this.data.prevUserCallbackChar.invoke(window, c);
-        }
+        //if (this.data.prevUserCallbackChar != null && window == this.data.window) {
+        //    this.data.prevUserCallbackChar.invoke(window, c);
+        //}
 
         ImGui.getIO().addInputCharacter(c);
     }
@@ -1041,6 +1039,8 @@ public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
             this.onMouse((MouseEvent) event);
         } else if (event instanceof ScrollEvent) {
             this.onScroll((ScrollEvent) event);
+        } else if (event instanceof TextInputEvent) {
+            this.onChar((TextInputEvent) event);
         }
     }
 
@@ -1054,6 +1054,10 @@ public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
                 }
             }
         }
+    }
+
+    public void onChar(TextInputEvent event) {
+        this.charCallback(event.getWindow(), event.getCharacter());
     }
 
     public void onMouse(MouseEvent event) {
@@ -1176,7 +1180,7 @@ public class ImGuiImplGlfw implements IInputEventListener<InputEvent> {
             GLFW.glfwSetMouseButtonCallback(vd.window, inputEventManager::onMouseButton);
             GLFW.glfwSetScrollCallback(vd.window, inputEventManager::onScroll);
             GLFW.glfwSetKeyCallback(vd.window, inputEventManager::onKey);
-            GLFW.glfwSetCharCallback(vd.window, ImGuiImplGlfw.this::charCallback);
+            GLFW.glfwSetCharCallback(vd.window, inputEventManager::onChar);
             GLFW.glfwSetWindowCloseCallback(vd.window, (x$0) -> ImGuiImplGlfw.this.windowCloseCallback(x$0));
             GLFW.glfwSetWindowPosCallback(vd.window, (x$0, x$1, x$2) -> ImGuiImplGlfw.this.windowPosCallback(x$0, x$1, x$2));
             GLFW.glfwSetWindowSizeCallback(vd.window, (x$0, x$1, x$2) -> ImGuiImplGlfw.this.windowSizeCallback(x$0, x$1, x$2));

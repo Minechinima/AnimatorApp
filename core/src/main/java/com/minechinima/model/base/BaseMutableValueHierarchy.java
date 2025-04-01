@@ -18,14 +18,6 @@ public non-sealed abstract class BaseMutableValueHierarchy<T extends BaseStructu
     }
 
     /**
-     * Adds the given child into this.
-     * @param child
-     * @return true if the given child was not present (reference equality) and could be added.
-     *         false if the given child was already present or could not be added.
-     */
-    public abstract boolean addChild(T child);
-
-    /**
      * Remove the given child in this.
      * @param child
      * @return true when the child was present and could be removed.

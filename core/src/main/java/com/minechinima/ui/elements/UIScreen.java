@@ -1,5 +1,6 @@
 package com.minechinima.ui.elements;
 
+import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 import com.minechinima.rendering.GLUtils;
 import imgui.ImGui;
@@ -7,14 +8,14 @@ import imgui.flag.ImGuiComboFlags;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiWindowFlags;
 
-public class UIScreen extends UIElement {
-    private UISpace panel;
+public class UIScreen<C extends IContext> extends UIElement<C> {
+    private UISpace<C> panel;
 
-    public UIScreen(UISpace panelBody) {
+    public UIScreen(UISpace<C> panelBody) {
         this.setPanel(panelBody);
     }
 
-    public void setPanel(UISpace panel) {
+    public void setPanel(UISpace<C> panel) {
         if (this.panel != null) this.panel.onClose();
         this.children.remove(this.panel);
         this.panel = panel;
@@ -22,7 +23,7 @@ public class UIScreen extends UIElement {
     }
 
     @Override
-    public final void draw(UIContext context) {
+    public final void draw(UIContext<C> context) {
         float ar = 1F/this.panel.getDefaultAspectRatio();
         int[] windowSize = GLUtils.getGLFWWindowSize(context.getWindow().ptr());
         float windowHeight = windowSize[1];

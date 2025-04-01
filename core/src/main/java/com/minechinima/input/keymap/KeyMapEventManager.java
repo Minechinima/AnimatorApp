@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * This class is the interface for the raw hardware input and the application keymap events.
+ */
 public class KeyMapEventManager implements IInputEventListener<InputEvent> {
     private final Multimap<Class<? extends KeyMapEvent>, IKeyMapEventListener<? extends KeyMapEvent>> listeners = LinkedListMultimap.create();
     /**
@@ -125,7 +128,9 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
 
             if (builder instanceof IKeyEventBuilder<?, ?> keyEventBuilder) {
                 keyEventBuilder.setPressedKeys(new PressedKeySet(this.pressedKeys));
-
+                //TODO possible flaw(?): a keyEventBuilder that procudes multiple release events
+                // -> for every release event there could be produced n amount of the same click events ->
+                // the getResult method is called for every original getResult... potentially creating a duplicate batch of events?
                 if (prevClick != null && System.currentTimeMillis() - this.releasedKeys.get(prevClick) <= this.doubleClickmsTimer) {
                     keyEventBuilder.setKeyMapType(KeyType.DOUBLECLICK);
                     clicks = keyEventBuilder.getResult();

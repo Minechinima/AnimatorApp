@@ -7,28 +7,50 @@ import com.minechinima.ui.elements.UISpace;
 import com.minechinima.ui.elements.UIWindow;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * @implNote final so a subclass cannot give a UIOperator access to App data.
+ * Immutable record to ensure it cannot be changed by other systems other than the UI.
+ * This also ensures that it has to be built after the UI rendering cycle is finished.
  */
-public final class UIOperatorContext {
-    /*
-     * The UI context in which the operator was triggered in.
-     * This might diverge from the current UI context
-     * when the mouse moves to another context
-     */
-    public UIWindow clickedWindow;
-    public UIScreen clickedUIScreen;
-    public UISpace clickedUISpace;
-    //public UIWindow clickedUIRegion;
-    @Nullable
-    public UIElement clickedWidget;
+//TODO make record and make it so that it is created after the UI is finished, this requires an intermediate object to hold
+// this data, but it makes it more safe and secure (no need to copy the context, also it makes it clear that the UI must first be run through)
+public record UIOperatorContext(UIWindow clickedWindow,
+                                UIScreen clickedUIScreen,
+                                UISpace clickedUISpace,
+                                UIElement clickedWidget,
+                                UIWindow currentHoveredWindow,
+                                UIScreen currentHoveredUIScreen,
+                                UISpace currentHoveredUISpace,
+                                UIElement currentHoveredWidget,
+                                UIManager manager) implements IContext {
+    @Override
+    public UIOperatorContext getUIContext() {
+        return this;
+    }
 
-    public UIWindow currentWindow;
-    public UIScreen currentUIScreen;
-    public UISpace currentUISpace;
-    //public UIWindow currentUIRegion;
-    @Nullable
-    public UIElement currentWidget;
-    //TODO this needs to be UI data interface
+    @Override
+    public void setUIContext(UIOperatorContext operatorContext) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public UIOperatorContext copy() {
+        UIOperatorContext copy = new UIOperatorContext(this.clickedWindow,
+                this.clickedUIScreen,
+                this.clickedUISpace,
+                this.clickedWidget,
+                this.currentHoveredWindow,
+                this.currentHoveredUIScreen,
+                this.currentHoveredUISpace,
+                this.currentHoveredWidget,
+                this.manager);
+        return copy;
+    }
+
+    @Override
+    public boolean contextEquals(IContext other) {
+        return this.equals(other);
+    }
 }
