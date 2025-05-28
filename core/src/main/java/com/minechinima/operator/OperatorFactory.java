@@ -50,7 +50,7 @@ public class OperatorFactory {
 
     @Nullable
     public <C extends IContext,
-            P extends OperatorProperties,
+            P extends OperatorPropertiesGroupStruct,
             OP extends IPropertyOperator<C, P> & IOperator<C>,
             OT extends OperatorType<C> & IOTPropertyProvider<P>>
     OP getOperator(OT type, @NotNull P props) {
@@ -65,7 +65,7 @@ public class OperatorFactory {
     }
 
     public <C extends IContext,
-            P extends OperatorProperties,
+            P extends OperatorPropertiesGroupStruct,
             OP extends IPropertyOperator<C, P> & IOperator<C>,
             OT extends OperatorType<C> & IOTPropertyProvider<P>>
     void register(OT type, Function<P, OP> init) {
@@ -99,7 +99,7 @@ public class OperatorFactory {
      */
     private class PropertyOperatorEntry
             <C extends IContext,
-            P extends OperatorProperties,
+            P extends OperatorPropertiesGroupStruct,
             OT extends OperatorType<C> & IOTPropertyProvider<P>,
             OP extends IPropertyOperator<C, P> & IOperator<C>> {
         private final OT type;

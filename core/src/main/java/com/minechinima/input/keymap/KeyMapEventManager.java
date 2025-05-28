@@ -2,9 +2,6 @@ package com.minechinima.input.keymap;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
-import com.minechinima.input.keymap.builder.IKeyEventBuilder;
-import com.minechinima.input.keymap.builder.IKeyMapEventBuilder;
-import com.minechinima.input.keymap.builder.IMousePosEventProvider;
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyType;

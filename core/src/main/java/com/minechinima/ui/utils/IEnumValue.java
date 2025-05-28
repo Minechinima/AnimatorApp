@@ -1,9 +1,7 @@
-package com.minechinima.model.values;
+package com.minechinima.ui.utils;
 
 import com.minechinima.controller.api.defaults.ValueControllerFactory;
-import com.minechinima.ui.utils.ILangKeyProvider;
 
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**

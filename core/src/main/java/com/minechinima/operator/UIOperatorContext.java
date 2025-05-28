@@ -15,7 +15,7 @@ import java.util.Objects;
  * This also ensures that it has to be built after the UI rendering cycle is finished.
  */
 //TODO make record and make it so that it is created after the UI is finished, this requires an intermediate object to hold
-// this data, but it makes it more safe and secure (no need to copy the context, also it makes it clear that the UI must first be run through)
+// this data, but it makes it more safe and secure (no need to originalProps the context, also it makes it clear that the UI must first be run through)
 public record UIOperatorContext(UIWindow clickedWindow,
                                 UIScreen clickedUIScreen,
                                 UISpace clickedUISpace,

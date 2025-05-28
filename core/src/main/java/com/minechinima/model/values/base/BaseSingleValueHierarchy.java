@@ -2,25 +2,15 @@ package com.minechinima.model.values.base;
 
 import com.minechinima.controller.api.defaults.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
-import com.minechinima.data.types.MapType;
-import com.minechinima.data.types.StringType;
-import com.minechinima.input.hotkey.HotKeyConfig;
-import com.minechinima.input.hotkey.HotKeyConfigSelectorEnum;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
-import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.utils.LimitedSizeSet;
-import com.minechinima.utils.UUIDUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
 /**

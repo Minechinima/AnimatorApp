@@ -19,8 +19,9 @@ import java.util.*;
 public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, DragValueSliderProp>
         implements IOperator<UIOperatorContext>, IModalOperator<UIOperatorContext>, ITitleProvider<UIOperatorContext> {
     /* runtime attributes */
-    private final Set<UIDragFloat> floatElements = new LinkedHashSet<>();
+    private final List<Pair<Float, UIDragFloat<?>>> floatElements = new LinkedList<>();
     private boolean selectingElements = true;
+    private Vector2d startPos = null;
 
     public UIDragValueSlider(DragValueSliderProp props) {
         super(props);
@@ -28,15 +29,15 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
 
     @Override
     public void close() {
-        for (UIDragFloat drag : this.floatElements) {
-            drag.highlight = false;
+        for (Pair<Float, UIDragFloat<?>> drag : this.floatElements) {
+            drag.getB().highlight = false;
         }
     }
 
     @Override
     public Pair<OpInvokeFlag, Queue<IControllerCommand>> invoke(UIOperatorContext context) throws UserException {
-        if (context.currentHoveredWidget() instanceof UIDragFloat dragFloat) {
-            this.floatElements.add(dragFloat);
+        if (context.currentHoveredWidget() instanceof UIDragFloat<?> dragFloat) {
+            this.floatElements.add(new Pair<>(dragFloat.getValue().get(), dragFloat));
             dragFloat.highlight = true;
             return new Pair<>(OpInvokeFlag.MODAL_RUNNING, null);
         }
@@ -44,29 +45,46 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
         return new Pair<>(OpInvokeFlag.CANCELLED, null);
     }
 
+    private boolean containsUIDragFloat(UIDragFloat dragFloat) {
+        for (Pair<Float, UIDragFloat<?>> pair : this.floatElements) {
+            if (pair.getB() == dragFloat) return true;
+        }
+
+        return false;
+    }
+
     @Override
     public Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<UIOperatorContext> ctx, KeyMapEvent event) throws UserException {
         //TODO execute after invoke directly once
         UIOperatorContext context = ctx.current();
+        if (this.startPos == null) this.startPos = new Vector2d(event.mouseX(), event.mouseY());
+
         if (event instanceof KeyMapMouseDragEvent mouseMoveEvent) {
-            Vector2d move = new Vector2d(mouseMoveEvent.dragX(), mouseMoveEvent.dragY());
             boolean isValueChanging = mouseMoveEvent.direction() == KeyMapMouseMoveEvent.Direction.LEFT ||
                     mouseMoveEvent.direction() == KeyMapMouseMoveEvent.Direction.RIGHT;
-            if (!isValueChanging && this.selectingElements && context.currentHoveredWidget() instanceof UIDragFloat dragFloat) {
-                this.floatElements.add(dragFloat);
+            if (!isValueChanging && this.selectingElements && context.currentHoveredWidget() instanceof UIDragFloat<?> dragFloat) {
+                if (!this.containsUIDragFloat(dragFloat)) {
+                    this.floatElements.add(new Pair<>(dragFloat.getValue().get(), dragFloat));
+                }
                 dragFloat.highlight = true;
-            } else if (Math.abs(move.x) >= 1) {
+                return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+            } else if (isValueChanging) {
                 this.selectingElements = false;
-                Queue<IControllerCommand> commands = new LinkedList<>();
-                this.floatElements.forEach(e -> {
-                    FloatValue v = (FloatValue) e.getValue();
-                    commands.add(v.controllers().set((float) (v.get() + Math.signum(mouseMoveEvent.dragX()) * this.props.incrementCTRL.get())));
-                });
-                return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), commands);
             }
         }
 
-        return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        Queue<IControllerCommand> commands = null;
+        if (!this.selectingElements) {
+            commands = new LinkedList<>();
+            for (Pair<Float, UIDragFloat<?>> entry : this.floatElements) {
+                FloatValue v = entry.getB().getValue();
+                double value = entry.getA() + (event.mouseX() - this.startPos.x()) * this.props.increment.get();
+                if (this.props.round.get()) value = Math.round(value);
+                commands.add(v.controllers().set((float) value));
+            }
+        }
+
+        return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), commands);
     }
 
     @Override
@@ -79,8 +97,8 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
         //TODO we need more translation features like composite keys, or nesting?
         // example: "langkey.operator.set" + "label1key" + "label2key"
         String labels = "";
-        for (UIDragFloat floatElement : this.floatElements) {
-            labels += floatElement.getValue().getIdentifier();
+        for (Pair<Float, UIDragFloat<?>> floatElement : this.floatElements) {
+            labels += floatElement.getB().getValue().getIdentifier();
         }
 
         return "Set " + labels;

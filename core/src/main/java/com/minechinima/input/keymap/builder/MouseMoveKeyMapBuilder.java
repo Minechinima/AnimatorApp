@@ -1,5 +1,6 @@
 package com.minechinima.input.keymap.builder;
 
+import com.minechinima.input.keymap.IMousePosEventProvider;
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseDragEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
@@ -64,7 +65,7 @@ public class MouseMoveKeyMapBuilder extends AbstractKeyMapEventBuilder<MouseEven
             Vector2d drag = this.getAveragedMovement(pressedPositions.getValue(), dragAverageFrames);
             if (drag.length() >= dragAverageFrames - 1) {
                 drag.y = -drag.y;
-                dragEvents.add(new KeyMapMouseDragEvent(pressedPositions.getKey().key(), this.mouseX, this.mouseY,
+                dragEvents.add(new KeyMapMouseDragEvent(pressedPositions.getKey(), this.mouseX, this.mouseY,
                         this.prevMouseX, this.prevMouseY, this.calculateDirection(drag), this.window, this.pressedKeySet));
             }
         }

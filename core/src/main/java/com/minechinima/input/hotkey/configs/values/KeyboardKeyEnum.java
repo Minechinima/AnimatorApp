@@ -1,22 +1,21 @@
 package com.minechinima.input.hotkey.configs.values;
 
+import com.minechinima.input.hotkey.configs.AbstractHotKeyKeyConfigGroupStruct;
+import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.raw.Key;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import com.minechinima.utils.CollectionUtils;
 import com.minechinima.utils.IGenericRegistry;
 import imgui.flag.ImGuiKey;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.OperationNotSupportedException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * All available keyboard keys for the hotkey configuration.
  */
-public enum KeyboardKeyEnum implements ILangKeyProvider {
+public enum KeyboardKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfigGroupStruct.IKeyEnum {
     KEY_SPACE(ImGuiKey.Space),
     KEY_APOSTROPHE(ImGuiKey.Apostrophe),
     KEY_COMMA(ImGuiKey.Comma),
@@ -315,5 +314,10 @@ public enum KeyboardKeyEnum implements ILangKeyProvider {
     @Override
     public @Nullable String tooltip() {
         return this.name();
+    }
+
+    @Override
+    public boolean equalKey(KeyMapKeyEvent event) {
+        return this.equalsRawKey(event.key());
     }
 }

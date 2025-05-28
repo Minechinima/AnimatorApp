@@ -1,14 +1,13 @@
 package com.minechinima;
 
 import com.minechinima.input.hotkey.*;
-import com.minechinima.input.hotkey.configs.HotKeyKeyboardConfig;
-import com.minechinima.input.hotkey.configs.HotKeyMouseConfig;
-import com.minechinima.input.hotkey.configs.values.KeyModEnum;
-import com.minechinima.input.hotkey.configs.values.KeyboardKeyEnum;
-import com.minechinima.input.hotkey.configs.values.MouseKeyEnum;
+import com.minechinima.input.hotkey.configs.HotKeyKeyboardConfigGroupStruct;
+import com.minechinima.input.hotkey.configs.HotKeyMouseConfigGroupStruct;
+import com.minechinima.input.hotkey.configs.values.*;
 import com.minechinima.input.keymap.KeyMapEventManager;
 import com.minechinima.input.keymap.builder.KeyEventBuilder;
 import com.minechinima.input.keymap.builder.MouseMoveKeyMapBuilder;
+import com.minechinima.input.keymap.builder.MouseScrollBuilder;
 import com.minechinima.input.raw.*;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import com.minechinima.i18n.ClasspathBundleProvider;
@@ -22,11 +21,17 @@ import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.scene.Scene;
 import com.minechinima.operator.*;
-import com.minechinima.operator.config.OperatorConfig;
-import com.minechinima.operator.config.OperatorConfigurations;
+import com.minechinima.operator.config.modal.*;
+import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
+import com.minechinima.operator.config.KeyConfigurationsGroupStruct;
+import com.minechinima.operator.defaults.DragValueSliderProp;
 import com.minechinima.operator.defaults.RedoOperator;
 import com.minechinima.operator.defaults.UIDragValueSlider;
 import com.minechinima.operator.defaults.UndoOperator;
+import com.minechinima.operator.defaults.modal.CancelModal;
+import com.minechinima.operator.defaults.modal.ConfirmModal;
+import com.minechinima.operator.defaults.modal.uidrag.DragIncrementModal;
+import com.minechinima.operator.defaults.modal.uidrag.RoundModal;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -78,8 +83,8 @@ public class Application {
         EventTypeRegistry dataEventTypes = new EventTypeRegistry();
         EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
 
-        this.hotKeyConfigRegistry = new HotKeyConfigRegistry(1, HotKeyKeyboardConfig.class, () -> new HotKeyKeyboardConfig("keyboard", "hi"));
-        this.hotKeyConfigRegistry.register(2, HotKeyMouseConfig.class, () -> new HotKeyMouseConfig("mouse", "hi"));
+        this.hotKeyConfigRegistry = new HotKeyConfigRegistry(1, HotKeyKeyboardConfigGroupStruct.class, () -> new HotKeyKeyboardConfigGroupStruct("keyboard", "hi"));
+        this.hotKeyConfigRegistry.register(2, HotKeyMouseConfigGroupStruct.class, () -> new HotKeyMouseConfigGroupStruct("mouse", "hi"));
 
         this.dataTree = new BBDataTreeManager(dataEventTypes, this.hotKeyConfigRegistry);
         BBNameSpace bb = this.dataTree.getRoot();
@@ -88,47 +93,150 @@ public class Application {
         this.controller = new ControllerManager(this.dataTree, this.logger);
 
         OperatorFactory opFactory = new OperatorFactory(this.logger);
-        OperatorConfigurations<BBOperatorContext> opConfig = bb.opConfig;
+        KeyConfigurationsGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
         opFactory.register(bb.ops.move, TranslateObject::new);
-        OperatorConfig config = opConfig.newConfig();
+        OperatorKeyConfigItemGroupStruct config = opConfig.newConfig();
         config.operatorType.set(bb.ops.move);
         config.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
-        ((HotKeyKeyboardConfig) config.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_G);
+        ((HotKeyKeyboardConfigGroupStruct) config.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_G);
 
 
         opFactory.register(bb.ops.delete, DeleteObject::new);
-        OperatorConfig deleteConfig = opConfig.newConfig();
+        OperatorKeyConfigItemGroupStruct deleteConfig = opConfig.newConfig();
         deleteConfig.operatorType.set(bb.ops.delete);
         deleteConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
-        ((HotKeyKeyboardConfig) deleteConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_DELETE);
+        ((HotKeyKeyboardConfigGroupStruct) deleteConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_DELETE);
 
         opFactory.register(bb.ops.dragUISlider, UIDragValueSlider::new);
-        OperatorConfig dragConfig = opConfig.newConfig();
+        OperatorKeyConfigItemGroupStruct dragConfig = opConfig.newConfig();
         dragConfig.operatorType.set(bb.ops.dragUISlider);
         dragConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
-        ((HotKeyMouseConfig) dragConfig.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_1);
+        ((HotKeyMouseConfigGroupStruct) dragConfig.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_1);
+        ((HotKeyMouseConfigGroupStruct) dragConfig.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
 
         opFactory.register(bb.ops.undo, UndoOperator::new);
-        OperatorConfig undoConfig = opConfig.newConfig();
+        OperatorKeyConfigItemGroupStruct undoConfig = opConfig.newConfig();
         undoConfig.operatorType.set(bb.ops.undo);
         undoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
-        ((HotKeyKeyboardConfig) undoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
-        ((HotKeyKeyboardConfig) undoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
+        ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
+        ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
 
         opFactory.register(bb.ops.redo, RedoOperator::new);
-        OperatorConfig redoConfig = opConfig.newConfig();
+        OperatorKeyConfigItemGroupStruct redoConfig = opConfig.newConfig();
         redoConfig.operatorType.set(bb.ops.redo);
         redoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
-        ((HotKeyKeyboardConfig) redoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
-        ((HotKeyKeyboardConfig) redoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
-        /*opFactory.register(bb.ops.delete, DeleteObject::new);
-        opConfig.keyConfig.put(Key.KEY_DELETE, bb.ops.delete);
+        ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
+        ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
 
-        opFactory.register(bb.ops.dragUISlider, UIDragValueSlider::new);
-        opConfig.uiKeyConfig.put(Key.MOUSE_BUTTON_1, bb.ops.dragUISlider);*/
+        opFactory.register(bb.ops.orbitViewport, OrbitViewportOperator::new);
+        OperatorKeyConfigItemGroupStruct orbitCfg = opConfig.newConfig();
+        orbitCfg.operatorType.set(bb.ops.orbitViewport);
+        orbitCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_E);
+        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
+        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
+        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).confirmOnStop.set(true);
+
+        opFactory.register(bb.ops.panViewport, PanViewportOP::new);
+        OperatorKeyConfigItemGroupStruct panCfg = opConfig.newConfig();
+        panCfg.operatorType.set(bb.ops.panViewport);
+        panCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_3);
+        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
+        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
+        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).confirmOnStop.set(true);
+
+        opFactory.register(bb.ops.zoomViewport, ZoomViewportOP::new);
+        OperatorKeyConfigItemGroupStruct zoomInCfg = opConfig.newConfig();
+        zoomInCfg.operatorType.set(bb.ops.zoomViewport);
+        zoomInCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) zoomInCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_WHEEL_UP);
+        ((ZoomViewportProps)zoomInCfg.props.getProps()).delta.set(1F);
+
+        OperatorKeyConfigItemGroupStruct zoomOutCfg = opConfig.newConfig();
+        zoomOutCfg.operatorType.set(bb.ops.zoomViewport);
+        zoomOutCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) zoomOutCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_WHEEL_DOWN);
+        ((ZoomViewportProps)zoomOutCfg.props.getProps()).delta.set(-1F);
+
+        this.setupModal();
 
         this.operatorManager = new OperatorManager<>(opFactory, opConfig, this.controller, this.logger, BBOperatorContext.class);
+    }
+
+    public void setupModal() {
+        KeyConfigurationsGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
+        PropModifierKeyConfigurationsMapStruct propertyModifiers = config.modalKeyConfigs.propModifiers;
+        PropModifierKeyConfigListStruct<TranslateProps> translate_modal = new PropModifierKeyConfigListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
+        PropModifierKeyConfigListStruct<DragValueSliderProp> slider_modal = new PropModifierKeyConfigListStruct<>("slider_modal", DragValueSliderProp.class, config.hotKeyConfigRegistry);
+        propertyModifiers.add(translate_modal);
+        propertyModifiers.add(slider_modal);
+
+        translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
+        translate_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
+
+        slider_modal.register(0, DragIncrementModal.class, DragIncrementModal::new);
+        slider_modal.register(1, RoundModal.class, RoundModal::new);
+
+        PropModifierKeyConfigItemGroupStruct<TranslateProps> xCfg = translate_modal.newConfig();
+        xCfg.modifier.set(new TranslateModalAxisX());
+        xCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_X);
+        ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropModifierKeyConfigItemGroupStruct<TranslateProps> yCfg = translate_modal.newConfig();
+        yCfg.modifier.set(new TranslateModalAxisY());
+        yCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
+        ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> slider1Cfg = slider_modal.newConfig();
+        slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
+        slider1Cfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_CONTROL);
+        ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> sliderCfg = slider_modal.newConfig();
+        sliderCfg.modifier.set(new DragIncrementModal(0.001F));
+        sliderCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_SHIFT);
+        ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).confirmOnStop.set(true);
+
+        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> sliderRoundCfg = slider_modal.newConfig();
+        sliderRoundCfg.modifier.set(new RoundModal());
+        sliderRoundCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) sliderRoundCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_ALT);
+        ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+
+        ModalFuncKeyConfigListStruct<BBOperatorContext> modalFunctions = config.modalKeyConfigs.modalFunctions;
+
+        modalFunctions.register(0, ConfirmModal.class, ConfirmModal::new);
+        modalFunctions.register(1, CancelModal.class, CancelModal::new);
+        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> confirmCfg = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
+        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> confirmCfg2 = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
+        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> cancelCfg = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
+
+        modalFunctions.add(confirmCfg);
+        modalFunctions.add(confirmCfg2);
+        modalFunctions.add(cancelCfg);
+
+        confirmCfg.modifier.set(new ConfirmModal<>());
+        confirmCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) confirmCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_1);
+        ((HotKeyMouseConfigGroupStruct) confirmCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        confirmCfg2.modifier.set(new ConfirmModal<>());
+        confirmCfg2.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) confirmCfg2.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_ENTER);
+        ((HotKeyKeyboardConfigGroupStruct) confirmCfg2.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        cancelCfg.modifier.set(new CancelModal<>());
+        cancelCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) cancelCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_2);
+        ((HotKeyMouseConfigGroupStruct) cancelCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
     }
 
     public void init() {
@@ -156,7 +264,6 @@ public class Application {
         glfwSetScrollCallback(this.window[0], this.inputEventManager::onScroll);
         glfwSetCharCallback(this.window[0], this.inputEventManager::onChar);
 
-        this.inputEventManager.addListener(this::closeOnEscape, KeyEvent.class);
         this.inputEventManager.addListener(this::debugInputEvent, KeyEvent.class);
         this.uiManager = new UIManager<>(this.windowProvider, new ImguiLoader(this.inputEventManager), this.operatorManager, this.handlerRegistry,
                 new BBOperatorContext(new BBContext("", this.dataTree.getRoot().data), null));
@@ -204,6 +311,7 @@ public class Application {
         KeyMapEventManager manager = new KeyMapEventManager(uiManager);
         manager.registerKeyMapBuilder(KeyEvent.class, new KeyEventBuilder());
         manager.registerKeyMapBuilder(MouseEvent.class, new MouseMoveKeyMapBuilder());
+        manager.registerKeyMapBuilder(ScrollEvent.class, new MouseScrollBuilder());
         return manager;
     }
 
@@ -237,18 +345,6 @@ public class Application {
         glfwDestroyWindow(window[0]);
         glfwTerminate();
         glfwSetErrorCallback(null).free();
-    }
-
-    private void closeOnEscape(KeyEvent event) {
-        if (event.getCurrentKey() != Key.KEY_ESCAPE) {
-            return;
-        }
-
-        if (event.getInputType() != InputType.RELEASE) {
-            return;
-        }
-
-        glfwSetWindowShouldClose(window[0], true);
     }
 
     private void debugInputEvent(KeyEvent event) {

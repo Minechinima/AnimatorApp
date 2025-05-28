@@ -1,6 +1,5 @@
-package com.minechinima.input.keymap.builder;
+package com.minechinima.input.keymap;
 
-import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.raw.IInputEventListener;
 import com.minechinima.input.raw.InputEvent;
@@ -27,7 +26,7 @@ public interface IKeyMapEventBuilder<T extends InputEvent, J extends KeyMapEvent
      * @return the result of the builder or null if the builder was not completely setup. Can be multiple events too.
      */
     @Nullable
-    Collection<J> getResult();
+    J getResult();
 
     /**
      * Reset the builder parameters.

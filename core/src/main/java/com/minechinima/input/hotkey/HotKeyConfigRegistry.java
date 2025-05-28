@@ -6,18 +6,17 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.naming.OperationNotSupportedException;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
- * Registry and factory for available {@link HotKeyConfig} types.
+ * Registry and factory for available {@link HotKeyConfigGroupStruct} types.
  */
-public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfig> {
-    private final Map<Integer, Supplier<? extends HotKeyConfig>> registry = new HashMap<>();
-    private final Map<Class<? extends HotKeyConfig>, Integer> idRegistry = new HashMap<>();
-    private final Supplier<? extends HotKeyConfig> defaultConfig;
+public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfigGroupStruct> {
+    private final Map<Integer, Supplier<? extends HotKeyConfigGroupStruct>> registry = new HashMap<>();
+    private final Map<Class<? extends HotKeyConfigGroupStruct>, Integer> idRegistry = new HashMap<>();
+    private final Supplier<? extends HotKeyConfigGroupStruct> defaultConfig;
 
-    public <T extends HotKeyConfig> HotKeyConfigRegistry(int id, Class<T> clazz, Supplier<T> defaultConfig) {
+    public <T extends HotKeyConfigGroupStruct> HotKeyConfigRegistry(int id, Class<T> clazz, Supplier<T> defaultConfig) {
         this.register(id, clazz, defaultConfig);
         this.defaultConfig = defaultConfig;
     }
@@ -28,7 +27,7 @@ public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfi
      * @throws OperationNotSupportedException when the given id is already registered.
      */
     @Override
-    public <T extends HotKeyConfig> void register(int id, Class<T> clazz, Supplier<T> constructor) throws IllegalArgumentException {
+    public <T extends HotKeyConfigGroupStruct> void register(int id, Class<T> clazz, Supplier<T> constructor) throws IllegalArgumentException {
         if (this.registry.containsKey(id) || this.idRegistry.containsKey(clazz)) {
             throw new IllegalArgumentException("The id is already registered");
         }
@@ -39,24 +38,24 @@ public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfi
 
     @Override
     @Nullable
-    public HotKeyConfig getNew(int id) {
-        Supplier<? extends HotKeyConfig> constructor;
+    public HotKeyConfigGroupStruct getNew(int id) {
+        Supplier<? extends HotKeyConfigGroupStruct> constructor;
         if ((constructor = this.registry.get(id)) == null) return null;
-        HotKeyConfig config = constructor.get();
+        HotKeyConfigGroupStruct config = constructor.get();
         config.initChildren();
         return config;
     }
 
     @Override
-    public Integer getID(HotKeyConfig value) {
+    public Integer getID(HotKeyConfigGroupStruct value) {
         return this.idRegistry.get(value.getClass());
     }
 
     @Override
-    public Map<Integer, HotKeyConfig> getAllNew() {
-        Map<Integer, HotKeyConfig> map = new HashMap<>();
-        for (Map.Entry<Integer, Supplier<? extends HotKeyConfig>> entry : this.registry.entrySet()) {
-            HotKeyConfig config = entry.getValue().get();
+    public Map<Integer, HotKeyConfigGroupStruct> getAllNew() {
+        Map<Integer, HotKeyConfigGroupStruct> map = new HashMap<>();
+        for (Map.Entry<Integer, Supplier<? extends HotKeyConfigGroupStruct>> entry : this.registry.entrySet()) {
+            HotKeyConfigGroupStruct config = entry.getValue().get();
             config.initChildren();
             map.put(entry.getKey(), config);
         }
@@ -65,19 +64,9 @@ public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfi
 
     @Override
     @NotNull
-    public HotKeyConfig getNewDefault() {
-        HotKeyConfig defaultconfig = this.defaultConfig.get();
+    public HotKeyConfigGroupStruct getNewDefault() {
+        HotKeyConfigGroupStruct defaultconfig = this.defaultConfig.get();
         defaultconfig.initChildren();
         return defaultconfig;
-    }
-
-    public LinkedHashSet<HotKeyConfig> getAvailableConfigs() {
-        LinkedHashSet<HotKeyConfig> configs = new LinkedHashSet<>();
-        for (Supplier<? extends HotKeyConfig> supplier : this.registry.values()) {
-            HotKeyConfig config = supplier.get();
-            config.initChildren();
-            configs.add(config);
-        }
-        return configs;
     }
 }

@@ -1,9 +1,9 @@
 package com.minechinima.operator.ot;
 
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 
-public abstract class OperatorTypePropertyProvider<P extends OperatorProperties, C extends IContext>
+public abstract class OperatorTypePropertyProvider<P extends OperatorPropertiesGroupStruct, C extends IContext>
         extends OperatorType<C> implements IOTPropertyProvider<P> {
     private final OTPropertyStorage<P> storage = new OTPropertyStorage<>("", this::createProps);
 

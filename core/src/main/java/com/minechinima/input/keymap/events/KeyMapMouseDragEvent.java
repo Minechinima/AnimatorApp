@@ -8,10 +8,13 @@ import com.minechinima.ui.elements.UIWindow;
  * Triggered for a key when a certain threshold of mouse movement.
  */
 public class KeyMapMouseDragEvent extends KeyMapMouseMoveEvent {
-    private final Key key;
+    /**
+     * Store the event here to allow custom data
+     */
+    private final KeyMapKeyEvent key;
     private final Direction direction;
 
-    public KeyMapMouseDragEvent(Key key, double mouseX, double mouseY, double prevMouseX, double prevMouseY, Direction direction, UIWindow window, PressedKeySet pressedKeys) {
+    public KeyMapMouseDragEvent(KeyMapKeyEvent key, double mouseX, double mouseY, double prevMouseX, double prevMouseY, Direction direction, UIWindow window, PressedKeySet pressedKeys) {
         super(mouseX, mouseY, prevMouseX, prevMouseY, window, pressedKeys);
         this.key = key;
         this.direction = direction;
@@ -21,7 +24,11 @@ public class KeyMapMouseDragEvent extends KeyMapMouseMoveEvent {
         return this.direction;
     }
 
-    public Key key() {
+    /**
+     * @return the keyevent for which the dragging threshold was surpassed.
+     * This is a cached event and might contain outdated information.
+     */
+    public KeyMapKeyEvent key() {
         return this.key;
     }
 }

@@ -5,7 +5,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorContext;
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import com.minechinima.ui.elements.UIModal;
 import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ import java.util.Queue;
  * @implNote Important why this is an interface: force subclasses that
  * implement {@link IAdjustableOperator} to also implement this interface.
  */
-public abstract class IPropertyOperator<C extends IContext, P extends OperatorProperties> implements IOperator<C> {
+public abstract class IPropertyOperator<C extends IContext, P extends OperatorPropertiesGroupStruct> implements IOperator<C> {
     @NotNull
     protected final P props;
 

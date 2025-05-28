@@ -4,6 +4,7 @@ import com.minechinima.model.values.FloatValue;
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
+import imgui.ImVec4;
 import imgui.flag.ImGuiCol;
 import imgui.flag.ImGuiMouseButton;
 
@@ -41,7 +42,9 @@ public class UIDragFloat<C extends IContext> extends UIValueElement<Float, Float
         }
 
         if (this.highlight) {
-            ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0xFFAA33FF);
+            ImGui.pushStyleColor(ImGuiCol.FrameBg, new ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
+            ImGui.pushStyleColor(ImGuiCol.FrameBgActive, new ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
+            ImGui.pushStyleColor(ImGuiCol.FrameBgHovered, new ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
         }
 
         boolean changed = ImGui.dragFloat(this.label, newValue);
@@ -50,8 +53,12 @@ public class UIDragFloat<C extends IContext> extends UIValueElement<Float, Float
             ImGui.popStyleColor();
         }
 
-        //TODO utility method, this logic will likely appear a lot later on.
-        //TODO we need unique UI instances (factory in the UIHandler)
+        if (this.highlight) {
+            ImGui.popStyleColor();
+            ImGui.popStyleColor();
+            ImGui.popStyleColor();
+        }
+
         if (ImGui.isMouseHoveringRect(ImGui.getItemRectMinX(), ImGui.getItemRectMinY(), ImGui.getItemRectMaxX(), ImGui.getItemRectMaxY())) {
             context.getContextBuilder().setCurrentHoveredWidget(this);
         }

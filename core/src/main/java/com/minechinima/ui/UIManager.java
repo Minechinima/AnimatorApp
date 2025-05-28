@@ -79,11 +79,14 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
      *         This can be dynamic and change based on internal conditions, e.g., current rendering context, last hovered window etc.
      */
     @NotNull
+    //TODO remove
     public C getCurrentOperatorContext() {
         return this.context;
     }
 
     public void render(UIContext<C> context) {
+        this.context.setUIContext(null);
+
         this.loader.beginFrame();
         for (UIWindow<C> window : this.windows) {
             context.setOperatorContext(this.context);
@@ -91,6 +94,7 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
             window.render(context);
         }
         this.loader.endFrame();
+
         this.context.setUIContext(context.getContextBuilder().build());
         context.getContextBuilder().reset();
     }

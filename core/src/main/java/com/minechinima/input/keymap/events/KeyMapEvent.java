@@ -4,7 +4,7 @@ import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.ui.elements.UIWindow;
 
 public abstract class KeyMapEvent {
-    /* current mouse position */
+    /* current mouse position relative to window coordinates. */
     private final double mouseX;
     private final double mouseY;
     /**

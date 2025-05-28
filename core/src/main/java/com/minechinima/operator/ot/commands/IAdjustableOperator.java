@@ -5,7 +5,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorContext;
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import com.minechinima.ui.elements.UIElement;
 import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +21,7 @@ import java.util.Queue;
  * @param <C>
  * @param <P>
  */
-public abstract class IAdjustableOperator<C extends IContext, P extends OperatorProperties> extends IPropertyOperator<C, P> {
+public abstract class IAdjustableOperator<C extends IContext, P extends OperatorPropertiesGroupStruct> extends IPropertyOperator<C, P> {
     public IAdjustableOperator(P props) {
         super(props);
     }

@@ -32,6 +32,9 @@ public class Transaction {
         this.timestamp = System.currentTimeMillis();
     }
 
+    /**
+     * @return copy of the log with full {@link com.minechinima.model.utils.ValuePath}.
+     */
     public Stack<DataOperationLog.Entry> getDataOperationStack() {
         return this.log.getLog();
     }
@@ -63,7 +66,7 @@ public class Transaction {
 
     /**
      * Transition to aborted state. This closes the transaction.
-     * @implNote this is default so it can only be modified by {@link Controller}, which is in the same package.
+     * @implNote this is default so it can only be modified by {@link ControllerManager}, which is in the same package.
      * Also prevent subclasses from changing the access.
      */
     void abortedState() {
@@ -76,7 +79,7 @@ public class Transaction {
 
     /**
      * Transition to committed state, indicating a successful transaction. This closes the transaction.
-     * @implNote this is default so it can only be modified by {@link Controller}, which is in the same package.
+     * @implNote this is default so it can only be modified by {@link ControllerManager}, which is in the same package.
      * Also prevent subclasses from changing the access.
      */
     void committedState() {

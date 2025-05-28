@@ -41,16 +41,17 @@ public interface IModalOperator<C extends IContext> extends IOperator<C> {
      * @return
      * @throws UserException
      */
-    default Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmModal(OperatorContext<C> context, KeyMapEvent event) throws UserException {
+    default Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmModal(OperatorContext<C> context, @Nullable KeyMapEvent event) throws UserException {
         return new Pair<>(OpExecuteFlag.FINISHED, null);
     }
 
+    //TODO make an abstraction layer so you don't return UIElement for info but a set of status values
+    // like progressbar 0-1, text, color etc., which in turn return / render the appropiate UIElement.
+    // NO UI layer coupling in operator framework so UI can be independently developed
     /**
      *
      * @param info optional information string for the header
-     *             TODO make an abstraction layer so you don't return UIElement here but a set of status values
-     *             like progressbar 0-1, text, color etc., which in turn return / render the appropiate UIElement.
-     *             NO UI layer coupling in operator framework so UI can be independently developed
+     *
      * @param flag
      */
     public record Modal(@Nullable String info, OpModalFlag flag) {
