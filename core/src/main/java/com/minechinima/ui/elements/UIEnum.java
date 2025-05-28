@@ -1,15 +1,13 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.values.IEnumValue;
+import com.minechinima.ui.utils.IEnumValue;
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import imgui.ImGui;
 import imgui.type.ImInt;
 
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 public class UIEnum<T extends ILangKeyProvider, J extends BaseStructure & IEnumValue<T>, C extends IContext> extends UIValueElement<T, J, C> {

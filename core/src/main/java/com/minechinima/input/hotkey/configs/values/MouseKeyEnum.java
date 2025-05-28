@@ -1,16 +1,17 @@
 package com.minechinima.input.hotkey.configs.values;
 
+import com.minechinima.input.hotkey.configs.AbstractHotKeyKeyConfigGroupStruct;
+import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.raw.Key;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import com.minechinima.utils.CollectionUtils;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public enum MouseKeyEnum implements ILangKeyProvider {
+public enum MouseKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfigGroupStruct.IKeyEnum {
     MOUSE_BUTTON_1(0),
     MOUSE_BUTTON_2(1),
     MOUSE_BUTTON_3(2),
@@ -22,7 +23,9 @@ public enum MouseKeyEnum implements ILangKeyProvider {
     MOUSE_BUTTON_LAST(7),
     MOUSE_BUTTON_LEFT(0),
     MOUSE_BUTTON_RIGHT(1),
-    MOUSE_BUTTON_MIDDLE(2);
+    MOUSE_BUTTON_MIDDLE(2),
+    MOUSE_WHEEL_UP(8),
+    MOUSE_WHEEL_DOWN(9);
 
     public static final IGenericRegistry<MouseKeyEnum> REGISTRY = new IGenericRegistry<MouseKeyEnum>() {
         @Override
@@ -83,5 +86,10 @@ public enum MouseKeyEnum implements ILangKeyProvider {
     @Override
     public @Nullable String tooltip() {
         return this.name();
+    }
+
+    @Override
+    public boolean equalKey(KeyMapKeyEvent event) {
+        return this.equalsRawKey(event.key());
     }
 }

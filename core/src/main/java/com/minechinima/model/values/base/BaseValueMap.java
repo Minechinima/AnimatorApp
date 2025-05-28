@@ -28,7 +28,7 @@ import java.util.*;
  * @param <T> the type of the children.
  */
 public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableValueHierarchy<T>
-        implements IBaseValueCollection<T>, IValueMap<T> {
+        implements IBaseValueCollection<T>, IValueMap<T>, Iterable<Map.Entry<String, T>> {
     private final Set<T> children = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public BaseValueMap(String id) {
@@ -47,6 +47,16 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @Override
     public final Set<T> getChildren() {
         return new HashSet<>(this.children);
+    }
+
+    public final Iterator<Map.Entry<String, T>> iterator() {
+        Map<String, T> items = new HashMap<>();
+        for (T child : this.children) {
+            /* this only works well since the ids here are unique since empty strings will collide [""] */
+            items.put(child.getIdentifier(), child);
+        }
+
+        return items.entrySet().iterator();
     }
 
     @Override

@@ -46,7 +46,6 @@ public class DummyBaseMutableHierarchy extends BaseMutableValueHierarchy<BaseStr
         return this;
     }
 
-    @Override
     public boolean addChild(BaseStructure child) {
         return false;
     }

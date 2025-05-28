@@ -7,6 +7,10 @@ import com.minechinima.ui.elements.UIWindow;
 import java.util.Objects;
 
 public class KeyMapKeyEvent extends KeyMapEvent {
+    /**
+     * @implNote this is not used in the core framework of keymap stuff. Instead, the more general equalKey method is
+     * used to allow future subclasses with custom keys and better runtime extensibility.
+     */
     private final Key key;
     private final KeyType type;
 

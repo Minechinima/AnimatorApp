@@ -136,12 +136,8 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
     public final MapType toData() {
         Map<String, BaseType<?>> map = new HashMap<>();
 
-        for (T child : this.children) {
-            /*
-             * we don't need to store identifier, the children are already initialized.
-             */
-            String serializationKey = this.mappingBuffer.inverse().get(child);
-            map.put(serializationKey, child.toData());
+        for (Map.Entry<String, T> child : this.mappingBuffer.entrySet()) {
+            map.put(child.getKey(), child.getValue().toData());
         }
 
         return new MapType(map);
@@ -154,7 +150,7 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
         for (Map.Entry<String, BaseType<?>> entry : type) {
             T child;
             if ((child = this.mappingBuffer.get(entry.getKey())) == null
-                || !this.children.contains(child)) {
+                /* TODO allow deserialization of not initialized || !this.children.contains(child)*/) {
                 continue;
             }
             child.fromData(entry.getValue());

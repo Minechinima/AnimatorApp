@@ -1,8 +1,8 @@
 package com.minechinima.operator.ot;
 
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 
-public abstract class UIOperatorTypePropertyProvider<P extends OperatorProperties> extends UIOperatorType implements IOTPropertyProvider<P> {
+public abstract class UIOperatorTypePropertyProvider<P extends OperatorPropertiesGroupStruct> extends UIOperatorType implements IOTPropertyProvider<P> {
     private final OTPropertyStorage<P> storage = new OTPropertyStorage<>("", this::createProps);
 
     public UIOperatorTypePropertyProvider(String id, String title, String description, int flags) {

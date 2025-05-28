@@ -5,7 +5,7 @@ import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.values.base.BaseValueList;
 import com.minechinima.model.values.base.BaseValueOrderedCollection;
 import com.minechinima.model.values.base.ValueGroup;
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,10 +13,10 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * Utility class that has common attributes and logic that are needed by an {@link OperatorType} which provides {@link OperatorProperties}.
+ * Utility class that has common attributes and logic that are needed by an {@link OperatorType} which provides {@link OperatorPropertiesGroupStruct}.
  * @param <P>
  */
-public class OTPropertyStorage<P extends OperatorProperties> extends ValueGroup implements IOTPropertyProvider<P> {
+public class OTPropertyStorage<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements IOTPropertyProvider<P> {
     /**
      * Runtime properties cached here so they can be undone and adressed properly.
      * TODO how to prevent these from being stored to harddrive? Not serializing sounds a bit too early in the process.

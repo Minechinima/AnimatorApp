@@ -29,7 +29,7 @@ public class ObjectDataManager extends BaseValueMap<BaseObject> {
         BaseObject obj = uuid == null ? new BaseObject(id, this.database) : new BaseObject(id, uuid, this.database);
         obj.fromData(data);
         obj.initChildren();
-        //TODO ptr exception is not initialized when doing fromData after init
+        //TODO ptr exception @is not initialized@ when doing fromData after init
         return obj;
     }
 

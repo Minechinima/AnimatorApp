@@ -1,4 +1,4 @@
-package com.minechinima.operator.config;
+package com.minechinima.operator.config.operator;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.*;
@@ -6,7 +6,7 @@ import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.OperatorType;
 import org.jetbrains.annotations.Nullable;
@@ -15,16 +15,16 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Wrapper of {@link OperatorProperties}
+ * Wrapper of {@link OperatorPropertiesGroupStruct}
  * with logic to deserialize/serialize and sync with a pointer to an {@link OperatorType}
  */
-public class OperatorConfigProps extends BaseMutableValueHierarchy<OperatorProperties> {
+public class OperatorConfigPropsTreeStruct extends BaseMutableValueHierarchy<OperatorPropertiesGroupStruct> {
     @Nullable
-    private OperatorProperties props;
+    private OperatorPropertiesGroupStruct props;
     private BaseType<?> cachedData;
     private final ValuePointer<OperatorType> ptr;
 
-    public OperatorConfigProps(String id, ValuePointer<OperatorType> ptr) {
+    public OperatorConfigPropsTreeStruct(String id, ValuePointer<OperatorType> ptr) {
         super(id, ValuePath.Format.PATH);
         this.ptr = ptr;
         this.ptr.getEventBus().subscribe(this);
@@ -38,7 +38,7 @@ public class OperatorConfigProps extends BaseMutableValueHierarchy<OperatorPrope
     }
 
     @Nullable
-    public OperatorProperties getProps() {
+    public OperatorPropertiesGroupStruct getProps() {
         this.reloadProps(false);
         return this.props;
     }
@@ -71,9 +71,9 @@ public class OperatorConfigProps extends BaseMutableValueHierarchy<OperatorPrope
     }
 
     @Override
-    public boolean removeChild(OperatorProperties child) {
+    public boolean removeChild(OperatorPropertiesGroupStruct child) {
         if (this.props == null || this.props != child) return false;
-        OperatorProperties props = this.props;
+        OperatorPropertiesGroupStruct props = this.props;
         this.props = null;
         try {
             props.setParent(null);
@@ -85,7 +85,7 @@ public class OperatorConfigProps extends BaseMutableValueHierarchy<OperatorPrope
     }
 
     @Override
-    public Collection<OperatorProperties> getChildren() {
+    public Collection<OperatorPropertiesGroupStruct> getChildren() {
         return this.props != null ? List.of(this.props) : List.of();
     }
 

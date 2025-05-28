@@ -2,12 +2,6 @@ package com.minechinima.controller;
 
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Every method of the Controller Layer must return this
- * @param result
- * @param userMessage
- * @param exception
- */
 public record ControllerResult(Transaction transaction, State state, String userMessage, @Nullable Exception exception) {
     public ControllerResult {
         if (state != State.ERROR && exception != null) {

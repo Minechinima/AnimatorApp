@@ -1,4 +1,4 @@
-package com.minechinima.input.keymap.builder;
+package com.minechinima.input.keymap;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;

@@ -22,13 +22,13 @@ public class HistoryManager {
     public HistoryManager() {
     }
 
-    public void pushUndo(Transaction transaction, OperatorType type, @Nullable OperatorProperties props) {
+    public void pushUndo(Transaction transaction, OperatorType type, @Nullable OperatorPropertiesGroupStruct props) {
         if (type instanceof IOTPropertyProvider<?> && props == null) {
-            throw new IllegalArgumentException("WTF");
+            throw new IllegalArgumentException("Provided a IOTPropertyProvider without OperatorProperties.");
         }
 
         if (transaction.getState() != Transaction.State.COMMITTED) {
-            throw new IllegalArgumentException("Transaction is not commited, cannot be pushed as redo step.");
+            throw new IllegalArgumentException("Transaction is not commited, cannot be pushed as undo step.");
         }
 
         this.undos.push(new HistoryStep(transaction.getLocalizedTitle(), type, props, transaction.getDataOperationStack()));
@@ -117,13 +117,13 @@ public class HistoryManager {
         };
     }
 
-    protected record HistoryStep(String stepTitle, OperatorType ot, @Nullable OperatorProperties props, Stack<DataOperationLog.Entry> log) { }
+    protected record HistoryStep(String stepTitle, OperatorType ot, @Nullable OperatorPropertiesGroupStruct props, Stack<DataOperationLog.Entry> log) { }
 
     public final static class UndoRedoStep {
         public final IControllerCommand command;
         public final OperatorType ot;
         @Nullable
-        public final OperatorProperties props;
+        public final OperatorPropertiesGroupStruct props;
         public final String title;
         /**
          * For the HistoryManager to verify that when pushing into redo stack the step is from undo stack.
@@ -134,7 +134,7 @@ public class HistoryManager {
          * Private so only history manager can instantiate. This ensures that only an undo step created by this history can be inserted
          * as redo step.
          */
-        private UndoRedoStep(String title, IControllerCommand command, OperatorType ot, @Nullable OperatorProperties props, boolean isUndo) {
+        private UndoRedoStep(String title, IControllerCommand command, OperatorType ot, @Nullable OperatorPropertiesGroupStruct props, boolean isUndo) {
             this.ot = ot;
             this.command = command;
             this.props = props;

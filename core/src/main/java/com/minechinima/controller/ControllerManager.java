@@ -16,6 +16,10 @@ import java.util.Queue;
 import java.util.Stack;
 
 public class ControllerManager {
+    /**
+     * null if no transaction is currently being performed.
+     */
+    @Nullable
     private Transaction currentTransaction;
     private final DataTreeManager<?> dataTree;
     private final Logger logger;
@@ -91,10 +95,12 @@ public class ControllerManager {
         this.nestedLevel++;
 
         try {
-            /*ATTENTION: while this is running, writeToTransaction could be called again */
-            while (!commands.isEmpty() && this.e == null) {
-                IControllerCommand command = commands.poll();
-                command.execute();
+            /* ATTENTION: while this is running, writeToTransaction could be called again,
+             * abortTransaction could set current to null */
+            while (!commands.isEmpty()
+                    && this.e == null
+                    && this.currentTransaction != null) {
+                commands.poll().execute();
             }
         } catch (Exception e) {
             if (this.nestedLevel > 1) this.e = e;

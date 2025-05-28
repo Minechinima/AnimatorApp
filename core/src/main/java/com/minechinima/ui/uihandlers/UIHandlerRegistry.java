@@ -19,10 +19,17 @@ public final class UIHandlerRegistry {
 
     public <E extends BaseStructure,F extends IUIHandler<E>> Collection<F> getHandlersFor(Class<F> clazz) {
         if (entryPoints.containsKey(clazz)) {
-            return (Collection<F>) entryPoints.get(clazz);
+            List<F> handlers = new LinkedList<>();
+            for (F handler : (Collection<F>) entryPoints.get(clazz)) {
+                handlers.add((F) handler/*TODO.newInstance()*/);
+            }
+            return handlers;
         }
 
-        return registerEntryPoints(clazz);
+        List<F> handlers = registerEntryPoints(clazz);
+        handlers.sort(Comparator.comparing(o -> getClassDepth(o.getRenderTarget())));
+
+        return handlers;
     }
 
     public <E extends BaseStructure, F extends IUIHandler<E>> Collection<F> getHandlersFor(Class<F> clazz, E baseStructure) {
@@ -32,7 +39,7 @@ public final class UIHandlerRegistry {
             List<F> uiHandlers = new LinkedList<>();
             for (F uiHandler : (Iterable<F>) entryPoints.get(clazz)) {
                 if (uiHandler.getRenderTarget() != null && baseStructure.getClass().isAssignableFrom(uiHandler.getRenderTarget())) {
-                    uiHandlers.add(uiHandler);
+                    uiHandlers.add((F) uiHandler/*TODO.newInstance()*/);
                 }
             }
 
@@ -53,7 +60,7 @@ public final class UIHandlerRegistry {
             List<F> uiHandlers = new LinkedList<>();
             for (F uiHandler : (Iterable<F>) entryPoints.get(clazz)) {
                 if (uiHandler.getRenderTarget() != null && uiHandler.getRenderTarget() == baseStructure.getClass()) {
-                    uiHandlers.add(uiHandler);
+                    uiHandlers.add((F) uiHandler/*TODO.newInstance()*/);
                 }
             }
 
@@ -71,7 +78,7 @@ public final class UIHandlerRegistry {
         List<F> uiHandlers = new LinkedList<>();
         for (IUIHandler<? extends BaseStructure> uiHandler : unnamedUIHandlers) {
             if (uiHandler.getRenderTarget() != null && uiHandler.getRenderTarget().isAssignableFrom(baseStructure.getClass())) {
-                uiHandlers.add((F) uiHandler);
+                uiHandlers.add((F) uiHandler/*TODO.newInstance()*/);
             }
         }
 
@@ -88,7 +95,7 @@ public final class UIHandlerRegistry {
         List<F> uiHandlers = new LinkedList<>();
         for (IUIHandler<? extends BaseStructure> uiHandler : unnamedUIHandlers) {
             if (uiHandler.getRenderTarget() != null && uiHandler.getRenderTarget() == baseStructure.getClass()) {
-                uiHandlers.add((F) uiHandler);
+                uiHandlers.add((F) uiHandler/*TODO.newInstance()*/);
             }
         }
 
@@ -117,7 +124,7 @@ public final class UIHandlerRegistry {
         ServiceLoader<F> serviceLoader = ServiceLoader.load(clazz);
 
         for (F entryPoint : serviceLoader) {
-            entryPoints.add(entryPoint);
+            entryPoints.add((F) entryPoint/*TODO.newInstance()*/);
 
             if (UnnamedUIHandler.class.isAssignableFrom(clazz)) {
                 unnamedHandlersInitialized = true;

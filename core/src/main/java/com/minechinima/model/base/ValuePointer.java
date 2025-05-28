@@ -232,6 +232,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             }
 
             final T prev = this.referenced;
+            //TODO value is referenced here but addPointer called under a condition.
             this.referenced = value;
             /* can only perform the listening operations when we are in the same tree */
             if (this.getParent() != null) {

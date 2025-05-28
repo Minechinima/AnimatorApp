@@ -39,7 +39,6 @@ public class UIPropertiesPanel extends UISpace {
     @Override
     public void drawBody(UIContext context) {
         PropertyContextRegistry registry = (PropertyContextRegistry) context.getRegisteredObj(PropertyContextRegistry.class);
-        //TODO pass the C context type to everything in the UI?? Context tpye not very safe atm... raw types
         BBContext uiContext = ((BBOperatorContext) context.getOperatorContext()).bbContext();
         BaseObject active;
         Set<IUIPropertyContext> bodies = registry.getStandardBodies();

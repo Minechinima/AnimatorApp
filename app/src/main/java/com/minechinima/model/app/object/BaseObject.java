@@ -63,5 +63,6 @@ public class BaseObject extends ValueGroup {
         this.addChild("data", this.data);
         this.addChild("viewport_visibility", this.viewportVisibility);
         this.addChild("render_visibility", this.renderVisibility);
+        this.data.set(new CameraType());
     }
 }

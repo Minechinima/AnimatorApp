@@ -1,6 +1,5 @@
-package com.minechinima.input.keymap.builder;
+package com.minechinima.input.keymap;
 
-import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyType;
 import com.minechinima.input.raw.InputEvent;
