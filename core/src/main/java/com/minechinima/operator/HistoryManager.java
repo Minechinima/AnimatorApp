@@ -6,6 +6,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DataOperationLog;
+import com.minechinima.model.logging.DataOperationLogging;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.OperatorType;
@@ -22,6 +23,44 @@ public class HistoryManager {
     public HistoryManager() {
     }
 
+    protected static Stack<DataOperationLog.Entry> compressLog(Stack<DataOperationLog.Entry> log) {
+        Stack<DataOperationLog.Entry> newLog = new Stack<>();
+        /*
+         * Store operations in their order that could be executed simultaneously.
+         * Merge next operations onto the parallel ones.
+         */
+        List<DataOperationLog.Entry> parallel = new LinkedList<>();
+
+        for (int i = 0; i < log.size(); i++) {
+            DataOperationLog.Entry test = log.get(i);
+            boolean merged = false;
+            boolean notParallel = false;
+            for (DataOperationLog.Entry p : parallel) {
+                if (!p.getOperation().canBeParallel(test.getOperation())) {
+                    notParallel = true;
+                }
+
+                if (p.getOperation().merge(test.getOperation())) {
+                    notParallel = false;
+                    merged = true;
+                    break;
+                }
+            }
+
+            if (notParallel) {
+                newLog.addAll(parallel);
+                newLog.push(test);
+                parallel.clear();
+            } else if (!merged) {
+                parallel.add(test);
+            }
+        }
+
+        newLog.addAll(parallel);
+
+        return newLog;
+    }
+
     public void pushUndo(Transaction transaction, OperatorType type, @Nullable OperatorPropertiesGroupStruct props) {
         if (type instanceof IOTPropertyProvider<?> && props == null) {
             throw new IllegalArgumentException("Provided a IOTPropertyProvider without OperatorProperties.");
@@ -31,7 +70,8 @@ public class HistoryManager {
             throw new IllegalArgumentException("Transaction is not commited, cannot be pushed as undo step.");
         }
 
-        this.undos.push(new HistoryStep(transaction.getLocalizedTitle(), type, props, transaction.getDataOperationStack()));
+        this.undos.push(new HistoryStep(transaction.getLocalizedTitle(), type, props,
+                this.compressLog(transaction.getDataOperationStack())));
     }
 
     public void pushUndo(Transaction transaction, UndoRedoStep step) {
@@ -39,7 +79,8 @@ public class HistoryManager {
             throw new IllegalArgumentException("Cannot push a step from undo stack into the undo stack again.");
         }
 
-        this.undos.push(new HistoryStep(step.title, step.ot, step.props, transaction.getDataOperationStack()));
+        this.undos.push(new HistoryStep(step.title, step.ot, step.props,
+                this.compressLog(transaction.getDataOperationStack())));
     }
 
     public void pushRedo(Transaction transaction, UndoRedoStep step) {
@@ -51,7 +92,8 @@ public class HistoryManager {
             throw new IllegalArgumentException("Cannot push a step from redo stack into the redo stack again.");
         }
 
-        this.redos.push(new HistoryStep(step.title, step.ot, step.props, transaction.getDataOperationStack()));
+        this.redos.push(new HistoryStep(step.title, step.ot, step.props,
+                this.compressLog(transaction.getDataOperationStack())));
     }
 
     /**

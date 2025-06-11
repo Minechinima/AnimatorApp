@@ -36,6 +36,11 @@ public class MapValueRemove implements IDataOperation<IValueMap<?>> {
     }
 
     @Override
+    public boolean canBeParallel(IDataOperation<?> test) {
+        return false;
+    }
+
+    @Override
     public Type getOperationType() {
         return Type.DELETE;
     }

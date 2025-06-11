@@ -17,9 +17,9 @@ public class LogTest {
     public void pushReferenceEqualOperation() {
         DataOperationLog log = new DataOperationLog();
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("", ValuePath.Format.PATH);
-        IdentifierChange op = new IdentifierChange("");
+        IdentifierChange op = new IdentifierChange(root,"");
         log.pushDataOperation(root.getFullPath(), op);
-        log.pushDataOperation(root.getFullPath(), new IdentifierChange(""));
+        log.pushDataOperation(root.getFullPath(), new IdentifierChange(root,""));
         Exception e = Assertions.assertThrowsExactly(IllegalArgumentException.class, ()-> log.pushDataOperation(root.getFullPath(), op));
         Assertions.assertEquals("Tried to log a data operation instance (reference equal) that was already logged.",
                 e.getMessage());

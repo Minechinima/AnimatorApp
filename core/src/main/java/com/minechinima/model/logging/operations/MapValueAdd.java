@@ -35,6 +35,11 @@ public class MapValueAdd implements IDataOperation<IValueMap<?>> {
     }
 
     @Override
+    public boolean canBeParallel(IDataOperation<?> test) {
+        return false;
+    }
+
+    @Override
     public Type getOperationType() {
         return Type.CREATE;
     }

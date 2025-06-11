@@ -129,9 +129,11 @@ public class DataOperationLog {
 
         this.cache.add(dataOperation);
 
-        if (!this.log.empty() && this.log.peek().operation.merge(dataOperation)) {
-            return;
-        }
+        // Deactivated, as the log should contain all operations for full transparency.
+        // This might impact performance when iterating through it tho.
+        // if (!this.log.empty() && this.log.peek().operation.merge(dataOperation)) {
+        //    return;
+        //}
 
         /*
          * Just plainly record any changes, no matter whether that node is actually addressable in the tree.

@@ -7,25 +7,17 @@ import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 
 public class ValueChange implements IDataOperation<IValue<?>> {
+    private BaseType<?> newValue;
     private final BaseType<?> oldValue;
     /**
      * Used to check if data should be merged
      */
     private final String path;
-    private boolean canMerge = false;
-    private boolean dontMergeWithPrev = false;
 
     public <T extends BaseStructure & IValue> ValueChange(T value, BaseType<?> oldValue) {
         this.oldValue = oldValue;
+        this.newValue = value.valueToData();
         this.path = value.getFullPath().toUniquePath();
-    }
-
-    public void enableMerge() {
-        this.canMerge = true;
-    }
-
-    public void disableMerginWithPrev() {
-        this.dontMergeWithPrev = true;
     }
 
     @Override
@@ -54,13 +46,23 @@ public class ValueChange implements IDataOperation<IValue<?>> {
     }
 
     @Override
+    public boolean canBeParallel(IDataOperation<?> test) {
+        return test.getOperationType() == Type.UPDATE;
+    }
+
+    @Override
     public Type getOperationType() {
         return Type.UPDATE;
     }
 
     @Override
     public boolean merge(IDataOperation next) {
-        return this.canMerge && next instanceof ValueChange changeUndo && changeUndo.path.equals(this.path)
-                && changeUndo.canMerge && !changeUndo.dontMergeWithPrev;
+        if (!(next instanceof ValueChange nextChange && nextChange.path.equals(this.path))) {
+            return false;
+        }
+
+        this.newValue = nextChange.newValue;
+
+        return true;
     }
 }
