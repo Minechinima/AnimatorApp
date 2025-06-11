@@ -1,13 +1,18 @@
 package com.minechinima.model.logging.operations;
 
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 
 public class IdentifierChange implements IDataOperation<IDMutable> {
     private final String oldIdentifier;
+    private String newIdentifier;
+    private final String uniquePath;
 
-    public IdentifierChange(String oldIdentifier) {
+    public <T extends BaseStructure & IDMutable> IdentifierChange(BaseStructure context, String oldIdentifier) {
         this.oldIdentifier = oldIdentifier;
+        this.newIdentifier = context.getIdentifier();
+        this.uniquePath = context.getFullPath().toUniquePath();
     }
 
     @Override
@@ -27,12 +32,23 @@ public class IdentifierChange implements IDataOperation<IDMutable> {
     }
 
     @Override
+    public boolean canBeParallel(IDataOperation<?> test) {
+        return test.getOperationType() == Type.UPDATE;
+    }
+
+    @Override
     public Type getOperationType() {
         return Type.UPDATE;
     }
 
     @Override
     public boolean merge(IDataOperation next) {
-        return false;
+        if (!(next instanceof IdentifierChange idChange && idChange.uniquePath.equals(this.uniquePath))) {
+            return false;
+        }
+
+        this.newIdentifier = idChange.newIdentifier;
+
+        return true;
     }
 }
