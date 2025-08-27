@@ -4,15 +4,13 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyDoubleValueMap;
 import com.minechinima.model.logging.DataOperationLog;
-import com.minechinima.model.logging.DataOperationLogging;
 import com.minechinima.model.logging.operations.MapValueAdd;
-import com.minechinima.model.logging.operations.ValueChange;
 import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
+import com.minechinima.operator.history.HistoryManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.crypto.Data;
 import java.lang.reflect.Field;
 import java.util.Stack;
 

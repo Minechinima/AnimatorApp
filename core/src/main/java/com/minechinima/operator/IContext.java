@@ -30,6 +30,7 @@ public interface IContext {
      * This method is used to determine if the application context changed.
      * @param other
      * @return true if the contexts are the same.<br>false if the contexts are not equal and should be treated as a changed context.
+     * TODO review
      */
     boolean contextEquals(IContext other);
 }

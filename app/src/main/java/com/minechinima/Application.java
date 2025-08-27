@@ -6,6 +6,7 @@ import com.minechinima.input.hotkey.configs.HotKeyMouseConfigGroupStruct;
 import com.minechinima.input.hotkey.configs.values.*;
 import com.minechinima.input.keymap.KeyMapEventManager;
 import com.minechinima.input.keymap.builder.KeyEventBuilder;
+import com.minechinima.input.keymap.builder.MouseDragKeyMapBuilder;
 import com.minechinima.input.keymap.builder.MouseMoveKeyMapBuilder;
 import com.minechinima.input.keymap.builder.MouseScrollBuilder;
 import com.minechinima.input.raw.*;
@@ -23,7 +24,7 @@ import com.minechinima.model.scene.Scene;
 import com.minechinima.operator.*;
 import com.minechinima.operator.config.modal.*;
 import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
-import com.minechinima.operator.config.KeyConfigurationsGroupStruct;
+import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
 import com.minechinima.operator.defaults.DragValueSliderProp;
 import com.minechinima.operator.defaults.RedoOperator;
 import com.minechinima.operator.defaults.UIDragValueSlider;
@@ -32,6 +33,8 @@ import com.minechinima.operator.defaults.modal.CancelModal;
 import com.minechinima.operator.defaults.modal.ConfirmModal;
 import com.minechinima.operator.defaults.modal.uidrag.DragIncrementModal;
 import com.minechinima.operator.defaults.modal.uidrag.RoundModal;
+import com.minechinima.operator.history.CompressionStrategyRegistry;
+import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -93,7 +96,7 @@ public class Application {
         this.controller = new ControllerManager(this.dataTree, this.logger);
 
         OperatorFactory opFactory = new OperatorFactory(this.logger);
-        KeyConfigurationsGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
+        UserFunctionalityConfigGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
         opFactory.register(bb.ops.move, TranslateObject::new);
         OperatorKeyConfigItemGroupStruct config = opConfig.newConfig();
@@ -162,11 +165,13 @@ public class Application {
 
         this.setupModal();
 
-        this.operatorManager = new OperatorManager<>(opFactory, opConfig, this.controller, this.logger, BBOperatorContext.class);
+        CompressionStrategyRegistry logCompReg = new CompressionStrategyRegistry();
+
+        this.operatorManager = new OperatorManager<>(opFactory, opConfig, new HistoryManager(logCompReg), this.controller, this.logger, BBOperatorContext.class);
     }
 
     public void setupModal() {
-        KeyConfigurationsGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
+        UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropModifierKeyConfigurationsMapStruct propertyModifiers = config.modalKeyConfigs.propModifiers;
         PropModifierKeyConfigListStruct<TranslateProps> translate_modal = new PropModifierKeyConfigListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
         PropModifierKeyConfigListStruct<DragValueSliderProp> slider_modal = new PropModifierKeyConfigListStruct<>("slider_modal", DragValueSliderProp.class, config.hotKeyConfigRegistry);
@@ -312,6 +317,7 @@ public class Application {
         manager.registerKeyMapBuilder(KeyEvent.class, new KeyEventBuilder());
         manager.registerKeyMapBuilder(MouseEvent.class, new MouseMoveKeyMapBuilder());
         manager.registerKeyMapBuilder(ScrollEvent.class, new MouseScrollBuilder());
+        manager.registerKeyMapBuilder(MouseEvent.class, new MouseDragKeyMapBuilder());
         return manager;
     }
 

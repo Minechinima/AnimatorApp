@@ -9,6 +9,8 @@ import com.minechinima.ui.utils.ILangKeyProvider;
  * and receives all important states (makes it more dependent and increases risks)
  * <br><br>
  * The command methods are executed on the configuration instances, YOU CANNOT STORE RUNTIME STATES HERE AS THESE INSTANCES ARE REUSED.
+ * <br><br>
+ * Is part of data model to allow configuration attributes
  */
 public abstract class ModalFunctionGroupStruct<C extends IContext> extends ValueGroup implements ILangKeyProvider {
     private final String title;

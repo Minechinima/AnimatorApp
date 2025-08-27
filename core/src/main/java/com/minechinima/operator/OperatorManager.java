@@ -8,7 +8,6 @@ import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.input.hotkey.HotKeyConfigRegistry;
 import com.minechinima.input.keymap.IKeyMapEventListener;
 import com.minechinima.input.keymap.events.KeyMapEvent;
-import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.bus.SubscribeEvent;
@@ -17,9 +16,10 @@ import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.modal.ModalFuncKeyConfigItemGroupStruct;
 import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
-import com.minechinima.operator.config.KeyConfigurationsGroupStruct;
+import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
 import com.minechinima.operator.config.modal.PropModifierKeyConfigItemGroupStruct;
 import com.minechinima.operator.config.modal.PropModifierKeyConfigListStruct;
+import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.UIOperatorType;
@@ -53,7 +53,7 @@ import java.util.*;
  */
 public class OperatorManager<C extends IContext> implements IKeyMapEventListener<KeyMapEvent> {
     private final OperatorFactory factory;
-    private final KeyConfigurationsGroupStruct<C> config;
+    private final UserFunctionalityConfigGroupStruct<C> config;
     @Nullable
     private UIManager<C> uiManager;
     /**
@@ -94,26 +94,29 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * true during the execution of {@link #onUIPropertyChange(BaseStructure)}
      */
     private boolean isUIPropChange;
-    private final HistoryManager historyManager = new HistoryManager();
+    private final HistoryManager historyManager;
 
-    public OperatorManager(OperatorFactory factory, KeyConfigurationsGroupStruct<C> config, ControllerManager controller, Logger logger, Class<C> contextClass) {
-        this(null, factory, config, controller, logger, contextClass);
+    public OperatorManager(OperatorFactory factory, UserFunctionalityConfigGroupStruct<C> config,
+                           HistoryManager historyManager, ControllerManager controller, Logger logger, Class<C> contextClass) {
+        this(null, factory, config, historyManager, controller, logger, contextClass);
     }
 
-    public OperatorManager(UIManager<C> uiManager, OperatorFactory factory, KeyConfigurationsGroupStruct<C> config, ControllerManager controller, Logger logger, Class<C> contextClass) {
+    public OperatorManager(UIManager<C> uiManager, OperatorFactory factory, UserFunctionalityConfigGroupStruct<C> config,
+                           HistoryManager historyManager, ControllerManager controller, Logger logger, Class<C> contextClass) {
         this.config = config;
         this.controller = controller;
         this.factory = factory;
         this.uiManager = uiManager;
         this.logger = logger;
         this.contextClass = contextClass;
+        this.historyManager = historyManager;
     }
 
     public void setUIManager(UIManager<C> uiManager) {
         this.uiManager = uiManager;
     }
 
-    public KeyConfigurationsGroupStruct<C> getConfig() {
+    public UserFunctionalityConfigGroupStruct<C> getConfig() {
         return this.config;
     }
 

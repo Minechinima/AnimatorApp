@@ -12,7 +12,6 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * @param <T> OperatorTypes that can be switched to while in modal mode. TODO check if this is necessary
  * @param <C> type of the Operator Context.
  * @implNote By defining {@link #poll(C)} here
  *           it allows generic bounds and type safety with the Context type of {@link IOperator <C>}.

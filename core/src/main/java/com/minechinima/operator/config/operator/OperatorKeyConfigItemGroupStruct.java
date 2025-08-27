@@ -4,7 +4,7 @@ import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.config.KeyConfigurationsGroupStruct;
+import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
 import com.minechinima.operator.ot.OperatorType;
 
 /**
@@ -16,7 +16,7 @@ public class OperatorKeyConfigItemGroupStruct<C extends IContext> extends ValueG
     public final ValuePointer<OperatorType> operatorType;
     public final OperatorConfigPropsTreeStruct props;
 
-    public OperatorKeyConfigItemGroupStruct(KeyConfigurationsGroupStruct<C> opConfig) {
+    public OperatorKeyConfigItemGroupStruct(UserFunctionalityConfigGroupStruct<C> opConfig) {
         super("");
         this.addChild("hotkey_config",
                 this.hotKeyConfigSelector = new HotKeyConfigSelectorEnumStruct("hotkey_config", opConfig.hotKeyConfigRegistry));

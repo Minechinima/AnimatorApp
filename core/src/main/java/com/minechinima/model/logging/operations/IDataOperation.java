@@ -71,22 +71,5 @@ public interface IDataOperation<T> {
      */
     boolean isCorrectType(Object object);
 
-    /**
-     * Merge this operation with the next.
-     * @param next
-     * @return true if the merge was successful.
-     */
-    boolean merge(IDataOperation<?> next);
-
-    /**
-     * Test whether this operation can be executed parallel to the given operation.
-     * @param test
-     * @return true if this operation and the argument can be executed simultaneously.
-     * <br><br>
-     * Example: two operations changing a float value of different nodes. They do not depend on each other and could be
-     * executed in parallel. This property allows compressing a log more.
-     */
-    boolean canBeParallel(IDataOperation<?> test);
-
     Type getOperationType();
 }

@@ -118,10 +118,6 @@ public class DummyHistoryManager extends DataOperationLog {
     }
 
     protected void push(Stack<Map.Entry<String, IDataOperation>> cache, String uniquePath, IDataOperation step) {
-        if (!cache.empty() && cache.peek().getValue().merge(step)) {
-            return;
-        }
-
         cache.push(new AbstractMap.SimpleEntry<>(uniquePath, step));
     }
 

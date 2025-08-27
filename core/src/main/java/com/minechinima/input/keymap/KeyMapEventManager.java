@@ -13,10 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class is the interface for the raw hardware input and the application keymap events.
@@ -27,7 +24,8 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
      * Dynamic factory for converting one {@link InputEvent} class into a {@link KeyMapEvent}.
      * 1:1 mapping for input events.
      */
-    private final Map<Class<? extends InputEvent>, IKeyMapEventBuilder<? extends InputEvent, ? extends KeyMapEvent>> registry = new HashMap<>();
+    private final Map<Class<? extends InputEvent>,
+            Set<IKeyMapEventBuilder<? extends InputEvent, ? extends KeyMapEvent>>> registry = new HashMap<>();
     private double mouseX = 0;
     private double mouseY = 0;
     private double prevMouseX = 0;
@@ -58,45 +56,50 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
     }
 
     public <T extends InputEvent> void registerKeyMapBuilder(Class<T> inputEventClass, IKeyMapEventBuilder<T, ?> builder) {
-        this.registry.put(inputEventClass, builder);
+        Set<IKeyMapEventBuilder<?, ?>> set;
+        if ((set = this.registry.get(inputEventClass)) == null) {
+            this.registry.put(inputEventClass, set = new HashSet<>());
+        }
+        set.add(builder);
     }
 
     @Override
     public void onEvent(InputEvent event) {
-        IKeyMapEventBuilder builder;
-        if ((builder = this.registry.get(event.getClass())) == null) return;
+        Set<IKeyMapEventBuilder<?, ?>> set;
+        if ((set = this.registry.get(event.getClass())) == null) return;
 
-        builder.onEvent(event);
+        for (IKeyMapEventBuilder builder : set) {
+            builder.setInputEvent(event);
 
-        /* event converter provides mouse position */
-        if (builder instanceof IMousePosEventProvider mousePosProvider) {
-            Vector2d pos = mousePosProvider.getMousePos();
-            this.prevMouseX = this.mouseX;
-            this.prevMouseY = this.mouseY;
-            this.mouseX = pos.x;
-            this.mouseY = pos.y;
-            this.pressedKeys.appendMousePos(this.mouseX, this.mouseY);
-        }
+            /* event converter provides mouse position */
+            if (builder instanceof IMousePosEventProvider mousePosProvider) {
+                Vector2d pos = mousePosProvider.getMousePos();
+                this.prevMouseX = this.mouseX;
+                this.prevMouseY = this.mouseY;
+                this.mouseX = pos.x;
+                this.mouseY = pos.y;
+                this.pressedKeys.appendMousePos(this.mouseX, this.mouseY);
+            }
 
-        builder.setMousePos(this.prevMouseX, this.prevMouseY, this.mouseX, this.mouseY);
-        //TODO imgui generates new os windows for popups, these are not in the UI framework atm
-        builder.setUIWindow(this.manager.getWindow(event.getWindow()));
+            builder.setMousePos(this.prevMouseX, this.prevMouseY, this.mouseX, this.mouseY);
+            //TODO imgui generates new os windows for popups, these are not in the UI framework atm
+            builder.setUIWindow(this.manager.getWindow(event.getWindow()));
 
-        if (builder instanceof IKeyEventBuilder keyEventBuilder) {
-            keyEventBuilder.setKeyMapType(this.convertInputTypeKeyType(keyEventBuilder.getInputType()));
-        }
+            if (builder instanceof IKeyEventBuilder keyEventBuilder) {
+                keyEventBuilder.setKeyMapType(this.convertInputTypeKeyType(keyEventBuilder.getInputType()));
+            }
 
-        builder.setPressedKeys(new PressedKeySet(this.pressedKeys));
+            builder.setPressedKeys(new PressedKeySet(this.pressedKeys));
 
-        Collection<KeyMapEvent> results = builder.getResult();
+            KeyMapEvent result = builder.getResult();
 
-        if (results == null) return;
+            if (result == null) return;
 
-        for (KeyMapEvent result : results) {
             this.handleEvent(builder, result);
+
+            builder.reset();
         }
 
-        builder.reset();
         this.cleanupCachedReleasedKeys();
     }
 
@@ -121,29 +124,24 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
             /* a released keyevent that was not consumed becomes a click event, or double-click */
             KeyMapKeyEvent prevClick = this.getReleasedKeyByEqualKey(keyEvent);
 
-            Collection<? extends KeyMapKeyEvent> clicks = null;
+            KeyMapKeyEvent click = null;
 
             if (builder instanceof IKeyEventBuilder<?, ?> keyEventBuilder) {
                 keyEventBuilder.setPressedKeys(new PressedKeySet(this.pressedKeys));
-                //TODO possible flaw(?): a keyEventBuilder that procudes multiple release events
-                // -> for every release event there could be produced n amount of the same click events ->
-                // the getResult method is called for every original getResult... potentially creating a duplicate batch of events?
                 if (prevClick != null && System.currentTimeMillis() - this.releasedKeys.get(prevClick) <= this.doubleClickmsTimer) {
                     keyEventBuilder.setKeyMapType(KeyType.DOUBLECLICK);
-                    clicks = keyEventBuilder.getResult();
+                    click = keyEventBuilder.getResult();
                 } else if (prevClick == null) {
                     keyEventBuilder.setKeyMapType(KeyType.CLICK);
-                    clicks = keyEventBuilder.getResult();
+                    click = keyEventBuilder.getResult();
                 }
             }
 
-            if (clicks != null) {
-                for (KeyMapKeyEvent click : clicks) {
-                    if (!this.notifyListeners(click) && prevClick == null) {
-                        this.releasedKeys.put(keyEvent, System.currentTimeMillis());
-                    } else {
-                        this.releasedKeys.remove(prevClick);
-                    }
+            if (click != null) {
+                if (!this.notifyListeners(click) && prevClick == null) {
+                    this.releasedKeys.put(keyEvent, System.currentTimeMillis());
+                } else {
+                    this.releasedKeys.remove(prevClick);
                 }
             }
         }

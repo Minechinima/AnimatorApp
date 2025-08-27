@@ -173,7 +173,7 @@ public class DataOperationLog {
             this(System.currentTimeMillis(), path, operation);
         }
 
-        private Entry(long timetamp, ValuePath path, IDataOperation<?> operation) {
+        protected Entry(long timetamp, ValuePath path, IDataOperation<?> operation) {
             super(timetamp, path, operation);
         }
 
@@ -206,6 +206,7 @@ public class DataOperationLog {
 
         /**
          * @return null if the entry's operation is to be performed on the target node.
+         * //TODO review why extra method, should be getPath?
          */
         @Nullable
         public ValuePath getRelativePath() {

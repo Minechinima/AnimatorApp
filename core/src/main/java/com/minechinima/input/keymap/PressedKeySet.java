@@ -93,14 +93,14 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     /**
      * @return copy of the positions
      */
-    public Set<Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>>> positionSet() {
-        Set<Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>>> set = new HashSet<>();
+    public Map<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> positions() {
+        Map<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> map = new HashMap<>();
 
         for (Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> entry : this.keys.entrySet()) {
-            set.add(new AbstractMap.SimpleEntry<>(entry.getKey(), new LinkedList<>(entry.getValue())));
+            map.put(entry.getKey(), new LinkedList<>(entry.getValue()));
         }
 
-        return set;
+        return map;
     }
 
     @Nullable
@@ -150,7 +150,8 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
 
     /**
      * Adds only events that are press/repeat type.
-     * @return true if it was added
+     * Only events that are not already present are added. Use {@link #replaceEqualKeys(KeyMapKeyEvent)} to replace keys.
+     * @return true if it was added.
      */
     @Override
     public boolean add(KeyMapKeyEvent keyEvent) {

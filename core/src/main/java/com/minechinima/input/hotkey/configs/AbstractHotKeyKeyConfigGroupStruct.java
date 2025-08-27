@@ -42,21 +42,19 @@ public abstract class AbstractHotKeyKeyConfigGroupStruct extends HotKeyConfigGro
 
     @Override
     public boolean onEvent(KeyMapEvent event) {
-        KeyMapKeyEvent keyEvent;
+        Key keyEvent;
         boolean typeEqual;
         if (this.type.get() == KeyType.CLICKDRAG && event instanceof KeyMapMouseDragEvent dragEvent) {
             keyEvent = dragEvent.key();
             typeEqual = true;
         } else if (event instanceof KeyMapKeyEvent keyEvent1) {
-            keyEvent = keyEvent1;
             typeEqual = this.type.get().equalsKeyType(keyEvent1.type());
         } else {
             return false;
         }
 
         return this.isModPressed(event.getPressedKeys())
-                && typeEqual
-                && this.key.get().equalKey(keyEvent);
+                && typeEqual;
     }
 
     protected boolean isModPressed(PressedKeySet pressed) {

@@ -12,6 +12,9 @@ import org.jetbrains.annotations.Nullable;
  * call this class which will set the corresponding property.
  * <br><br>
  * The command methods are executed on the configuration instances, YOU CANNOT STORE RUNTIME STATES HERE AS THESE INSTANCES ARE REUSED.
+ * <br><br>
+ * Is part of data model to allow configuration attributes<br>
+ * Modifier to adjust dragging increments: float value to configure increment steps
  * @param <P>
  */
 public abstract class PropertyModifierGroupStruct<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements ILangKeyProvider {

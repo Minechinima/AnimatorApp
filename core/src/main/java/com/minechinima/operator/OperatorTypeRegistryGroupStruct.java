@@ -6,6 +6,14 @@ import com.minechinima.operator.defaults.OTRedo;
 import com.minechinima.operator.defaults.OTUndo;
 
 //TODO make mutable so we can register at runtime and ensure correct Context type
+
+/**
+ * Registry of all OperatorTypes
+ * <br><br>
+ * Part of data model to allow id management, access via paths and config attributes of OperatorTypes.
+ * TODO concept of configuring OperatorTypes is wonky. Configuration happens in the keymapping. Config maybe default / template config into OT?
+ * @param <C>
+ */
 public class OperatorTypeRegistryGroupStruct<C extends IContext> extends ValueGroup {
     public final OTDragValueSlider dragUISlider = new OTDragValueSlider("drag_ui_slider", "drag_ui_slider", "Dragging a UI slider");
     public final OTUndo undo = new OTUndo("undo", "Undo", "undo");

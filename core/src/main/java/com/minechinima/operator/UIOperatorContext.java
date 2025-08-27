@@ -10,6 +10,9 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
+ * This is the context information of the current UI state. It holds all current relevant information
+ * how the user interacted with the UI. This information can be used to programme logic for user interaction based on
+ * the UI state.
  * @implNote final so a subclass cannot give a UIOperator access to App data.
  * Immutable record to ensure it cannot be changed by other systems other than the UI.
  * This also ensures that it has to be built after the UI rendering cycle is finished.

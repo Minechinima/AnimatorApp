@@ -32,23 +32,7 @@ public class IdentifierChange implements IDataOperation<IDMutable> {
     }
 
     @Override
-    public boolean canBeParallel(IDataOperation<?> test) {
-        return test.getOperationType() == Type.UPDATE;
-    }
-
-    @Override
     public Type getOperationType() {
         return Type.UPDATE;
-    }
-
-    @Override
-    public boolean merge(IDataOperation next) {
-        if (!(next instanceof IdentifierChange idChange && idChange.uniquePath.equals(this.uniquePath))) {
-            return false;
-        }
-
-        this.newIdentifier = idChange.newIdentifier;
-
-        return true;
     }
 }
