@@ -12,8 +12,7 @@ public class KeyMapMouseMoveEvent extends KeyMapEvent {
     private final double dragY;
 
     public KeyMapMouseMoveEvent(double mouseX, double mouseY,
-                                double prevMouseX, double prevMouseY,
-                                UIWindow window, PressedKeySet pressedKeys) {
+                                double prevMouseX, double prevMouseY, UIWindow window, PressedKeySet pressedKeys) {
         super(mouseX, mouseY, window, pressedKeys);
         this.prevMouseX = prevMouseX;
         this.prevMouseY = prevMouseY;
@@ -40,7 +39,10 @@ public class KeyMapMouseMoveEvent extends KeyMapEvent {
     @Override
     public boolean equals(Object object) {
         if (!(object instanceof KeyMapMouseMoveEvent that)) return false;
-        return Double.compare(prevMouseX, that.prevMouseX) == 0 && Double.compare(prevMouseY, that.prevMouseY) == 0 && Double.compare(dragX, that.dragX) == 0 && Double.compare(dragY, that.dragY) == 0;
+        return Double.compare(prevMouseX, that.prevMouseX) == 0
+                && Double.compare(prevMouseY, that.prevMouseY) == 0
+                && Double.compare(dragX, that.dragX) == 0
+                && Double.compare(dragY, that.dragY) == 0;
     }
 
     @Override

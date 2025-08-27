@@ -7,17 +7,17 @@ import com.minechinima.ui.elements.UIWindow;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
 
 /**
  * A builder for converting an {@link InputEvent} (received via {@link IInputEventListener#onEvent(InputEvent)}) into a {@link KeyMapEvent}.
  * <br><br>
  * This allows for a dynamic step by step build of a keymapevent. This allows the KeyMapEventManager to have some control over
  * KeyMapEvent aspects without exposing concrete event classes.
- * @param <T>
- * @param <J>
+ * @param <I> input class, ideally a record, with the event types this builder requires
+ * @param <O> the output keymap event.
  */
-public interface IKeyMapEventBuilder<T extends InputEvent, J extends KeyMapEvent> extends IInputEventListener<T> {
+public interface IKeyMapEventBuilder<I extends InputEvent, O extends KeyMapEvent> {
+    void setInputEvent(I inputs);
     void setMousePos(double prevMouseX, double prevMouseY, double currentMouseX, double currentMouseY);
     void setUIWindow(@NotNull UIWindow window);
     void setPressedKeys(@NotNull PressedKeySet pressedKeys);
@@ -26,7 +26,7 @@ public interface IKeyMapEventBuilder<T extends InputEvent, J extends KeyMapEvent
      * @return the result of the builder or null if the builder was not completely setup. Can be multiple events too.
      */
     @Nullable
-    J getResult();
+    O getResult();
 
     /**
      * Reset the builder parameters.

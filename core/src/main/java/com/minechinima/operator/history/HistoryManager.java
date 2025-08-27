@@ -1,4 +1,4 @@
-package com.minechinima.operator;
+package com.minechinima.operator.history;
 
 import com.minechinima.controller.Transaction;
 import com.minechinima.controller.api.IControllerCommand;
@@ -6,10 +6,12 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DataOperationLog;
-import com.minechinima.model.logging.DataOperationLogging;
 import com.minechinima.model.logging.operations.IDataOperation;
+import com.minechinima.model.utils.ValuePath;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.OperatorType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
@@ -19,11 +21,13 @@ import java.util.Stack;
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
     protected Stack<HistoryStep> redos = new Stack<>();
+    protected final CompressionStrategyRegistry compressionStrategyRegistry;
 
-    public HistoryManager() {
+    public HistoryManager(CompressionStrategyRegistry compressionStrategyRegistry) {
+        this.compressionStrategyRegistry = compressionStrategyRegistry;
     }
 
-    protected static Stack<DataOperationLog.Entry> compressLog(Stack<DataOperationLog.Entry> log) {
+    protected Stack<DataOperationLog.Entry> compressLog(Stack<DataOperationLog.Entry> log) {
         Stack<DataOperationLog.Entry> newLog = new Stack<>();
         /*
          * Store operations in their order that could be executed simultaneously.
@@ -31,16 +35,30 @@ public class HistoryManager {
          */
         List<DataOperationLog.Entry> parallel = new LinkedList<>();
 
+        /*
+         * Go through the log and cache all entries, where the operations can be executed parallel until
+         * one is found that is not parallel to at least one of the cached entries.
+         * Try to merge next operations onto the cached parallel operations.
+         */
         for (int i = 0; i < log.size(); i++) {
-            DataOperationLog.Entry test = log.get(i);
+            DataOperationLog.Entry nextEntry = log.get(i);
             boolean merged = false;
             boolean notParallel = false;
-            for (DataOperationLog.Entry p : parallel) {
-                if (!p.getOperation().canBeParallel(test.getOperation())) {
+            for (DataOperationLog.Entry cachedParallelEntry : parallel) {
+                ParallelCheckStrategy parallelStrategy = this.compressionStrategyRegistry.getParallelCheckStrategy(
+                        cachedParallelEntry.getOperation().getClass(), nextEntry.getOperation().getClass());
+                if (!parallelStrategy.canBeParallel(cachedParallelEntry.getOperation(), nextEntry.getOperation())) {
                     notParallel = true;
                 }
 
-                if (p.getOperation().merge(test.getOperation())) {
+                MergeStrategy mergeStrategy = this.compressionStrategyRegistry.getMergeStrategy(cachedParallelEntry.getOperation().getClass(), nextEntry.getOperation().getClass());
+                IDataOperation mergedOp = null;
+                /* merge strategy returns same type as current,
+                 * assume that is still parallel to the cache, otherwise another for loop is required
+                 * TODO review
+                 */
+                if (mergeStrategy != null && (mergedOp = mergeStrategy.merge(cachedParallelEntry.getOperation(), nextEntry.getOperation())) != null) {
+                    nextEntry = new HistoryLogEntry(cachedParallelEntry.getTimetamp(), mergedOp, cachedParallelEntry.getPath());
                     notParallel = false;
                     merged = true;
                     break;
@@ -49,10 +67,10 @@ public class HistoryManager {
 
             if (notParallel) {
                 newLog.addAll(parallel);
-                newLog.push(test);
+                newLog.push(nextEntry);
                 parallel.clear();
             } else if (!merged) {
-                parallel.add(test);
+                parallel.add(nextEntry);
             }
         }
 
@@ -132,6 +150,8 @@ public class HistoryManager {
                         node = relative.getChildByUniquePath(entry.getRelativePath());
                     }
 
+                    if (node == null) throw new UserException("Could not undo as the data node was not found.");
+
                     IDataOperation op = entry.getOperation();
 
                     if (!op.isCorrectType(node) || !op.undo(node)) {
@@ -182,6 +202,12 @@ public class HistoryManager {
             this.props = props;
             this.title = title;
             this.isUndo = isUndo;
+        }
+    }
+
+    protected static class HistoryLogEntry extends DataOperationLog.Entry {
+        protected HistoryLogEntry(long timestamp, IDataOperation op, ValuePath path) {
+            super(timestamp, path, op);
         }
     }
 }

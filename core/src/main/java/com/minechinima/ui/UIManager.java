@@ -50,6 +50,10 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
         this.keyMapEventManager.removeListener(this.operatorManager);
     }
 
+    public KeyMapEventManager getKeyMapEventManager() {
+        return this.keyMapEventManager;
+    }
+
     public void init() {
         this.loader.init(this.renderingWindow.ptr());
 

@@ -10,19 +10,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Category of key config items.
+ * list of operator configs
  * @param <C>
  */
 public class OperatorKeyConfigListStruct<C extends IContext> extends BaseValueList<OperatorKeyConfigItemGroupStruct<C>> {
-    /* TODO space, region ui stuff
-     * public final Class<? extends UI...> spacetype;
-     * public final Class<? extends UI...> regiontype;
-     */
-    public final String translationKey;
-
-    public OperatorKeyConfigListStruct(String id, String translationKey) {
+    public OperatorKeyConfigListStruct(String id) {
         super(id);
-        this.translationKey = translationKey;
     }
 
     @Override

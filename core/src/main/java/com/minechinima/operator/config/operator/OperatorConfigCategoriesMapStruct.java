@@ -8,13 +8,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class OperatorKeyConfigurationsMapStruct<C extends IContext> extends BaseValueMap<OperatorKeyConfigListStruct<C>> {
-    public OperatorKeyConfigurationsMapStruct(String id) {
+public class OperatorConfigCategoriesMapStruct<C extends IContext> extends BaseValueMap<OperatorConfigCategoryGroupStruct<C>> {
+    public OperatorConfigCategoriesMapStruct(String id) {
         super(id);
     }
 
     @Override
-    protected @NotNull OperatorKeyConfigListStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+    protected @NotNull OperatorConfigCategoryGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
         return null;
     }
 }

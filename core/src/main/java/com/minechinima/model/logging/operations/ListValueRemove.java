@@ -40,17 +40,7 @@ public class ListValueRemove implements IDataOperation<IValueList<?>> {
     }
 
     @Override
-    public boolean canBeParallel(IDataOperation<?> test) {
-        return false;
-    }
-
-    @Override
     public Type getOperationType() {
         return Type.DELETE;
-    }
-
-    @Override
-    public boolean merge(IDataOperation next) {
-        return false;
     }
 }

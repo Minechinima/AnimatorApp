@@ -497,6 +497,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     /**
      * @return the full path including the root.
      * @implNote includes all elements in the tree, even empty path elements.
+     * //TODO test if full path with empty segments actually helps data operations. e.g. can an operation be performed on empty path
      */
     @NotNull
     @Contract(pure = true)

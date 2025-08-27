@@ -7,11 +7,8 @@ import com.minechinima.input.raw.InputType;
 import com.minechinima.input.raw.KeyEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
-public class KeyEventBuilder extends AbstractKeyMapEventBuilder<KeyEvent, KeyMapKeyEvent> implements IKeyEventBuilder<KeyEvent, KeyMapKeyEvent> {
+public class KeyEventBuilder extends AbstractKeyMapEventBuilder<KeyEvent, KeyMapKeyEvent>
+        implements IKeyEventBuilder<KeyEvent, KeyMapKeyEvent> {
     protected KeyType type;
 
     @Override
@@ -37,10 +34,8 @@ public class KeyEventBuilder extends AbstractKeyMapEventBuilder<KeyEvent, KeyMap
     }
 
     @Override
-    public @Nullable Collection<KeyMapKeyEvent> getResult() {
+    public @Nullable KeyMapKeyEvent getResult() {
         if (this.isArgNull()) return null;
-        List<KeyMapKeyEvent> list = new LinkedList<>();
-        list.add(new KeyMapKeyEvent(this.event.getCurrentKey(), this.type, this.mouseX, this.mouseY, this.window, this.pressedKeySet));
-        return list;
+        return new KeyMapKeyEvent(this.event.getCurrentKey(), this.type, this.mouseX, this.mouseY, this.window, this.pressedKeySet);
     }
 }
