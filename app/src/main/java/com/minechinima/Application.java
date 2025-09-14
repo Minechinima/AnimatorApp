@@ -172,9 +172,9 @@ public class Application {
 
     public void setupModal() {
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
-        PropModifierKeyConfigurationsMapStruct propertyModifiers = config.modalKeyConfigs.propModifiers;
-        PropModifierKeyConfigListStruct<TranslateProps> translate_modal = new PropModifierKeyConfigListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
-        PropModifierKeyConfigListStruct<DragValueSliderProp> slider_modal = new PropModifierKeyConfigListStruct<>("slider_modal", DragValueSliderProp.class, config.hotKeyConfigRegistry);
+        PropertyModifierConfigsMapStruct propertyModifiers = config.modalKeyConfigs.propModifiers;
+        PropertyModifiersListStruct<TranslateProps> translate_modal = new PropertyModifiersListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
+        PropertyModifiersListStruct<DragValueSliderProp> slider_modal = new PropertyModifiersListStruct<>("slider_modal", DragValueSliderProp.class, config.hotKeyConfigRegistry);
         propertyModifiers.add(translate_modal);
         propertyModifiers.add(slider_modal);
 
@@ -184,45 +184,45 @@ public class Application {
         slider_modal.register(0, DragIncrementModal.class, DragIncrementModal::new);
         slider_modal.register(1, RoundModal.class, RoundModal::new);
 
-        PropModifierKeyConfigItemGroupStruct<TranslateProps> xCfg = translate_modal.newConfig();
+        PropertyModifierConfigGroupStruct<TranslateProps> xCfg = translate_modal.newConfig();
         xCfg.modifier.set(new TranslateModalAxisX());
         xCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_X);
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropModifierKeyConfigItemGroupStruct<TranslateProps> yCfg = translate_modal.newConfig();
+        PropertyModifierConfigGroupStruct<TranslateProps> yCfg = translate_modal.newConfig();
         yCfg.modifier.set(new TranslateModalAxisY());
         yCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> slider1Cfg = slider_modal.newConfig();
+        PropertyModifierConfigGroupStruct<DragValueSliderProp> slider1Cfg = slider_modal.newConfig();
         slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
         slider1Cfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_CONTROL);
         ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> sliderCfg = slider_modal.newConfig();
+        PropertyModifierConfigGroupStruct<DragValueSliderProp> sliderCfg = slider_modal.newConfig();
         sliderCfg.modifier.set(new DragIncrementModal(0.001F));
         sliderCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_SHIFT);
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).confirmOnStop.set(true);
 
-        PropModifierKeyConfigItemGroupStruct<DragValueSliderProp> sliderRoundCfg = slider_modal.newConfig();
+        PropertyModifierConfigGroupStruct<DragValueSliderProp> sliderRoundCfg = slider_modal.newConfig();
         sliderRoundCfg.modifier.set(new RoundModal());
         sliderRoundCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) sliderRoundCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_ALT);
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
 
-        ModalFuncKeyConfigListStruct<BBOperatorContext> modalFunctions = config.modalKeyConfigs.modalFunctions;
+        ModalFunctionConfigsMapStruct<BBOperatorContext> modalFunctions = config.modalFunctions;
 
         modalFunctions.register(0, ConfirmModal.class, ConfirmModal::new);
         modalFunctions.register(1, CancelModal.class, CancelModal::new);
-        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> confirmCfg = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
-        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> confirmCfg2 = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
-        ModalFuncKeyConfigItemGroupStruct<BBOperatorContext> cancelCfg = new ModalFuncKeyConfigItemGroupStruct<>(modalFunctions);
+        ModalFunctionConfigGroupStruct<BBOperatorContext> confirmCfg = new ModalFunctionConfigGroupStruct<>(modalFunctions);
+        ModalFunctionConfigGroupStruct<BBOperatorContext> confirmCfg2 = new ModalFunctionConfigGroupStruct<>(modalFunctions);
+        ModalFunctionConfigGroupStruct<BBOperatorContext> cancelCfg = new ModalFunctionConfigGroupStruct<>(modalFunctions);
 
         modalFunctions.add(confirmCfg);
         modalFunctions.add(confirmCfg2);

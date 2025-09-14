@@ -6,7 +6,8 @@ import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorTypeRegistryGroupStruct;
-import com.minechinima.operator.config.modal.ModalConfigurationsGroupStruct;
+import com.minechinima.operator.config.modal.ModalFunctionConfigsMapStruct;
+import com.minechinima.operator.config.modal.PropertyModifierConfigsMapStruct;
 import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
 import com.minechinima.operator.config.operator.OperatorKeyConfigListStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
@@ -19,8 +20,12 @@ import java.util.*;
  *
  */
 public class UserFunctionalityConfigGroupStruct<C extends IContext> extends ValueGroup {
+    //TODO we need a cache of config categories for their UI identifiers for shallow and quick search
+    // when the operator manager retrieves categories for a specific ui.
+    // impl idea: listener when children get addeed -> ui identifiers are final, add them here into a map.
     public final OperatorConfigCategoriesMapStruct<C> operatorKeyConfigs;
-    public final ModalConfigurationsGroupStruct<C> modalKeyConfigs;
+    public final ModalFunctionConfigsMapStruct<C> modalFunctions;
+    public final PropertyModifierConfigsMapStruct propModifiers;
 
     public final HotKeyConfigRegistry hotKeyConfigRegistry;
     public final OperatorTypeRegistryGroupStruct<C> operatorTypeRegistry;
@@ -30,7 +35,8 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
         this.operatorTypeRegistry = operatorTypeRegistry;
         this.addChild("configs", this.operatorKeyConfigs = new OperatorConfigCategoriesMapStruct<>("key_configurations"));
-        this.addChild("modal_keymap", this.modalKeyConfigs = new ModalConfigurationsGroupStruct<>("modal_keymap", this.hotKeyConfigRegistry));
+        this.addChild("modal_functions", this.modalFunctions = new ModalFunctionConfigsMapStruct<>("modal_functions", this.hotKeyConfigRegistry));
+        this.addChild("prop_modifiers", this.propModifiers = new PropertyModifierConfigsMapStruct("prop_modifiers"));
     }
 
     //TODO for testing

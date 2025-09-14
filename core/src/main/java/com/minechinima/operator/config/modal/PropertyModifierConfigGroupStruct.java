@@ -4,11 +4,15 @@ import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.OperatorPropertiesGroupStruct;
 
-public class PropModifierKeyConfigItemGroupStruct<P extends OperatorPropertiesGroupStruct> extends ValueGroup {
+/**
+ * Configuration for a {@link com.minechinima.operator.PropertyModifierGroupStruct}
+ * @param <P>
+ */
+public class PropertyModifierConfigGroupStruct<P extends OperatorPropertiesGroupStruct> extends ValueGroup {
     public final HotKeyConfigSelectorEnumStruct hotKeyConfigSelector;
     public final PropertyModifierSelectorEnumStruct<P> modifier;
 
-    public PropModifierKeyConfigItemGroupStruct(PropModifierKeyConfigListStruct<P> category) {
+    public PropertyModifierConfigGroupStruct(PropertyModifiersListStruct<P> category) {
         super("");
         this.addChild("hotkey_config",
                 this.hotKeyConfigSelector = new HotKeyConfigSelectorEnumStruct("hotkey_config", category.hotKeyConfigRegistry));

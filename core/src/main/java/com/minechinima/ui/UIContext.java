@@ -22,6 +22,10 @@ import java.util.logging.Logger;
 public class UIContext<C extends IContext> {
     private final ImguiLoader imguiContext;
     private final IWindow window;
+    /**
+     * Builder for the UI during rendering to slowly setup the UIOperator Context.
+     * Operators need all UI states set which is only finished at the end of rendering.
+     */
     private final UIOperatorContextBuilder<C> builder = new UIOperatorContextBuilder<>();
     private final UIManager<C> manager;
     private UIWindow<C> currentWindow;

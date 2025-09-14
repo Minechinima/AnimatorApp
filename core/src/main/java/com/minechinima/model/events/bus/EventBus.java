@@ -121,6 +121,7 @@ public abstract class EventBus {
      * dispatch events through it.
      */
     protected final void dispatchEventFromChildNode(Event event) {
+        //TODO possible performance issue: for every parent we traverse the tree to test isChildOf
         if (!(this.owner instanceof BaseValueHierarchy<?> hierarchy) || !event.getTrigger().isChildOf(hierarchy)) {
             throw new IllegalArgumentException("Cannot dispatch a child event from a node that is not child of the bus owner.");
         }

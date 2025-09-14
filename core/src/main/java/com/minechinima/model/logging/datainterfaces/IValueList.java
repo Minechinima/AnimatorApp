@@ -16,6 +16,12 @@ import java.util.UUID;
  * @param <T>
  */
 public interface IValueList<T> {
+    /**
+     * @throws BaseTypeCannotBeParsed if the data is not in the correct format.<br>
+     * Important to throw an exception, so the caller of this method can interrupt the code if
+     * no correct value can be returned by this method. This allows more transparent failure analysis
+     * (see undo redo system failing to revert changes when the value cannot be parsed).
+     */
     @Contract(pure = true)
     @NotNull
     ListElement<T> listElementFromData(@NotNull MapType child) throws BaseTypeCannotBeParsed;

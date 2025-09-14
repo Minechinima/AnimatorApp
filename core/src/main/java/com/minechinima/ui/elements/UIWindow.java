@@ -10,6 +10,10 @@ import org.joml.Vector2i;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * OS Window. One window can have multiple (detachable) screens (sub-windows)
+ * @param <C>
+ */
 public class UIWindow<C extends IContext> extends UIElement<C> {
     public final List<UIScreen> screens = new ArrayList<>();
     //TODO discuss where to put modal
