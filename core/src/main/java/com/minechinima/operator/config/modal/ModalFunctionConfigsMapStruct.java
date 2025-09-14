@@ -2,8 +2,7 @@ package com.minechinima.operator.config.modal;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.input.hotkey.HotKeyConfigRegistry;
-import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
-import com.minechinima.model.values.base.BaseValueList;
+import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.ModalFunctionGroupStruct;
 import com.minechinima.utils.GenericRegistry;
@@ -15,18 +14,24 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class ModalFuncKeyConfigListStruct<C extends IContext> extends BaseValueList<ModalFuncKeyConfigItemGroupStruct<C>>
+/**
+ * Map of global modal function configuration objects.
+ * <br><br>
+ * @param <C>
+ * @implSpec is a map to retrieve modal functions by a key for easier runtime read/write access.
+ */
+public class ModalFunctionConfigsMapStruct<C extends IContext> extends BaseValueMap<ModalFunctionConfigGroupStruct<C>>
         implements IGenericDefaultRegistry<ModalFunctionGroupStruct<C>> {
     public final HotKeyConfigRegistry hotKeyConfigRegistry;
     private final GenericRegistry<ModalFunctionGroupStruct<C>> registry = new GenericRegistry<>();
 
-    public ModalFuncKeyConfigListStruct(String id, HotKeyConfigRegistry hotKeyConfigRegistry) {
+    public ModalFunctionConfigsMapStruct(String id, HotKeyConfigRegistry hotKeyConfigRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
     }
 
     @Override
-    protected @NotNull ModalFuncKeyConfigItemGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed {
+    protected @NotNull ModalFunctionConfigGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) {
         return null;
     }
 

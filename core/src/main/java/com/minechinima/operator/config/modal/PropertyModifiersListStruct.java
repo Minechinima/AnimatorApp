@@ -16,26 +16,27 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * Category of property modifiers for an operatorpoperties. Is a list of configs, each config has the property modifier type
+ * Category of property modifiers for an operatorpoperties.<br>
+ * Is a list of configs, each config has the property modifier type
  * and the hotkey config.
  * <br><br>
  * This is at the same time the registry for instantiating the ProperyModifier instances for the config enums.
  * @param <P>
  */
-public class PropModifierKeyConfigListStruct<P extends OperatorPropertiesGroupStruct> extends BaseValueList<PropModifierKeyConfigItemGroupStruct<P>>
+public class PropertyModifiersListStruct<P extends OperatorPropertiesGroupStruct> extends BaseValueList<PropertyModifierConfigGroupStruct<P>>
         implements IGenericDefaultRegistry<PropertyModifierGroupStruct<P>> {
     public final HotKeyConfigRegistry hotKeyConfigRegistry;
     public final Class<P> clazz;
     private final GenericRegistry<PropertyModifierGroupStruct<P>> registry = new GenericRegistry<>();
 
-    public PropModifierKeyConfigListStruct(String id, Class<P> propClazz, HotKeyConfigRegistry hotKeyConfigRegistry) {
+    public PropertyModifiersListStruct(String id, Class<P> propClazz, HotKeyConfigRegistry hotKeyConfigRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
         this.clazz = propClazz;
     }
 
-    public PropModifierKeyConfigItemGroupStruct<P> newConfig() {
-        PropModifierKeyConfigItemGroupStruct<P> cfg = new PropModifierKeyConfigItemGroupStruct<P>(this);
+    public PropertyModifierConfigGroupStruct<P> newConfig() {
+        PropertyModifierConfigGroupStruct<P> cfg = new PropertyModifierConfigGroupStruct<P>(this);
         cfg.initChildren();
         this.add(cfg);
         return cfg;
@@ -67,7 +68,7 @@ public class PropModifierKeyConfigListStruct<P extends OperatorPropertiesGroupSt
     }
 
     @Override
-    protected @NotNull PropModifierKeyConfigItemGroupStruct<P> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed {
+    protected @NotNull PropertyModifierConfigGroupStruct<P> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed {
         return null;
     }
 }

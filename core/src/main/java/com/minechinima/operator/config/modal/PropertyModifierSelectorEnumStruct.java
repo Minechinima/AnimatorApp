@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class PropertyModifierSelectorEnumStruct<P extends OperatorPropertiesGroupStruct>
         extends AbstractEnumValueHierarchyReg<PropertyModifierGroupStruct<P>> {
-    public PropertyModifierSelectorEnumStruct(String id, PropModifierKeyConfigListStruct<P> category, @NotNull PropertyModifierGroupStruct<P> defaultValue) {
+    public PropertyModifierSelectorEnumStruct(String id, PropertyModifiersListStruct<P> category, @NotNull PropertyModifierGroupStruct<P> defaultValue) {
         super(id, category, defaultValue);
     }
 }

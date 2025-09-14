@@ -8,11 +8,9 @@ import com.minechinima.input.raw.*;
 
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorManager;
-import com.minechinima.operator.UIOperatorContext;
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIWindow;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -31,7 +29,7 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
     private UIWindow active = null;
     private UIWindow hovered = null;
     public UIHandlerRegistry handlerRegistry;
-    private C context;
+    private C operatorContext;
     private KeyMapEventManager keyMapEventManager;
 
     public UIManager(IWindow renderingWindow, ImguiLoader imguiLoader,
@@ -41,12 +39,13 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
         this.operatorManager = operatorManager;
         this.operatorManager.setUIManager(this);
         this.handlerRegistry = handlerRegistry;
-        this.context = context;
+        this.operatorContext = context;
     }
 
     public void setKeyMapEventManager(KeyMapEventManager keyMapEventManager) {
         this.keyMapEventManager = keyMapEventManager;
         this.keyMapEventManager.addListener(KeyMapEvent.class, this);
+        /* remove operatormanager to ensure the UIManager redirects events */
         this.keyMapEventManager.removeListener(this.operatorManager);
     }
 
@@ -78,29 +77,21 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
         return this.windows.get(0);
     }
 
-    /**
-     * @return the current context of the UI used by app components.<br>
-     *         This can be dynamic and change based on internal conditions, e.g., current rendering context, last hovered window etc.
-     */
-    @NotNull
-    //TODO remove
-    public C getCurrentOperatorContext() {
-        return this.context;
-    }
-
     public void render(UIContext<C> context) {
-        this.context.setUIContext(null);
+        this.operatorContext.setUIContext(null);
+        this.operatorManager.resetCurrentContext();
 
         this.loader.beginFrame();
         for (UIWindow<C> window : this.windows) {
-            context.setOperatorContext(this.context);
+            context.setOperatorContext(this.operatorContext);
             context.setWindow(window);
             window.render(context);
         }
         this.loader.endFrame();
 
-        this.context.setUIContext(context.getContextBuilder().build());
+        this.operatorContext.setUIContext(context.getContextBuilder().build());
         context.getContextBuilder().reset();
+        this.operatorManager.setCurrentContext(this.operatorContext);
     }
 
     public void close() {

@@ -8,6 +8,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
+/**
+ * Map of operator config categories.
+ * <br><br>
+ * @param <C>
+ * @implSpec is a map to retrieve categories by a key for easier runtime read/write access.
+ */
 public class OperatorConfigCategoriesMapStruct<C extends IContext> extends BaseValueMap<OperatorConfigCategoryGroupStruct<C>> {
     public OperatorConfigCategoriesMapStruct(String id) {
         super(id);
@@ -15,6 +21,9 @@ public class OperatorConfigCategoriesMapStruct<C extends IContext> extends BaseV
 
     @Override
     protected @NotNull OperatorConfigCategoryGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
-        return null;
+        OperatorConfigCategoryGroupStruct<C> category = new OperatorConfigCategoryGroupStruct<>(id, id);
+        category.fromData(data);
+        category.initChildren();
+        return category;
     }
 }

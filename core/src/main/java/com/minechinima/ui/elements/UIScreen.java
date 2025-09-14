@@ -8,6 +8,10 @@ import imgui.flag.ImGuiComboFlags;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiWindowFlags;
 
+/**
+ * A window with one panel. A UIScreen belongs to one {@link UIWindow}
+ * @param <C>
+ */
 public class UIScreen<C extends IContext> extends UIElement<C> {
     private UISpace<C> panel;
 

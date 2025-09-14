@@ -68,7 +68,8 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * In theory, this could allow a feature to automatically delete central data blocks in the tree
      * when no one uses them anymore.
      * <br><br>
-     * The referenceManagement is for internal runtime references, which is different to this kind of link.
+     * The {@link com.minechinima.model.memory.ReferenceManager} is for internal runtime references,
+     * which is different to this kind of link.
      */
     private final Set<ValuePointer<?>> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
     private final DataOperationLoggingImpl logger = new DataOperationLoggingImpl();

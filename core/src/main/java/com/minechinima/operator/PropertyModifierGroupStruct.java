@@ -15,6 +15,11 @@ import org.jetbrains.annotations.Nullable;
  * <br><br>
  * Is part of data model to allow configuration attributes<br>
  * Modifier to adjust dragging increments: float value to configure increment steps
+ * <br><br>
+ * Reasoning for the split into separate property modifier commands:<br>
+ * More transparency how the behavior of the operator is influenced.<br>
+ * The Operator does not need to implement any hotkey logic, only logic based on the attributes.<br>
+ * Higher flexibility with hotkey configuration.
  * @param <P>
  */
 public abstract class PropertyModifierGroupStruct<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements ILangKeyProvider {

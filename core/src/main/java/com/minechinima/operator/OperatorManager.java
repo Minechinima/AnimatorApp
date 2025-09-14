@@ -14,11 +14,11 @@ import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.config.modal.ModalFuncKeyConfigItemGroupStruct;
+import com.minechinima.operator.config.modal.ModalFunctionConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
-import com.minechinima.operator.config.modal.PropModifierKeyConfigItemGroupStruct;
-import com.minechinima.operator.config.modal.PropModifierKeyConfigListStruct;
+import com.minechinima.operator.config.modal.PropertyModifierConfigGroupStruct;
+import com.minechinima.operator.config.modal.PropertyModifiersListStruct;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.IOTPropertyProvider;
@@ -95,6 +95,16 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      */
     private boolean isUIPropChange;
     private final HistoryManager historyManager;
+    /**
+     * The current context on which the operators are performed.
+     * This can be null when the context is currently built and is not available.
+     * While this is null the invoke and execute Operators should be cached.
+     * <br><br>
+     * Example: The UI states for the UI Context are only known when the UI finished rendering.
+     */
+    @Nullable
+    private C currentContext;
+    private final Queue<QueueEntry> queue = new LinkedList<>();
 
     public OperatorManager(OperatorFactory factory, UserFunctionalityConfigGroupStruct<C> config,
                            HistoryManager historyManager, ControllerManager controller, Logger logger, Class<C> contextClass) {
@@ -118,6 +128,34 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
     public UserFunctionalityConfigGroupStruct<C> getConfig() {
         return this.config;
+    }
+
+    @Nullable
+    public C getCurrentContext() {
+        return this.currentContext;
+    }
+
+    /**
+     * Set the current context on which the operators are performed.
+     * @param context
+     */
+    public void setCurrentContext(C context) {
+        boolean wasNull = this.currentContext == null;
+        this.currentContext = context;
+
+        if (wasNull && this.currentContext != null) {
+            QueueEntry entry;
+            while ((entry = this.queue.poll()) != null) {
+                switch (entry.method) {
+                    case INVOKE -> this._invokeOT(entry.type, entry.props);
+                    case EXECUTE -> this._executeOT(entry.type, entry.props);
+                }
+            }
+        }
+    }
+
+    public void resetCurrentContext() {
+        this.currentContext = null;
     }
 
     /**
@@ -246,6 +284,12 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
         }
+
+        if (this.currentContext == null) {
+            this.queue.add(new QueueEntry(type, props, Method.EXECUTE));
+            return;
+        }
+
         this.isExecuting = true;
         try {
             try {
@@ -352,6 +396,12 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
         }
+
+        if (this.currentContext == null) {
+            this.queue.add(new QueueEntry(type, props, Method.INVOKE));
+            return false; //TODO what to return here? Do we need return value even?
+        }
+
         this.isExecuting = true;
         try {
             try {
@@ -790,7 +840,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     private <CTX extends IContext> CTX getCurrentContextForType(OperatorType<CTX> type) {
         final C ctx;
 
-        if ((ctx = this.uiManager.getCurrentOperatorContext()) == null) {
+        if ((ctx = this.currentContext) == null) {
             return null;
         }
 
@@ -821,14 +871,14 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     private void runModalFunctions(KeyMapEvent event) {
-        for (ModalFuncKeyConfigItemGroupStruct<C> func : this.config.modalKeyConfigs.modalFunctions) {
+        for (ModalFunctionConfigGroupStruct<C> func : this.config.modalFunctions.getChildren()) {
             if (func.hotKeyConfigSelector.get().onEvent(event)) {
                 ModalFunctionGroupStruct modifier = func.modifier.get();
                 /*
                  * ATTENTION: any states could be modified by this and need to be rechecked...
                  */
                 modifier.onEvent(this, new OperatorContext(this.modal.triggered.copy(),
-                        this.uiManager.getCurrentOperatorContext()), this.modal.op);
+                        this.currentContext), this.modal.op);
                 break;
             }
         }
@@ -847,9 +897,9 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             }
         }
 
-        PropModifierKeyConfigListStruct<?> propertyModalKeymap;
-        if ((propertyModalKeymap = this.config.modalKeyConfigs.propModifiers.getModalKeymapForProps(propOp.props())) != null) {
-            for (PropModifierKeyConfigItemGroupStruct<?> cfg : propertyModalKeymap.getChildren()) {
+        PropertyModifiersListStruct<?> propertyModalKeymap;
+        if ((propertyModalKeymap = this.config.propModifiers.getModalKeymapForProps(propOp.props())) != null) {
+            for (PropertyModifierConfigGroupStruct<?> cfg : propertyModalKeymap.getChildren()) {
                 if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
                     PropertyModifierGroupStruct modifier = cfg.modifier.get();
                     modifier.onEvent(this.modal.originalProps.copy(), propOp.props());
@@ -890,13 +940,12 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
     @Override
     public boolean onEvent(KeyMapEvent event) {
+        if (this.currentContext == null) return false;
+
         if (this.blockedModalEvent != null && this.blockedModalEvent.isReleaseEvent(event)) {
             this.blockedModalEvent = null;
         }
 
-        //TODO check Blender events -> pressing key is not the same as pressing key while moving, maybe only trigger one type of event
-        // or not, the keymap events are different than the hotkey trigger logic, think whether this generally allows two similar events to work like that
-        // only with hotkey logic.
         //TODO operator type switching and Operator needs to receive previous properties so the previous operator could influence the next
         /*
          * Check if modal operator should be cancelled or committed.
@@ -979,5 +1028,14 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             P extends OperatorPropertiesGroupStruct,
             OT extends OperatorType<CTX> & IOTPropertyProvider<P>>
             (OT type, IPropertyOperator<CTX, P> op, CTX triggered, Object propSubscriber) {
+    }
+
+    protected enum Method {
+        INVOKE,
+        EXECUTE;
+    }
+
+    protected record QueueEntry(OperatorType type, OperatorPropertiesGroupStruct props, Method method) {
+
     }
 }

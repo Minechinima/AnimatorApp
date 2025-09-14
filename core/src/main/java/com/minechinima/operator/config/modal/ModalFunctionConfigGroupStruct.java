@@ -4,11 +4,11 @@ import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
 
-public class ModalFuncKeyConfigItemGroupStruct<C extends IContext> extends ValueGroup {
+public class ModalFunctionConfigGroupStruct<C extends IContext> extends ValueGroup {
     public final HotKeyConfigSelectorEnumStruct hotKeyConfigSelector;
     public final ModalFunctionSelectorEnumStruct<C> modifier;
 
-    public ModalFuncKeyConfigItemGroupStruct(ModalFuncKeyConfigListStruct<C> category) {
+    public ModalFunctionConfigGroupStruct(ModalFunctionConfigsMapStruct<C> category) {
         super("");
         this.addChild("hotkey_config",
                 this.hotKeyConfigSelector = new HotKeyConfigSelectorEnumStruct("hotkey_config", category.hotKeyConfigRegistry));
