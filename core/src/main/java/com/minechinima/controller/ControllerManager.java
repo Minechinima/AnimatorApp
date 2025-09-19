@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
@@ -88,8 +89,6 @@ public class ControllerManager {
             throw new IllegalArgumentException("Commands cannot be null");
         }
 
-        commands = new LinkedList<>(commands);
-
         this.dataTree.getReferenceManager().startCachingClearedReferences();
         this.currentTransaction.getLog().resume();
         this.nestedLevel++;
@@ -97,10 +96,11 @@ public class ControllerManager {
         try {
             /* ATTENTION: while this is running, writeToTransaction could be called again,
              * abortTransaction could set current to null */
-            while (!commands.isEmpty()
+            Iterator<IControllerCommand> it = commands.iterator();
+            while (it.hasNext()
                     && this.e == null
                     && this.currentTransaction != null) {
-                commands.poll().execute();
+                it.next().execute();
             }
         } catch (Exception e) {
             if (this.nestedLevel > 1) this.e = e;
@@ -171,10 +171,10 @@ public class ControllerManager {
                 BaseStructure context;
                 IDataOperation operation = step.getOperation();
 
-                if (step.getRelativePath() == null) {
+                if (step.getPath() == null) {
                     context = root;
                 } else {
-                    context = root.getChildByUniquePath(step.getRelativePath());
+                    context = root.getChildByUniquePath(step.getPath());
                 }
 
                 if (context == null) {

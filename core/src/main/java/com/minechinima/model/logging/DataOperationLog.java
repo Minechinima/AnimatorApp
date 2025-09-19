@@ -159,6 +159,11 @@ public class DataOperationLog {
             this.operation = operation;
         }
 
+        @NotNull
+        public ValuePath getPath() {
+            return this.path.copy();
+        }
+
         public long getTimetamp() {
             return this.timetamp;
         }
@@ -175,14 +180,6 @@ public class DataOperationLog {
 
         protected Entry(long timetamp, ValuePath path, IDataOperation<?> operation) {
             super(timetamp, path, operation);
-        }
-
-        /**
-         * @return copy of full path
-         */
-        @NotNull
-        public ValuePath getPath() {
-            return this.path.copy();
         }
 
         @Override
@@ -206,10 +203,10 @@ public class DataOperationLog {
 
         /**
          * @return null if the entry's operation is to be performed on the target node.
-         * //TODO review why extra method, should be getPath?
          */
         @Nullable
-        public ValuePath getRelativePath() {
+        @Override
+        public ValuePath getPath() {
             return this.path.copy();
         }
 
