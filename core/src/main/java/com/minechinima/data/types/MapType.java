@@ -82,6 +82,11 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public NullType getNullType(String key) {
+        return this.value.get(key) instanceof NullType type ? type : null;
+    }
+
+    @Nullable
     public MapType getMapType(String key) {
         return this.value.get(key) instanceof MapType type ? type : null;
     }

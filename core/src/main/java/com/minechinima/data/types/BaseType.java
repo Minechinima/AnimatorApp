@@ -21,6 +21,7 @@ public abstract class BaseType<T> {
     public static final byte INT_ARRAY = 11;
     public static final byte LONG_ARRAY = 12;
     public static final byte UUID = 13;
+    public static final byte NULL = 14;
 
     public abstract T getValue();
 
@@ -153,6 +154,14 @@ public abstract class BaseType<T> {
         return this instanceof UUIDType type ? type : null;
     }
 
+    public boolean isNullType() {
+        return this instanceof NullType;
+    }
+
+    public NullType asNullType() {
+        return this instanceof NullType type ? type : null;
+    }
+
 
 
     /* +--------------------------------------------+
@@ -191,6 +200,8 @@ public abstract class BaseType<T> {
             return LONG_ARRAY;
         } else if (baseType instanceof UUIDType) {
             return UUID;
+        } else if (baseType instanceof NullType) {
+            return NULL;
         } else {
             throw new IllegalArgumentException("Unknown type");
         }
@@ -216,6 +227,7 @@ public abstract class BaseType<T> {
             case INT_ARRAY -> new IntArrayType();
             case LONG_ARRAY -> new LongArrayType();
             case UUID -> new UUIDType();
+            case NULL -> new NullType();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
