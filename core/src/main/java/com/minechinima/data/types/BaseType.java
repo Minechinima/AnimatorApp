@@ -227,7 +227,7 @@ public abstract class BaseType<T> {
             case INT_ARRAY -> new IntArrayType();
             case LONG_ARRAY -> new LongArrayType();
             case UUID -> new UUIDType();
-            case NULL -> new NullType();
+            case NULL -> NullType.INSTANCE;
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }

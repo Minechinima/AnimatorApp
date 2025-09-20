@@ -6,7 +6,9 @@ import com.minechinima.data.io.IDataWriter;
 import java.io.IOException;
 
 public class NullType extends BaseType<Void> {
-    public NullType() {
+    public static NullType INSTANCE = new NullType();
+
+    private NullType() {
         super();
     }
 
