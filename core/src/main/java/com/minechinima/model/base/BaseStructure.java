@@ -741,6 +741,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             throw new Error("An exception happened during logging the change. This is a critical bug!", e);
         }
 
+        this.onEvent(event);
         this.bus._dispatchEventOnThis(event);
 
         /*
@@ -753,6 +754,12 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             ((BaseStructure) this.parent).triggerChildEvent(event);
         }
     }
+
+    /**
+     * For internal event handling code without the event bus overhead.
+     * @param event
+     */
+    protected void onEvent(Event event) { }
 
     /**
      * Template method pattern, also enforce important things that should always happen when removing from the tree.
