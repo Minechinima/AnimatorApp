@@ -6,9 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class MapType extends BaseType<Map<String, BaseType<?>>> implements Iterable<Map.Entry<String, BaseType<?>>> {
     private Map<String, BaseType<?>> value;
@@ -32,8 +30,20 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public Byte getByteValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof ByteType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public DoubleType getDoubleType(String key) {
         return this.value.get(key) instanceof DoubleType type ? type : null;
+    }
+
+    @Nullable
+    public Double getDoubleValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof DoubleType type ? type.getValue() : null;
     }
 
     @Nullable
@@ -42,8 +52,20 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public Float getFloatValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof FloatType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public IntArrayType getIntArrayType(String key) {
         return this.value.get(key) instanceof IntArrayType type ? type : null;
+    }
+
+    @Nullable
+    public int[] getIntArrayValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof IntArrayType type ? type.getValue() : null;
     }
 
     @Nullable
@@ -52,8 +74,20 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public byte[] getByteArrayValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof ByteArrayType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public IntType getIntType(String key) {
         return this.value.get(key) instanceof IntType type ? type : null;
+    }
+
+    @Nullable
+    public Integer getIntValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof IntType type ? type.getValue() : null;
     }
 
     @Nullable
@@ -62,8 +96,20 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public long[] getLongArrayValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof LongArrayType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public ListType getListType(String key) {
         return this.value.get(key) instanceof ListType type ? type : null;
+    }
+
+    @Nullable
+    public List<?> getListValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof ListType type ? type.getValue() : null;
     }
 
     @Nullable
@@ -72,8 +118,20 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public Long getLongValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof LongType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public ShortType getShortType(String key) {
         return this.value.get(key) instanceof ShortType type ? type : null;
+    }
+
+    @Nullable
+    public Short getShortValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof ShortType type ? type.getValue() : null;
     }
 
     @Nullable
@@ -82,13 +140,36 @@ public class MapType extends BaseType<Map<String, BaseType<?>>> implements Itera
     }
 
     @Nullable
+    public String getStringValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof StringType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public NullType getNullType(String key) {
         return this.value.get(key) instanceof NullType type ? type : null;
     }
 
     @Nullable
+    public UUIDType getUUIDType(String key) {
+        return this.value.get(key) instanceof UUIDType type ? type : null;
+    }
+
+    @Nullable
+    public UUID getUUIDValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof UUIDType type ? type.getValue() : null;
+    }
+
+    @Nullable
     public MapType getMapType(String key) {
         return this.value.get(key) instanceof MapType type ? type : null;
+    }
+
+    @Nullable
+    public Map<String, BaseType<?>> getMapValue(String key) {
+        BaseType v = this.value.get(key);
+        return v instanceof MapType type ? type.getValue() : null;
     }
 
     @Override
