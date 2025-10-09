@@ -1,10 +1,11 @@
 ### Builds on these core concepts:
 - Any operation, which changes the tree state or a value, is either:
     - Successful AND logged, making it revert-able
-    - Unsuccessful (exception was thrown preventing follow-up operations), not logged, and the tree / values did not change
-    - Successful but logging failed, letting the app crash
+    - Unsuccessful (exception was thrown, which prevents follow-up operations), no event was triggered and therefore not logged, and the tree / values did not change
+    - Successful but logging failed (exception during logging), letting the app crash
 - every successful granular data change is logged on the lowest level (e.g. value change, remove object from one map)
-- anything in model is free to throw a lot of exceptions for any illegal arguments, things that could go wrong etc.
+- anything in model should throw a lot of exceptions for any illegal arguments, things that could go wrong etc.
+
 Programming in that layer should follow the paradigm "Never trust user input" 
 but in this case, the "user input" are the variables of the program. Always perform safety checks to ensure that
 the state your code works on is valid and what is expected.
@@ -23,7 +24,7 @@ The sole purpose of the `base` module is to build a tree that allows to retrieve
 can hold data and expose data operations.
 <br><br>
 This module should be very decoupled of any other modules and information, e.g. how the app, logging, events, controller or history management works.
-Classes in `base` are kept simple and only perform data operations and important safety checks to ensure the structural integrity
+Classes in `base` are kept simple and only perform important safety checks to ensure the structural integrity
 of the tree.
 <br><br>
 Following aspects are the only scope of `base` classes:
@@ -41,7 +42,7 @@ There are two core methods, which are final, that are responsible for securing t
   - is responsible for ensuring that there is no way to insert a node / build a tree with an illegal structure.
   - This method will never throw anything else than a `SetParentNotAllowed` Exception, which is a checked Exception.
     This forces the caller to catch it, and reminds them that any previous intermediary tree/value changes need to be reverted manually
-    if they were not logged.<br>If `BaseStructure.setParent()` throws something else than `SetParentNotAllowed`, the app must terminate.
+    <b>if they were not logged</b>.<br>If `BaseStructure.setParent()` throws something else than `SetParentNotAllowed`, the app must terminate.
 - `BaseStructure._setID()`
   - is responsible for ensuring the paths stay valid and unique without path collisions.
 <br><br>
@@ -60,7 +61,7 @@ A node can be categorized as either a subclass of `BaseStructure` or of `BaseVal
 #### Important notes
 - avoid lambdas / callbacks in the model modules that could be used to reference 
 another BaseStructure node and cause a memory leak.
-- Always perform checks whether the state your code works on is a valid state you expect it to be and throw
+- Always perform checks whether the state your code works on is valid or else throw
   exceptions if it is not valid.
   This should help with finding bugs that are rooted in core modules,
 - Always document `@Nullable` if a field or method return can be null.
@@ -106,14 +107,8 @@ This acts as a bridge between the `base` tree classes and the event management c
 the two modules independent of each-other.
 <br>
 
-The event subscription works by declaring a method with the `@SubscribeEvent` annotation and subscribe the object that
-listens to events to an `EventBus` in the `EventBusManager`.
-<br><br>
-The public interface of `EventBusManager` does not contain any references to `base` classes. 
-This design decision is on purpose to only couple `EventBusManager` with `EventBus`.
-<br><br>
-An `EventBusManager` can only manage subscriptions to `EventBus` of nodes in the tree the manager is assigned to.
-This is necessary as `EventBusManager` is part of reference management, which can only work on one tree at a time.
+The event subscription works by declaring a method with the `@SubscribeEvent` annotation and subscribe the object, that
+listens to events, to an `EventBus`.
 
 ### Logging module
 The `logging` module is responsible for logging data operations that are revert-able and reproducible.
@@ -127,12 +122,12 @@ This design decouples `base` from data operations
 and allows any object to be part of logging and data operation management.
 
 
-The only way of logging an operation is by registering a log to `DataOperationLogging` and dispatch 
-an operation through the `DataOperationLogging` object. 
+The only way of logging an operation is by registering a log to `DataOperationBus` and dispatch 
+an operation through it. 
 This secures the log from external systems trying to inject operations that were not logged by the owner.
 <br><br>
 A `DataOperationLog` can be paused and resumed, but once it is closed,
-it will be removed from all logging objects permanently and cannot be registered anymore.
+it will be removed from all bus objects permanently and cannot be registered anymore.
 Closing a log will freeze it.
 
 #### UserException
