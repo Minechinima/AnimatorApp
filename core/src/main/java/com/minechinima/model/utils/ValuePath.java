@@ -4,7 +4,10 @@ import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.utils.ICopy;
 
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -18,7 +21,7 @@ public class ValuePath implements ICopy<ValuePath> {
     private PathSegment end;
     private int size = 0;
 
-    public ValuePath(Format idFormat, ID id) {
+    public ValuePath(IFormat idFormat, ID id) {
         this.append(idFormat, id);
     }
 
@@ -54,7 +57,7 @@ public class ValuePath implements ICopy<ValuePath> {
         if (path.isEmpty()) return;
 
         /* if the first format is concat, it is a wrong syntax because the start cannot be concatenated */
-        Format lastFound = this.findFormat(path, 0);
+        IFormat lastFound = this.findFormat(path, 0);
         if (lastFound != null && lastFound.getMode() == Format.Mode.CONCAT) {
             throw new PathParsingException("The first format beginning at the first char cannot be concat.");
         }
@@ -73,7 +76,7 @@ public class ValuePath implements ICopy<ValuePath> {
                         if (test.equals(lastFound.getEnd())) {
                             this.append(lastFound, this.getIDFromString(currentID.toString()));
 
-                            Format next = null;
+                            IFormat next = null;
                             /*
                              * If the path has not ended yet, then the next path segment must begin with a format again.
                              * If there is no next format and only an id, there is a syntax error in the path string.*/
@@ -95,7 +98,7 @@ public class ValuePath implements ICopy<ValuePath> {
                 }
                 /* continue searching until we find the next formatting char */
                 else {
-                    Format nextFormat = this.findFormat(path, i);
+                    IFormat nextFormat = this.findFormat(path, i);
                     if (nextFormat != null) {
                         /*
                          * If the last format was concat and the current id is empty, this is illegal, because empty ids
@@ -158,11 +161,11 @@ public class ValuePath implements ICopy<ValuePath> {
      * @return
      * @throws PathParsingException
      */
-    private Format findFormat(String path, int startIndex) throws PathParsingException {
+    private IFormat findFormat(String path, int startIndex) throws PathParsingException {
         if (startIndex >= path.length()) return null;
-        Format currentlyFound = null;
+        IFormat currentlyFound = null;
         /* go through all formats and find the one that fits best */
-        for (Format format : Format.values()) {
+        for (IFormat format : IFormat.REGISTRY) {
             /* possible formatting found, check if the next chars match the entire format */
             if (path.charAt(startIndex) == format.getStart().charAt(0)) {
                 String test = path.substring(startIndex, Math.min(path.length(), startIndex + format.getStart().length()));
@@ -252,7 +255,7 @@ public class ValuePath implements ICopy<ValuePath> {
      * @param id
      * @throws RuntimeException for illegal node operations
      */
-    public void append(Format idFormat, ID id) {
+    public void append(IFormat idFormat, ID id) {
         this.appendSegment(new PathSegment(idFormat, id));
     }
 
@@ -269,7 +272,7 @@ public class ValuePath implements ICopy<ValuePath> {
     }
 
     /**
-     * Builds a path using {@link Format#getEnclosedIdentifier(String)}.
+     * Builds a path using {@link #getEnclosedIdentifier(IFormat, String)}.
      * <br>Empty identifiers with concatenation mode are skipped.
      * <br>For concatenation mode, the concatenation character is only added between non empty identifiers.
      * @throws IllegalStateException when the ID does not adhere to the enclosure format
@@ -280,7 +283,7 @@ public class ValuePath implements ICopy<ValuePath> {
     }
 
     /**
-     * Builds a path using {@link Format#getEnclosedIdentifier(String)} and if present {@link Format#getEnclosedIdentifier(String)}.
+     * Builds a path using {@link #getEnclosedIdentifier(IFormat, String)} and if present {@link #getEnclosedIdentifier(IFormat, String)}.
      * <br>Empty identifiers with concatenation mode are skipped.
      * <br>For concatenation mode, the concatenation character is only added between non empty identifiers.
      * @throws IllegalStateException when the ID does not adhere to the enclosure format
@@ -313,9 +316,9 @@ public class ValuePath implements ICopy<ValuePath> {
             if (current.idFormat != null) {
                 if (current.idFormat.getMode() == Format.Mode.ENCLOSE) {
                     if (uniquePath && current.id.uuid() != null) {
-                        idValue = current.idFormat.getEnclosedUUID(current.id.uuid());
+                        idValue = this.getEnclosedUUID(current.idFormat, current.id.uuid());
                     } else {
-                        idValue = current.idFormat.getEnclosedIdentifier(idValue);
+                        idValue = this.getEnclosedIdentifier(current.idFormat, idValue);
                     }
                 } else if (current.idFormat.getMode() == Format.Mode.CONCAT) {
                     path.append(current.idFormat.getStart());
@@ -447,6 +450,30 @@ public class ValuePath implements ICopy<ValuePath> {
     }
 
     /**
+     * @throws IllegalStateException when this identifier does not adhere to the enclosure format.
+     */
+    public final String getEnclosedIdentifier(IFormat format, String identifier) {
+        if (!format.isValidStringForEnclosure(identifier)) {
+            throw new IllegalStateException("The ID " + identifier + " does not adhere to its enclosure format of " + this);
+        }
+
+        if (format.getMode() == Format.Mode.ENCLOSE) {
+            identifier = this.getStart() + identifier + this.getEnd();
+        }
+
+        return identifier;
+    }
+
+    public final String getEnclosedUUID(IFormat format, UUID uuid) {
+        String string = uuid.toString();
+        if (format.getMode() == Format.Mode.ENCLOSE) {
+            string = this.getStart() + string + this.getEnd();
+        }
+
+        return string;
+    }
+
+    /**
      * A doubly linked list node.
      */
     public static class PathSegment {
@@ -457,7 +484,7 @@ public class ValuePath implements ICopy<ValuePath> {
          * Can be null, but only at the beginning of the linked list.
          */
         @Nullable
-        private final Format idFormat;
+        private final IFormat idFormat;
         private final ID id;
         @Nullable
         private PathSegment next;
@@ -466,7 +493,7 @@ public class ValuePath implements ICopy<ValuePath> {
             this(null, id);
         }
 
-        public PathSegment(@Nullable Format format, ID id) {
+        public PathSegment(@Nullable IFormat format, ID id) {
             if (id == null) {
                 throw new NullPointerException("ID cannot be null when format is not null");
             }
@@ -490,7 +517,7 @@ public class ValuePath implements ICopy<ValuePath> {
         }
 
         @Nullable
-        public Format getFormat() {
+        public IFormat getFormat() {
             return this.idFormat;
         }
 
@@ -686,7 +713,24 @@ public class ValuePath implements ICopy<ValuePath> {
         }
     }
 
-    public enum Format {
+    /**
+     * Interface for path segment formats.<br>
+     * You should use enums/singletons for better memory performance.<br>
+     * <b>You need to register the instance to {@link #REGISTRY}</b> so the format can be parsed from a string.
+     */
+    public interface IFormat {
+        /**
+         * Parsing algorithms need to know of all existing Formats.
+         */
+        Set<IFormat> REGISTRY = new HashSet<>();
+
+        String getStart();
+        String getEnd();
+        Format.Mode getMode();
+        boolean isValidStringForEnclosure(String value);
+    }
+
+    public enum Format implements IFormat {
         /*
          * Every end, start value must be unique, so you can get the pathformat by the char in a string.
          */
@@ -710,14 +754,17 @@ public class ValuePath implements ICopy<ValuePath> {
             this.mode = Mode.CONCAT;
         }
 
+        @Override
         public String getStart() {
             return this.start;
         }
 
+        @Override
         public String getEnd() {
             return this.end;
         }
 
+        @Override
         public Mode getMode() {
             return this.mode;
         }
@@ -733,6 +780,7 @@ public class ValuePath implements ICopy<ValuePath> {
          * @param value the string to test
          * @return false when the conditions are not met
          */
+        @Override
         public boolean isValidStringForEnclosure(String value) {
             if (this == ARRAY) {
                 if (value.isEmpty()) return false;
@@ -746,30 +794,6 @@ public class ValuePath implements ICopy<ValuePath> {
             }
 
             return true;
-        }
-
-        /**
-         * @throws IllegalStateException when this identifier does not adhere to the enclosure format.
-         */
-        public final String getEnclosedIdentifier(String identifier) {
-            if (!this.isValidStringForEnclosure(identifier)) {
-                throw new IllegalStateException("The ID " + identifier + " does not adhere to its enclosure format of " + this);
-            }
-
-            if (this.getMode() == Mode.ENCLOSE) {
-                identifier = this.getStart() + identifier + this.getEnd();
-            }
-
-            return identifier;
-        }
-
-        public final String getEnclosedUUID(UUID uuid) {
-            String string = uuid.toString();
-            if (this.getMode() == Mode.ENCLOSE) {
-                string = this.getStart() + string + this.getEnd();
-            }
-
-            return string;
         }
 
         /**

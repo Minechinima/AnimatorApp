@@ -17,11 +17,11 @@ import java.util.UUID;
  * A hierarchy element that can be used as a root as it does not permit setting a parent.
  */
 public abstract class BaseHierarchyRoot extends BaseImmutableValueHierarchy<BaseStructure> {
-    public BaseHierarchyRoot(String id, ValuePath.Format pathFormat) {
+    public BaseHierarchyRoot(String id, ValuePath.IFormat pathFormat) {
         super(id, pathFormat);
     }
 
-    protected BaseHierarchyRoot(String id, UUID uuid, ValuePath.Format pathFormat) {
+    protected BaseHierarchyRoot(String id, UUID uuid, ValuePath.IFormat pathFormat) {
         super(id, uuid, pathFormat);
     }
 

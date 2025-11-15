@@ -19,14 +19,14 @@ import java.util.*;
  * @param <T>
  */
 public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
-    private final ValuePath.Format format;
+    private final ValuePath.IFormat format;
 
-    public BaseValueHierarchy(String id, ValuePath.Format pathFormat) {
+    public BaseValueHierarchy(String id, ValuePath.IFormat pathFormat) {
         super(id);
         this.format = pathFormat;
     }
 
-    protected BaseValueHierarchy(String id, UUID uuid, ValuePath.Format pathFormat) {
+    protected BaseValueHierarchy(String id, UUID uuid, ValuePath.IFormat pathFormat) {
         super(id, uuid);
         this.format = pathFormat;
     }
@@ -34,7 +34,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
     /**
      * Determines how the child id is appended to the path.
      */
-    public final ValuePath.Format getPathFormat() {
+    public final ValuePath.IFormat getPathFormat() {
         return this.format;
     }
 
@@ -52,8 +52,8 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * Or if {@link #isDirectChild(BaseStructure)} is true
      * and {@link #getPathFormatPrefixForChildren()} is overridden but no id was given.
      */
-    protected final Pair<ID, ValuePath.Format> getPathSegmentPrefixForChild(BaseStructure child) {
-        ValuePath.Format prefix = this.getPathFormatPrefixForChildren();
+    protected final Pair<ID, ValuePath.IFormat> getPathSegmentPrefixForChild(BaseStructure child) {
+        ValuePath.IFormat prefix = this.getPathFormatPrefixForChildren();
         ID id = this.getIDPrefixForChild(child);
         boolean overriddenFormat = prefix != null;
 
@@ -72,7 +72,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * @see BaseValueHierarchy#getPathSegmentPrefixForChild(BaseStructure)
      */
     @Nullable
-    protected ValuePath.Format getPathFormatPrefixForChildren() {
+    protected ValuePath.IFormat getPathFormatPrefixForChildren() {
         return null;
     }
 
