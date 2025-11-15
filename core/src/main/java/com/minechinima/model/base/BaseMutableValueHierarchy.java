@@ -9,11 +9,11 @@ import java.util.UUID;
  * @param <T>
  */
 public non-sealed abstract class BaseMutableValueHierarchy<T extends BaseStructure> extends BaseValueHierarchy<T> {
-    public BaseMutableValueHierarchy(String id, ValuePath.Format pathFormat) {
+    public BaseMutableValueHierarchy(String id, ValuePath.IFormat pathFormat) {
         super(id, pathFormat);
     }
 
-    protected BaseMutableValueHierarchy(String id, UUID uuid, ValuePath.Format pathFormat) {
+    protected BaseMutableValueHierarchy(String id, UUID uuid, ValuePath.IFormat pathFormat) {
         super(id, uuid, pathFormat);
     }
 

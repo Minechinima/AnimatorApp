@@ -31,11 +31,11 @@ public non-sealed abstract class BaseImmutableValueHierarchy<T extends BaseStruc
     private final BiMap<String, T> mappingBuffer = HashBiMap.create();
     private boolean initializedChildren = false;
 
-    public BaseImmutableValueHierarchy(String id, ValuePath.Format pathFormat) {
+    public BaseImmutableValueHierarchy(String id, ValuePath.IFormat pathFormat) {
         super(id, pathFormat);
     }
 
-    protected BaseImmutableValueHierarchy(String id, UUID uuid, ValuePath.Format pathFormat) {
+    protected BaseImmutableValueHierarchy(String id, UUID uuid, ValuePath.IFormat pathFormat) {
         super(id, uuid, pathFormat);
     }
 
