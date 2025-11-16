@@ -1,7 +1,6 @@
-package com.minechinima.controller.api.defaults;
+package com.minechinima.controller.factories;
 
-import com.minechinima.controller.api.ControllerFactory;
-import com.minechinima.controller.api.IControllerCommand;
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.vectors.Vector3fValue;
