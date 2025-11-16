@@ -1,4 +1,4 @@
-package com.minechinima.operator.ot.commands;
+package com.minechinima.operator.ot.commands.flags;
 
 /**
  * Return values for the operator methods that should end the operator.

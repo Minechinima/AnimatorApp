@@ -1,20 +1,32 @@
 package com.minechinima.operator.defaults.modal.uidrag;
 
-import com.minechinima.operator.PropertyModifierGroupStruct;
+import com.minechinima.controller.IControllerCommand;
+import com.minechinima.operator.config.modal.PropertyModifierConfig;
+import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
 import com.minechinima.operator.defaults.DragValueSliderProp;
+import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
 
-public class RoundModal extends PropertyModifierGroupStruct<DragValueSliderProp> {
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
+public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSliderProp> {
     public RoundModal() {
         super("round", "round to nearest integer");
     }
 
     @Override
-    public void onEvent(DragValueSliderProp original, DragValueSliderProp props) {
-        props.round.set(!props.round.get());
-    }
+    public IPropertyModifierReleasableCommand<DragValueSliderProp, ?> factory() {
+        return new IPropertyModifierReleasableCommand<>(this) {
+            @Override
+            public void onEvent(DragValueSliderProp props) {
+                props.round.set(!props.round.get());
+            }
 
-    @Override
-    public void onStopEvent(DragValueSliderProp original, DragValueSliderProp props) {
-        props.round.set(false);
+            @Override
+            public Queue<IControllerCommand> onReleaseEvent(DragValueSliderProp props) {
+                return new LinkedList<>(List.of(props.round.controller().set(false)));
+            }
+        };
     }
 }

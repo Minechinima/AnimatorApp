@@ -13,15 +13,14 @@ public class DragValueSliderProp extends OperatorPropertiesGroupStruct {
     @InGui(as = UICheckBox.class, translationPrefix = "increment")
     public final BooleanValue round = new BooleanValue("round", false);
 
-    public DragValueSliderProp(String id) {
-        super(id);
+    public DragValueSliderProp() {
         this.addChild("increment", this.increment);
         this.addChild("round", this.round);
     }
 
     @Override
     public OperatorPropertiesGroupStruct copy() {
-        OperatorPropertiesGroupStruct copy = new DragValueSliderProp(this.getIdentifier());
+        OperatorPropertiesGroupStruct copy = new DragValueSliderProp();
         copy.fromData(this.toData());
         return copy;
     }

@@ -1,18 +1,22 @@
 package com.minechinima.operator.ot;
 
 import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.UIOperatorContext;
+import com.minechinima.operator.ot.commands.IPropertyOperator;
 
-public abstract class UIOperatorTypePropertyProvider<P extends OperatorPropertiesGroupStruct> extends UIOperatorType implements IOTPropertyProvider<P> {
+public abstract class UIOperatorTypePropertyProvider<O extends IPropertyOperator<UIOperatorContext, P>,
+                                                     P extends OperatorPropertiesGroupStruct>
+        extends UIOperatorType<O> implements IOTPropertyProvider<O, P> {
     private final OTPropertyStorage<P> storage = new OTPropertyStorage<>("", this::createProps);
 
-    public UIOperatorTypePropertyProvider(String id, String title, String description, int flags) {
-        super(id, title, description, flags);
+    public UIOperatorTypePropertyProvider(String id, String title, String description, boolean pushUndo) {
+        super(id, title, description, pushUndo);
         this.addChild("storage", this.storage);
         this.storage.initChildren();
     }
 
     public UIOperatorTypePropertyProvider(String id, String title, String description) {
-        this(id, title, description, 0);
+        this(id, title, description, false);
     }
 
     @Override

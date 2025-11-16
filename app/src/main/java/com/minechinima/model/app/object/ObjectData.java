@@ -3,6 +3,7 @@ package com.minechinima.model.app.object;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.LongType;
 import com.minechinima.data.types.MapType;
+import com.minechinima.model.values.AbstractEnumValueHierarchyReg;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.utils.Pair;
@@ -14,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class ObjectData extends BaseSingleValueHierarchy<ObjectType> {
+public class ObjectData extends AbstractEnumValueHierarchyReg<ObjectType> {
     public static final Map<Pair<Long, Class<? extends ObjectType>>, Supplier<ObjectType>> OBJECT_TYPE_FACTORY = new HashMap<>();
 
     static {
@@ -40,6 +41,11 @@ public class ObjectData extends BaseSingleValueHierarchy<ObjectType> {
         }
 
         return map;
+    }
+
+    @Override
+    protected ObjectType instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+        return null;
     }
 
     @Override

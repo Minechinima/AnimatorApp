@@ -1,10 +1,16 @@
 package com.minechinima.operator.defaults.modal.uidrag;
 
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.values.FloatValue;
-import com.minechinima.operator.PropertyModifierGroupStruct;
+import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
 import com.minechinima.operator.defaults.DragValueSliderProp;
+import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
 
-public class DragIncrementModal extends PropertyModifierGroupStruct<DragValueSliderProp> {
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
+public class DragIncrementModal extends PropertyModifierReleaseableConfig<DragValueSliderProp> {
     public final FloatValue incrementMultiplier;
 
     public DragIncrementModal() {
@@ -17,17 +23,20 @@ public class DragIncrementModal extends PropertyModifierGroupStruct<DragValueSli
     }
 
     @Override
-    public void onEvent(DragValueSliderProp original, DragValueSliderProp props) {
-        if (props.increment.get().equals(this.incrementMultiplier.get())) {
-            props.increment.set(original.increment.get());
-            return;
-        }
+    public IPropertyModifierReleasableCommand factory() {
+        return new IPropertyModifierReleasableCommand<>(this) {
+            private float originalIncrement;
 
-        props.increment.set(this.incrementMultiplier.get());
-    }
+            @Override
+            public Queue<IControllerCommand> onEvent(DragValueSliderProp props) {
+                this.originalIncrement = props.increment.get();
+                return new LinkedList<>(List.of(props.increment.controller().set(DragIncrementModal.this.incrementMultiplier.get())));
+            }
 
-    @Override
-    public void onStopEvent(DragValueSliderProp original, DragValueSliderProp props) {
-        props.increment.set(original.increment.get());
+            @Override
+            public Queue<IControllerCommand> onReleaseEvent(DragValueSliderProp props) {
+                return new LinkedList<>(List.of(props.increment.controller().set(this.originalIncrement)));
+            }
+        };
     }
 }

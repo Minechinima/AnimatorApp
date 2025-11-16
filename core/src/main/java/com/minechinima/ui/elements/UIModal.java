@@ -2,6 +2,7 @@ package com.minechinima.ui.elements;
 
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
+import com.minechinima.ui.elements.window.UIWindow;
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
 

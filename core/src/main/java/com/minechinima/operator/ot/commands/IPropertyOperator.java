@@ -1,18 +1,16 @@
 package com.minechinima.operator.ot.commands;
 
-import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorContext;
 import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
+import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.ui.elements.UIModal;
-import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.Queue;
 
 /**
  *
@@ -41,7 +39,7 @@ public abstract class IPropertyOperator<C extends IContext, P extends OperatorPr
      * @return
      * @throws UserException
      */
-    public abstract Pair<OpExecuteFlag, Queue<IControllerCommand>> onUIPropChange(OperatorContext<C> context, BaseStructure changedProp) throws UserException;
+    public abstract OPReturnValue<OpExecuteFlag> onUIPropChange(C context, BaseStructure changedProp) throws UserException;
 
     /**
      * @return if null the auto generated UI will be taken.

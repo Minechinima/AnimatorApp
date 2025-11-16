@@ -1,6 +1,8 @@
 package com.minechinima.operator;
 
-public abstract class TranslateModalAxis extends PropertyModifierGroupStruct<TranslateProps> {
+import com.minechinima.operator.config.modal.PropertyModifierConfig;
+
+public abstract class TranslateModalAxis extends PropertyModifierConfig<TranslateProps> {
     public TranslateModalAxis() {
         super("Axis", "");
     }

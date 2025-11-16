@@ -1,6 +1,7 @@
 package com.minechinima.model.values;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.data.types.NullType;
 import com.minechinima.input.hotkey.configs.values.KeyboardKeyEnum;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.ui.utils.ILangKeyProvider;
@@ -33,7 +34,6 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
         super.set(value);
     }
 
-
     @Override
     public BaseType<?> toData() {
         return this.valueToData();
@@ -41,8 +41,7 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
 
     @Override
     public void fromData(BaseType<?> data) {
-        //TODO check all the enum datastructs for null... this is temporary and draft, null not implemented well.
-        if (data == null) {
+        if (data instanceof NullType) {
             this.set(null);
             return;
         }
@@ -52,12 +51,12 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
 
     @Override
     public BaseType<?> valueToData() {
-        return this.get() == null ? null : RegistryUtils.serialize(this.registry, this.get());
+        return this.get() == null ? NullType.INSTANCE : RegistryUtils.serialize(this.registry, this.get());
     }
 
     @Override
     public @Nullable T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
-        return RegistryUtils.deserialize(data, this.registry);
+        return data instanceof NullType ? null : RegistryUtils.deserialize(data, this.registry);
     }
 
     @Override
@@ -66,7 +65,8 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
     }
 
     @Override
-    public Integer getCurrentValue() {
-        return this.get() == null ? -1 : this.registry.getID(this.get());
+    @Nullable
+    public Integer getCurrentValueIndex() {
+        return this.get() == null ? null : this.registry.getID(this.get());
     }
 }

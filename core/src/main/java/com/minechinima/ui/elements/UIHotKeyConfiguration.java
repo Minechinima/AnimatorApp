@@ -5,8 +5,8 @@ import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoryGroupStruct;
-import com.minechinima.operator.config.operator.OperatorKeyConfigListStruct;
-import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
+import com.minechinima.operator.config.operator.OperatorConfigsListStruct;
+import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.UIContext;
@@ -23,7 +23,7 @@ public class UIHotKeyConfiguration<C extends IContext> extends UIElement<C> {
     @Override
     public void draw(UIContext<C> context) {
         UserFunctionalityConfigGroupStruct<C> config = context.getUIManager().getOperatorManager().getConfig();
-        this.drawConfigCategories(context, config.operatorKeyConfigs);
+        this.drawConfigCategories(context, config.operators);
     }
 
     private void drawConfigCategories(UIContext<C> context, OperatorConfigCategoriesMapStruct<C> config) {
@@ -37,8 +37,8 @@ public class UIHotKeyConfiguration<C extends IContext> extends UIElement<C> {
 
     }
 
-    private void drawConfigs(UIContext<C> context, OperatorKeyConfigListStruct<C> config) {
-        for (OperatorKeyConfigItemGroupStruct<C> cfg : config) {
+    private void drawConfigs(UIContext<C> context, OperatorConfigsListStruct<C> config) {
+        for (OperatorConfigGroupStruct<C> cfg : config) {
             UIEnum<HotKeyConfigGroupStruct, HotKeyConfigSelectorEnumStruct, C> hotkey = new UIEnum<>("hotkey");
             hotkey.init(cfg.hotKeyConfigSelector);
             hotkey.draw(context);

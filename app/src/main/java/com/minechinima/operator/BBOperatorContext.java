@@ -28,16 +28,4 @@ public class BBOperatorContext implements IContext {
     public void setUIContext(UIOperatorContext operatorContext) {
         this.uiOperatorContext = operatorContext;
     }
-
-    @Override
-    public IContext copy() {
-        return new BBOperatorContext(this.bbContext, this.uiOperatorContext);
-    }
-
-    @Override
-    public boolean contextEquals(IContext other) {
-        if (!(other instanceof BBOperatorContext bbOpCtx)) return false;
-        return Objects.equals(this.bbContext, bbOpCtx.bbContext) &&
-                Objects.equals(this.uiOperatorContext, bbOpCtx.uiOperatorContext);
-    }
 }

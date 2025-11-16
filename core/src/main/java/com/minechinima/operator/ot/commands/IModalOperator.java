@@ -1,14 +1,13 @@
 package com.minechinima.operator.ot.commands;
 
-import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorContext;
-import com.minechinima.utils.Pair;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
+import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
+import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 
 import javax.annotation.Nullable;
-import java.util.Queue;
 
 /**
  * For Operators that support modal mode.
@@ -32,7 +31,7 @@ public interface IModalOperator<C extends IContext> extends IOperator<C> {
      *
      * @throws UserException
      */
-    Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<C> context, KeyMapEvent event) throws UserException;
+    OPReturnValue<Modal> modal(C context, KeyMapEvent event) throws UserException;
 
     /**
      * Called when the operator is confirmed by an external system. The FINISHED flag does not trigger this.
@@ -41,8 +40,8 @@ public interface IModalOperator<C extends IContext> extends IOperator<C> {
      * @return
      * @throws UserException
      */
-    default Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmModal(OperatorContext<C> context, @Nullable KeyMapEvent event) throws UserException {
-        return new Pair<>(OpExecuteFlag.FINISHED, null);
+    default OPReturnValue<OpExecuteFlag> confirmModal(C context, @Nullable KeyMapEvent event) throws UserException {
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED);
     }
 
     //TODO make an abstraction layer so you don't return UIElement for info but a set of status values

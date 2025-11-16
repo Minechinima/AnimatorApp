@@ -4,7 +4,7 @@ import com.minechinima.input.keymap.IKeyMapEventBuilder;
 import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.raw.InputEvent;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UIWindow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -39,6 +39,14 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
         super(id, uuid, ValuePath.Format.MAP);
     }
 
+    protected BaseValueMap(String id, UUID uuid, ValuePath.IFormat format) {
+        super(id, uuid, format);
+    }
+
+    protected BaseValueMap(String id, ValuePath.IFormat format) {
+        super(id, format);
+    }
+
     /**
      * final to force subclasses to call setters from this class, so this class can define important stuff like change events
      * to always track changes.

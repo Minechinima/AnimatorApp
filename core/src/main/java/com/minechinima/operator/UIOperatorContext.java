@@ -2,12 +2,11 @@ package com.minechinima.operator;
 
 import com.minechinima.ui.UIManager;
 import com.minechinima.ui.elements.UIElement;
-import com.minechinima.ui.elements.UIScreen;
-import com.minechinima.ui.elements.UISpace;
-import com.minechinima.ui.elements.UIWindow;
-
-import javax.annotation.Nullable;
-import java.util.Objects;
+import com.minechinima.ui.elements.window.UIRegion;
+import com.minechinima.ui.elements.window.UIScreen;
+import com.minechinima.ui.elements.window.UISpace;
+import com.minechinima.ui.elements.window.UIWindow;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This is the context information of the current UI state. It holds all current relevant information
@@ -16,44 +15,30 @@ import java.util.Objects;
  * @implNote final so a subclass cannot give a UIOperator access to App data.
  * Immutable record to ensure it cannot be changed by other systems other than the UI.
  * This also ensures that it has to be built after the UI rendering cycle is finished.
+ * <br><br>
+ * The UI elements' generic context type is kept raw as there is no need to spread it here. This enhances flexibility with the
+ * context type, as systems that have access to this UI context can't infer the data context type and access it through the UI.<br>
+ * <b>The data context should not be accessed through the UI.</b>
  */
-//TODO make record and make it so that it is created after the UI is finished, this requires an intermediate object to hold
-// this data, but it makes it more safe and secure (no need to originalProps the context, also it makes it clear that the UI must first be run through)
 public record UIOperatorContext(UIWindow clickedWindow,
                                 UIScreen clickedUIScreen,
                                 UISpace clickedUISpace,
+                                UIRegion clickedUIRegion,
                                 UIElement clickedWidget,
                                 UIWindow currentHoveredWindow,
                                 UIScreen currentHoveredUIScreen,
                                 UISpace currentHoveredUISpace,
+                                UIRegion currentHoveredUIRegion,
                                 UIElement currentHoveredWidget,
                                 UIManager manager) implements IContext {
+
     @Override
-    public UIOperatorContext getUIContext() {
+    public @NotNull UIOperatorContext getUIContext() {
         return this;
     }
 
     @Override
     public void setUIContext(UIOperatorContext operatorContext) {
         throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public UIOperatorContext copy() {
-        UIOperatorContext copy = new UIOperatorContext(this.clickedWindow,
-                this.clickedUIScreen,
-                this.clickedUISpace,
-                this.clickedWidget,
-                this.currentHoveredWindow,
-                this.currentHoveredUIScreen,
-                this.currentHoveredUISpace,
-                this.currentHoveredWidget,
-                this.manager);
-        return copy;
-    }
-
-    @Override
-    public boolean contextEquals(IContext other) {
-        return this.equals(other);
     }
 }

@@ -1,14 +1,14 @@
 package com.minechinima.model.values.base;
 
-import com.minechinima.controller.api.defaults.ValueControllerFactory;
+import com.minechinima.controller.factories.IControllerFactoryProvider;
+import com.minechinima.controller.factories.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
-//TODO add some mechanism for final attribute so a value can be completely final and never change - locked attribute is a UI specific thing, see Blender
-public abstract class BaseValue<T> extends BaseStructure implements IValue<T> {
+public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, BaseValue<T>>> {
     private T value;
     private final T defaultValue;
     private final ValueControllerFactory<T, BaseValue<T>> controllers = new ValueControllerFactory<>(this);
@@ -62,7 +62,7 @@ public abstract class BaseValue<T> extends BaseStructure implements IValue<T> {
         return (this.value == null && this.defaultValue != null) || (this.value != null && !this.value.equals(this.defaultValue));
     }
 
-    public ValueControllerFactory<T, BaseValue<T>> controllers() {
+    public ValueControllerFactory<T, BaseValue<T>> controller() {
         return this.controllers;
     }
 }

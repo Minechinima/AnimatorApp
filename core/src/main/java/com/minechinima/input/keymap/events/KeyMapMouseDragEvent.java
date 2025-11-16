@@ -2,7 +2,7 @@ package com.minechinima.input.keymap.events;
 
 import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.raw.Key;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UIWindow;
 import com.minechinima.utils.Pair;
 
 import java.util.HashSet;

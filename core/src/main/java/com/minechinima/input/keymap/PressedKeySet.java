@@ -128,7 +128,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     public boolean contains(Object o) {
         if (!(o instanceof KeyMapKeyEvent event)) return false;
         for (KeyMapKeyEvent search : this.keys.keySet()) {
-            if (search.equalKey(event)) return true;
+            if (search.key().keyCode() == event.key().keyCode()) return true;
         }
         return false;
     }
@@ -168,7 +168,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
         Iterator<Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>>> it = this.keys.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> entry = it.next();
-            if (entry.getKey().equalKey(event)) {
+            if (entry.getKey().key().keyCode() == event.key().keyCode()) {
                 it.remove();
                 this.keys.remove(entry.getKey());
             }
@@ -184,7 +184,7 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
         Map<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> temp = new HashMap<>();
         while (it.hasNext()) {
             Map.Entry<KeyMapKeyEvent, LinkedList<ImmutableVector2d>> entry = it.next();
-            if (entry.getKey().equalKey(event)) {
+            if (entry.getKey().key().keyCode() == event.key().keyCode()) {
                 it.remove();
                 this.keys.remove(entry.getKey());
                 temp.put(event, entry.getValue());

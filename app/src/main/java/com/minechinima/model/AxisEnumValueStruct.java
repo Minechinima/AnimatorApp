@@ -47,7 +47,7 @@ public class AxisEnumValueStruct extends AbstractEnumValue<AxisEnumValueStruct.A
     }
 
     @Override
-    public Integer getCurrentValue() {
+    public Integer getCurrentValueIndex() {
         return this.get().ordinal();
     }
 

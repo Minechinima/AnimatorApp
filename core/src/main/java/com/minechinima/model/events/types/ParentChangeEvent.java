@@ -3,6 +3,10 @@ package com.minechinima.model.events.types;
 import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Event when the parent of the triggering node changes.
+ * //TODO currently deactivated because no use case.
+ */
 public class ParentChangeEvent extends Event {
     @Nullable
     private final BaseStructure oldParent;

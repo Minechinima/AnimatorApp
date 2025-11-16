@@ -9,7 +9,7 @@ import com.minechinima.input.raw.*;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorManager;
 import com.minechinima.rendering.IWindow;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UIWindow;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 
 import javax.annotation.Nullable;
@@ -29,6 +29,7 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
     private UIWindow active = null;
     private UIWindow hovered = null;
     public UIHandlerRegistry handlerRegistry;
+    //TODO temporary: context is per window.
     private C operatorContext;
     private KeyMapEventManager keyMapEventManager;
 
@@ -115,7 +116,7 @@ public class UIManager<C extends IContext> implements IInputEventListener<InputE
         if (event instanceof KeyMapMouseDragEvent drag) {
             //System.out.println(drag.direction());
         }
-        if (!this.operatorManager.isModalMode()) {
+        if (!this.operatorManager.isModalMode() && !this.operatorManager.isEventBlocked(event)) {
             //TODO pass keymap to UI
         }
         //TODO only if keymapevent was not consumed by UI

@@ -1,10 +1,12 @@
 package com.minechinima.model.values.base;
 
-import com.minechinima.controller.api.defaults.ValueControllerFactory;
-import com.minechinima.data.types.BaseType;
+import com.minechinima.controller.factories.IControllerFactoryProvider;
+import com.minechinima.controller.factories.ValueControllerFactory;
+import com.minechinima.data.types.*;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
+import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
@@ -17,7 +19,8 @@ import java.util.*;
  * Class that holds a single value that is part of the hierarchy.
  * @param <T>
  */
-public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T> {
+public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T>,
+        IControllerFactoryProvider<ValueControllerFactory<T, BaseSingleValueHierarchy<T>>> {
     @Nullable
     private T value = null;
     private final ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controller = new ValueControllerFactory<>(this);
@@ -93,7 +96,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
     }
 
-    public ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controllers() {
+    public ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controller() {
         return this.controller;
     }
 
@@ -111,6 +114,36 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         this.set(child);
         return this.get() == child;
     }
+
+    @Override
+    @Nullable
+    public T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
+        if (data instanceof NullType) return null;
+        if (data instanceof MapType mapType) {
+            String id = mapType.getStringValue("id");
+            UUID uuid = mapType.getUUIDValue("uuid");
+            return this.instantiate(id, uuid, mapType.get("data"));
+        }
+
+        throw new BaseTypeCannotBeParsed("BaseType is not a Map");
+    }
+
+    @Override
+    @Nullable
+    public BaseType<?> valueToData() {
+        if (this.value == null) return NullType.INSTANCE;
+        Map<String, BaseType<?>> map = new HashMap<>();
+        map.put("id", new StringType(this.value.getIdentifier()));
+        map.put("data", this.value.toData());
+
+        if (this.value.getID().uuid() != null) {
+            map.put("uuid", new UUIDType(this.value.getID().uuid()));
+        }
+
+        return new MapType(map);
+    }
+
+    protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
 
     @Override
     public void fromData(BaseType<?> data) {

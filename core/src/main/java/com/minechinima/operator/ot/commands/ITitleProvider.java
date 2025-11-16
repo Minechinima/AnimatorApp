@@ -1,7 +1,6 @@
 package com.minechinima.operator.ot.commands;
 
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorContext;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -14,5 +13,5 @@ public interface ITitleProvider<C extends IContext> extends IOperator<C> {
      * @return null if the title of the {@link com.minechinima.operator.ot.OperatorType} should be used.
      */
     @Nullable
-    String getTitle(OperatorContext<C> context);
+    String getTitle(C context);
 }

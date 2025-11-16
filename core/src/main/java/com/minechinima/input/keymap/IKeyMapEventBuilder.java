@@ -3,7 +3,7 @@ package com.minechinima.input.keymap;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.raw.IInputEventListener;
 import com.minechinima.input.raw.InputEvent;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UIWindow;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;

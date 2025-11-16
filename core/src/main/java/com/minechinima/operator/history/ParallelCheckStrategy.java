@@ -13,5 +13,11 @@ import com.minechinima.model.logging.operations.IDataOperation;
  */
 @FunctionalInterface
 public interface ParallelCheckStrategy<T extends IDataOperation, J extends IDataOperation> {
+    /**
+     *
+     * @param a
+     * @param b
+     * @return true if the two operations could be run in parallel and do not interfere with each other.
+     */
     boolean canBeParallel(T a, J b);
 }

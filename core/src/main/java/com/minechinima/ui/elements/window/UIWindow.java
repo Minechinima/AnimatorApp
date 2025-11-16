@@ -1,7 +1,9 @@
-package com.minechinima.ui.elements;
+package com.minechinima.ui.elements.window;
 
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
+import com.minechinima.ui.elements.UIElement;
+import com.minechinima.ui.elements.UIModal;
 import com.minechinima.utils.Pair;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
@@ -15,7 +17,7 @@ import java.util.List;
  * @param <C>
  */
 public class UIWindow<C extends IContext> extends UIElement<C> {
-    public final List<UIScreen> screens = new ArrayList<>();
+    public final List<UIScreen<C>> screens = new ArrayList<>();
     //TODO discuss where to put modal
     private Pair<UIModal, Vector2i> modalPopup;
     private final long glWindowPtr = 0; //TODO
@@ -68,7 +70,7 @@ public class UIWindow<C extends IContext> extends UIElement<C> {
                 if (ImGui.beginMenu("New Window")) {
                     for (String panelName : context.getPanelFactory().getRegisteredNames()) {
                         if (ImGui.menuItem(panelName)) {
-                            this.screens.add(new UIScreen(context.getPanelFactory().createUIPanel(panelName)));
+                            this.screens.add(new UIScreen<>(context.getPanelFactory().createUIPanel(panelName)));
                         }
                     }
                     ImGui.endMenu();
@@ -80,7 +82,7 @@ public class UIWindow<C extends IContext> extends UIElement<C> {
         }
         ImGui.endMainMenuBar();
 
-        for (UIScreen screen : this.screens) {
+        for (UIScreen<C> screen : this.screens) {
             screen.draw(context);
         }
 

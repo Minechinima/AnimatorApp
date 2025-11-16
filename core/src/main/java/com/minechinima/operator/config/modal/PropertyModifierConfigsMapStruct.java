@@ -6,10 +6,13 @@ import com.minechinima.operator.OperatorPropertiesGroupStruct;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Contains all property modifier configurations
+ * Each item in this map is a configuration for all the modifiers of one property type.
  */
 public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModifiersListStruct<?>> {
     public PropertyModifierConfigsMapStruct(String id) {
@@ -21,14 +24,22 @@ public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModif
         return null;
     }
 
-    @Nullable
-    public <P extends OperatorPropertiesGroupStruct> PropertyModifiersListStruct<P> getModalKeymapForProps(P props) {
+    /**
+     *
+     * @param props
+     * @return all property modifier configurations that are assignable to the property class or subclasses.
+     * @param <P>
+     */
+    public <P extends OperatorPropertiesGroupStruct> List<PropertyModifierHotKeyConfig<P>> getConfigs(P props) {
+        List<PropertyModifierHotKeyConfig<P>> list = new ArrayList<>();
         for (PropertyModifiersListStruct<?> config : this.getChildren()) {
             if (config.clazz.isAssignableFrom(props.getClass())) {
-                return (PropertyModifiersListStruct<P>) config;
+                //TODO go through the modifiers and replace configs from subclasses where the modifier class is equal
+                // this allows for configurations for subclasses of props to overwrite modifier behavior of the superclass
+                list.addAll((Collection<? extends PropertyModifierHotKeyConfig<P>>) config.getChildren());
             }
         }
 
-        return null;
+        return list;
     }
 }
