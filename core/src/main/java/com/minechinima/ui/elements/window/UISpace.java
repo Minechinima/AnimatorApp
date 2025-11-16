@@ -28,12 +28,12 @@ public abstract class UISpace<C extends IContext> extends UIElement<C> {
         return 16F/9F;
     }
 
-    public abstract void drawMenuBarItems(UIContext context);
+    public abstract void drawMenuBarItems(UIContext<C> context);
 
-    public abstract void drawBody(UIContext context);
+    public abstract void drawBody(UIContext<C> context);
 
     @Override
-    public void draw(UIContext context) {
+    public void draw(UIContext<C> context) {
         this.drawMenuBarItems(context);
         this.drawBody(context);
     }
