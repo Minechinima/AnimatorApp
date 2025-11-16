@@ -32,11 +32,11 @@ public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModif
      */
     public <P extends OperatorPropertiesGroupStruct> List<PropertyModifierHotKeyConfig<P>> getConfigs(P props) {
         List<PropertyModifierHotKeyConfig<P>> list = new ArrayList<>();
-        for (PropertyModifiersListStruct<?> config : this.getChildren()) {
+        for (PropertyModifiersListStruct config : this.getChildren()) {
             if (config.clazz.isAssignableFrom(props.getClass())) {
                 //TODO go through the modifiers and replace configs from subclasses where the modifier class is equal
                 // this allows for configurations for subclasses of props to overwrite modifier behavior of the superclass
-                list.addAll((Collection<? extends PropertyModifierHotKeyConfig<P>>) config.getChildren());
+                list.addAll(config.getChildren());
             }
         }
 

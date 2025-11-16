@@ -7,14 +7,13 @@ import com.minechinima.ui.elements.UIDragFloat;
 public class ZoomViewportProps extends OperatorPropertiesGroupStruct {
     @InGui(as = UIDragFloat.class, translationPrefix = "delta")
     public final FloatValue delta = new FloatValue("delta", 1);
-    public ZoomViewportProps(String id) {
-        super(id);
+    public ZoomViewportProps() {
         this.addChild("delta", this.delta);
     }
 
     @Override
     public OperatorPropertiesGroupStruct copy() {
-        ZoomViewportProps copy = new ZoomViewportProps("");
+        ZoomViewportProps copy = new ZoomViewportProps();
         copy.copyFrom(this);
         return copy;
     }

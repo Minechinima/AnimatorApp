@@ -93,7 +93,6 @@ public class Application {
         this.translationBackpack = new TranslationBackpack();
         this.controller = new ControllerManager(this.dataTree, this.logger);
 
-        OperatorFactory opFactory = new OperatorFactory(this.logger);
         UserFunctionalityConfigGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
         OperatorConfigCategoryGroupStruct object = opConfig.operators.addConfigCategory("object");
@@ -101,41 +100,35 @@ public class Application {
         OperatorConfigCategoryGroupStruct viewport = ui.newCategory("viewport");
         OperatorConfigCategoryGroupStruct general = opConfig.operators.addConfigCategory("general");
 
-        opFactory.register(bb.ops.move, TranslateObject::new);
         OperatorConfigGroupStruct config = object.newConfig();
         config.operatorType.set(bb.ops.move);
         config.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) config.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_G);
 
 
-        opFactory.register(bb.ops.delete, DeleteObject::new);
         OperatorConfigGroupStruct deleteConfig = object.newConfig();
         deleteConfig.operatorType.set(bb.ops.delete);
         deleteConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) deleteConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_DELETE);
 
-        opFactory.register(bb.ops.dragUISlider, UIDragValueSlider::new);
         OperatorConfigGroupStruct dragConfig = ui.newConfig();
         dragConfig.operatorType.set(bb.ops.dragUISlider);
         dragConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
         ((HotKeyMouseConfigGroupStruct) dragConfig.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_1);
         ((HotKeyMouseConfigGroupStruct) dragConfig.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
 
-        opFactory.register(bb.ops.undo, UndoOperator::new);
         OperatorConfigGroupStruct undoConfig = general.newConfig();
         undoConfig.operatorType.set(bb.ops.undo);
         undoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
         ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
 
-        opFactory.register(bb.ops.redo, RedoOperator::new);
         OperatorConfigGroupStruct redoConfig = general.newConfig();
         redoConfig.operatorType.set(bb.ops.redo);
         redoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
         ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
 
-        opFactory.register(bb.ops.orbitViewport, OrbitViewportOperator::new);
         OperatorConfigGroupStruct orbitCfg = viewport.newConfig();
         orbitCfg.operatorType.set(bb.ops.orbitViewport);
         orbitCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
@@ -143,7 +136,6 @@ public class Application {
         ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
         ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
 
-        opFactory.register(bb.ops.panViewport, PanViewportOP::new);
         OperatorConfigGroupStruct panCfg = viewport.newConfig();
         panCfg.operatorType.set(bb.ops.panViewport);
         panCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
@@ -151,7 +143,6 @@ public class Application {
         ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
         ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
 
-        opFactory.register(bb.ops.zoomViewport, ZoomViewportOP::new);
         OperatorConfigGroupStruct zoomInCfg = viewport.newConfig();
         zoomInCfg.operatorType.set(bb.ops.zoomViewport);
         zoomInCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
@@ -164,13 +155,11 @@ public class Application {
         ((HotKeyMouseConfigGroupStruct) zoomOutCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_WHEEL_DOWN);
         ((ZoomViewportProps)zoomOutCfg.props.getProps()).delta.set(-1F);
 
-        opFactory.register(bb.ops.changeSpaceType, ChangeSpaceTypeOperator::new);
-
         this.setupModal();
 
         CompressionStrategyRegistry logCompReg = new CompressionStrategyRegistry();
 
-        this.operatorManager = new OperatorManager<>(opFactory, opConfig, new HistoryManager(logCompReg),
+        this.operatorManager = new OperatorManager<>(opConfig, new HistoryManager(logCompReg),
                 this.controller, this.logger);
     }
 
@@ -272,9 +261,12 @@ public class Application {
         glfwSetScrollCallback(this.window[0], this.inputEventManager::onScroll);
         glfwSetCharCallback(this.window[0], this.inputEventManager::onChar);
 
+        BBContext test = new BBContext("", this.dataTree.getRoot().data);
+        this.dataTree.getRoot().contexts.add(test);
+
         this.inputEventManager.addListener(this::debugInputEvent, KeyEvent.class);
         this.uiManager = new UIManager<>(this.windowProvider, new ImguiLoader(this.inputEventManager), this.operatorManager, this.handlerRegistry,
-                new BBOperatorContext(new BBContext("", this.dataTree.getRoot().data), null));
+                new BBOperatorContext(test, null));
         this.inputEventManager.addListener(this.uiManager, InputEvent.class);
         KeyMapEventManager eventManager = this.initKeyMapEventManager(this.uiManager);
         this.inputEventManager.addListener(eventManager, InputEvent.class);

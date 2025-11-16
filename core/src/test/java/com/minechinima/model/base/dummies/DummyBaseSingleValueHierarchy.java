@@ -24,6 +24,11 @@ public class DummyBaseSingleValueHierarchy extends BaseSingleValueHierarchy<Base
     }
 
     @Override
+    protected BaseStructure instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+        return null;
+    }
+
+    @Override
     public @Nullable BaseStructure valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
         return null;
     }

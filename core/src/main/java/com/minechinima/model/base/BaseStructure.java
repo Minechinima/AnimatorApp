@@ -203,7 +203,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
          * e.g. children collections
          */
         try {
-            final boolean isInSameTree = this.isInSameTree(parent);
+            final boolean isInSameTree = parent != null && this.isInSameTree(parent);
             final boolean isAddedToTree = originalParent == null || (parent != null && !isInSameTree);
             final boolean isRemovedFromTree = originalParent != null && (parent == null || !isInSameTree);
             /* parent change is in same tree */

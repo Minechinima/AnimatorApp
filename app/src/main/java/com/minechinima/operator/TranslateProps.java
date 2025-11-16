@@ -19,8 +19,7 @@ public class TranslateProps extends OperatorPropertiesGroupStruct {
     @InGui(translationPrefix = "axis", as= UIEnum.class)
     public final AxisEnumValueStruct axis = new AxisEnumValueStruct("axis", AxisEnumValueStruct.Axis.X);
 
-    public TranslateProps(String id) {
-        super(id);
+    public TranslateProps() {
         this.addChild("value", this.value);
         this.addChild("local", this.local);
         this.addChild("transformOnAxis", this.transformOnAxis);
@@ -29,7 +28,7 @@ public class TranslateProps extends OperatorPropertiesGroupStruct {
 
     @Override
     public OperatorPropertiesGroupStruct copy() {
-        OperatorPropertiesGroupStruct copy = new TranslateProps(this.getIdentifier());
+        OperatorPropertiesGroupStruct copy = new TranslateProps();
         copy.fromData(this.toData());
         return copy;
     }

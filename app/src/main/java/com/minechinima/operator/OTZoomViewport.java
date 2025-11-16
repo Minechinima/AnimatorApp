@@ -3,19 +3,31 @@ package com.minechinima.operator;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.ot.OperatorTypePropertyProvider;
 import com.minechinima.ui.panels.UIViewport;
+import org.jetbrains.annotations.NotNull;
 
-public class OTZoomViewport extends OperatorTypePropertyProvider<ZoomViewportProps, BBOperatorContext> {
+public class OTZoomViewport extends OperatorTypePropertyProvider<ZoomViewportProps, ZoomViewportOP, BBOperatorContext> {
     public OTZoomViewport(String id, String title, String description) {
         super(id, title, description);
     }
 
     @Override
     public ZoomViewportProps createProps() {
-        return new ZoomViewportProps("");
+        return new ZoomViewportProps();
     }
 
     @Override
     public boolean poll(BBOperatorContext context) throws UserException {
         return context.getUIContext().clickedUISpace() instanceof UIViewport;
+    }
+
+    @Override
+    public ZoomViewportOP getOperator(ZoomViewportProps props) {
+        return new ZoomViewportOP(props);
+    }
+
+    @NotNull
+    @Override
+    public ZoomViewportOP getOperator() {
+        return new ZoomViewportOP(new ZoomViewportProps());
     }
 }

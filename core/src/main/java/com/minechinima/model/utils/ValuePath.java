@@ -458,7 +458,7 @@ public class ValuePath implements ICopy<ValuePath> {
         }
 
         if (format.getMode() == Format.Mode.ENCLOSE) {
-            identifier = this.getStart() + identifier + this.getEnd();
+            identifier = format.getStart() + identifier + format.getEnd();
         }
 
         return identifier;
@@ -467,7 +467,7 @@ public class ValuePath implements ICopy<ValuePath> {
     public final String getEnclosedUUID(IFormat format, UUID uuid) {
         String string = uuid.toString();
         if (format.getMode() == Format.Mode.ENCLOSE) {
-            string = this.getStart() + string + this.getEnd();
+            string = format.getStart() + string + format.getEnd();
         }
 
         return string;
@@ -737,6 +737,12 @@ public class ValuePath implements ICopy<ValuePath> {
         PATH("."),
         ARRAY("[", "]"),
         MAP("[\"", "\"]");
+
+        static {
+            REGISTRY.add(PATH);
+            REGISTRY.add(ARRAY);
+            REGISTRY.add(MAP);
+        }
 
         private final String start;
         private final String end;

@@ -2,14 +2,12 @@ package com.minechinima.operator;
 
 import com.minechinima.model.BBContext;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.ot.IOTAdjustLast;
 import com.minechinima.operator.ot.OperatorTypePropertyProvider;
-import com.minechinima.operator.ot.commands.IOperator;
 import org.jetbrains.annotations.NotNull;
 
 public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, TranslateObject, BBOperatorContext> {
     public OTTranslateObject(String id, String title, String description) {
-        super(id, title, description, UNDO | ADJUSTLAST | REPEATLAST);
+        super(id, title, description);
     }
 
     @Override
@@ -29,6 +27,6 @@ public class OTTranslateObject extends OperatorTypePropertyProvider<TranslatePro
 
     @Override
     public TranslateProps createProps() {
-        return new TranslateProps("");
+        return new TranslateProps();
     }
 }

@@ -1,9 +1,9 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.ui.utils.Area;
 import com.minechinima.utils.MathUtils;
@@ -13,12 +13,10 @@ import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
-import java.util.Queue;
-
 public class PanViewportOP extends AbstractViewportControlOP {
     @Override
-    public Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<BBOperatorContext> context, KeyMapEvent event) throws UserException {
-        if (event.getClass() != KeyMapMouseMoveEvent.class) return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+    public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
+        if (event.getClass() != KeyMapMouseMoveEvent.class) return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
         //TODO triggered multiple times because moseMoveEvent has many sublcasses...
         // what to do with subclasses, how do we prevent a modal from executing its logic multiple times
         Vector3d viewVector = new Vector3d(0,0,-1);
@@ -56,6 +54,6 @@ public class PanViewportOP extends AbstractViewportControlOP {
         this.viewport.getPos().add(drag);
         this.viewport.getOrbitPos().add(drag);
 
-        return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
     }
 }

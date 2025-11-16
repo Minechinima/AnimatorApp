@@ -11,10 +11,11 @@ import java.util.Map;
 /**
  * Interface for a datastructure that acts like an enum in the UI.<
  * Such a datastructure has a current value and provides an array of available values to choose from.
+ * <br><br>
+ * API for getter and setter (via {@link ValueControllerFactory}) for the UI for an Enum.
  * @param <T> extends {@link ILangKeyProvider} so the UI can automatically display text for the available "enum" values.
  */
-public interface IUIEnumValue<T extends ILangKeyProvider, V extends BaseStructure & IValue<T>
-        & IControllerFactoryProvider> extends IControllerFactoryProvider<ValueControllerFactory<T, V>> {
+public interface IUIEnumValue<T extends ILangKeyProvider> extends IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     /**
      * @return all values that can be set to the enum, mapped to an integer so the UI can identify which is selected.
      * A value can be null.

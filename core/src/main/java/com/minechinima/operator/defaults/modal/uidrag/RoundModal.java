@@ -1,7 +1,6 @@
 package com.minechinima.operator.defaults.modal.uidrag;
 
 import com.minechinima.controller.IControllerCommand;
-import com.minechinima.operator.config.modal.PropertyModifierConfig;
 import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
 import com.minechinima.operator.defaults.DragValueSliderProp;
 import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
@@ -19,8 +18,8 @@ public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSlide
     public IPropertyModifierReleasableCommand<DragValueSliderProp, ?> factory() {
         return new IPropertyModifierReleasableCommand<>(this) {
             @Override
-            public void onEvent(DragValueSliderProp props) {
-                props.round.set(!props.round.get());
+            public Queue<IControllerCommand> onEvent(DragValueSliderProp props) {
+                return new LinkedList<>(List.of(props.round.controller().set(!props.round.get())));
             }
 
             @Override

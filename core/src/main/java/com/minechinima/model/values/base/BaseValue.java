@@ -8,7 +8,7 @@ import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
-public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, BaseValue<T>>> {
+public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     private T value;
     private final T defaultValue;
     private final ValueControllerFactory<T, BaseValue<T>> controllers = new ValueControllerFactory<>(this);
@@ -21,6 +21,11 @@ public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, I
         super(id);
         this.value = defaultValue;
         this.defaultValue = defaultValue;
+    }
+
+    @Override
+    public ValueControllerFactory<T, ? extends BaseValue<T>> controller() {
+        return this.controllers;
     }
 
     /**
@@ -60,9 +65,5 @@ public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, I
 
     public boolean isChanged() {
         return (this.value == null && this.defaultValue != null) || (this.value != null && !this.value.equals(this.defaultValue));
-    }
-
-    public ValueControllerFactory<T, BaseValue<T>> controller() {
-        return this.controllers;
     }
 }

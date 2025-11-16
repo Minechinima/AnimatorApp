@@ -1,18 +1,16 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.utils.Pair;
 import org.joml.Vector3d;
 
-import java.util.Queue;
-
 public class OrbitViewportOperator extends AbstractViewportControlOP {
     @Override
-    public Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<BBOperatorContext> context, KeyMapEvent event) throws UserException {
+    public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
         Vector3d relativePosition = new Vector3d(this.viewport.getPos()).sub(this.viewport.getOrbitPos());
 
         if (event instanceof KeyMapMouseMoveEvent moveEvent) {
@@ -25,6 +23,6 @@ public class OrbitViewportOperator extends AbstractViewportControlOP {
             this.viewport.getPos().set(basis.add(this.viewport.getOrbitPos()));
         }
 
-        return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
     }
 }

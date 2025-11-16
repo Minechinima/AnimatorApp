@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * template class that utilizes {@link com.minechinima.utils.IGenericRegistry}
+ * Enum value that utilizes {@link com.minechinima.utils.IGenericRegistry}
  * <br>
  * <b>Important:</b> This does not support deserializing identifiers or uuids.
  * @param <T>

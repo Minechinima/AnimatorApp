@@ -317,7 +317,7 @@ public enum KeyboardKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfig
     }
 
     @Override
-    public boolean equalKey(KeyMapKeyEvent event) {
-        return this.equalsRawKey(event.key());
+    public int keyCode() {
+        return this.imguiCode;
     }
 }

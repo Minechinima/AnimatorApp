@@ -1,13 +1,16 @@
-package com.minechinima.operator;
+package com.minechinima.operator.history;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyDoubleValueMap;
 import com.minechinima.model.logging.DataOperationLog;
+import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.logging.operations.MapValueAdd;
+import com.minechinima.model.logging.operations.ValueChange;
 import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
-import com.minechinima.operator.history.HistoryManager;
+import com.minechinima.operator.history.strategies.ValueChangeMerge;
+import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +20,11 @@ import java.util.Stack;
 public class HistoryManagerTest {
     @Test
     public void testCompressLogOneOperationMerging() {
-        HistoryManager historyManager = new HistoryManager();
+        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
+        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
+        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
+
+        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
         FloatValue slider = new FloatValue("a");
         DataOperationLog log = new DataOperationLog();
         slider.getDataOperationBus().registerLog(log);
@@ -26,13 +33,17 @@ public class HistoryManagerTest {
         slider.set(3F);
         slider.set(4F);
         log.close();
-        Stack<DataOperationLog.Entry> compressed = HistoryManager.compressLog(log.getLog());
+        Stack<DataOperationLog.Entry> compressed = historyManager.compressLog(log.getLog());
         Assertions.assertEquals(1, compressed.size());
     }
 
     @Test
     public void testCompressLogMergingTwo() {
-        HistoryManager historyManager = new HistoryManager();
+        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
+        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
+        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
+
+        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -55,12 +66,16 @@ public class HistoryManagerTest {
         slider2.set(10F);
 
         log.close();
-        Assertions.assertEquals(2, HistoryManager.compressLog(log.getLog()).size());
+        Assertions.assertEquals(2, historyManager.compressLog(log.getLog()).size());
     }
 
     @Test
     public void testCompressLogParallelity() {
-        HistoryManager historyManager = new HistoryManager();
+        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
+        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
+        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
+
+        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -85,7 +100,7 @@ public class HistoryManagerTest {
         slider2.set(9F);
 
         log.close();
-        Stack<DataOperationLog.Entry> compressed = HistoryManager.compressLog(log.getLog());
+        Stack<DataOperationLog.Entry> compressed = historyManager.compressLog(log.getLog());
         Assertions.assertEquals(2, compressed.size());
 
         BaseType newValue0 = getPrivateFieldValue(compressed.get(0).getOperation(), "newValue", BaseType.class);
@@ -101,7 +116,11 @@ public class HistoryManagerTest {
 
     @Test
     public void testCompressLogParallelityWithInterrupt() {
-        HistoryManager historyManager = new HistoryManager();
+        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
+        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
+        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
+
+        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -135,7 +154,7 @@ public class HistoryManagerTest {
         slider2.set(11F);
 
         log.close();
-        Stack<DataOperationLog.Entry> compressed = HistoryManager.compressLog(log.getLog());
+        Stack<DataOperationLog.Entry> compressed = historyManager.compressLog(log.getLog());
         Assertions.assertEquals(5, compressed.size());
 
         BaseType newValue0 = getPrivateFieldValue(compressed.get(0).getOperation(), "newValue", BaseType.class);

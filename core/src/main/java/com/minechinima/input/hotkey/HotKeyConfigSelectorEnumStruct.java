@@ -12,9 +12,4 @@ public class HotKeyConfigSelectorEnumStruct extends AbstractEnumValueHierarchyRe
     public HotKeyConfigSelectorEnumStruct(String id, HotKeyConfigRegistry registry) {
         super(id, registry,null);
     }
-
-    @Override
-    protected HotKeyConfigGroupStruct instantiate(BaseType<?> data) {
-        return null;
-    }
 }
