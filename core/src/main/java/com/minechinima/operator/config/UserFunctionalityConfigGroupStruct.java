@@ -1,8 +1,6 @@
 package com.minechinima.operator.config;
 
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
-import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
@@ -16,6 +14,7 @@ import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
 import com.minechinima.ui.elements.window.UIRegion;
 import com.minechinima.ui.elements.window.UISpace;
+import com.minechinima.utils.IGenericRegistry;
 import com.minechinima.utils.Pair;
 
 import java.util.*;
@@ -32,13 +31,13 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
     public final ModalFunctionConfigsMapStruct<C> modalFunctions;
     public final PropertyModifierConfigsMapStruct propModifiers;
 
-    public final HotKeyConfigRegistry hotKeyConfigRegistry;
+    public final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
     public final OperatorTypeRegistry<C> operatorTypeRegistry;
 
     private final HashMap<Class<? extends UISpace>, Set<OperatorConfigCategoryGroupStruct<C>>> spaceMapping = new HashMap<>();
     private final HashMap<Class<? extends UIRegion>, Set<OperatorConfigCategoryGroupStruct<C>>> regionMapping = new HashMap<>();
 
-    public UserFunctionalityConfigGroupStruct(String id, HotKeyConfigRegistry hotKeyConfigRegistry,
+    public UserFunctionalityConfigGroupStruct(String id, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry,
                                               OperatorTypeRegistry<C> operatorTypeRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
@@ -221,7 +220,7 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
     }
 
     @Override
-    protected final void onEvent(Event event) {
+    protected final void onChildEvent(Event event) {
         if (event instanceof AddToTreeEvent addToTreeEvent
                 && addToTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
             this.addSpaceRegionMapping(Set.of(opCategory));

@@ -2,13 +2,13 @@ package com.minechinima.operator.config.modal;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
 import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
+import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class ModalFunctionHotKeyConfig<C extends IContext> extends ValueGroup {
         }
     };
 
-    private final HotKeyConfigRegistry hotKeyConfigRegistry;
+    private final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
 
     public ModalFunctionHotKeyConfig(String id, ModalFunctionConfigsMapStruct<C> category) {
         super(id);

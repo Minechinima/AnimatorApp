@@ -1,7 +1,7 @@
 package com.minechinima.operator.config.modal;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
+import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.operator.IContext;
 import com.minechinima.utils.GenericRegistry;
@@ -21,10 +21,10 @@ import java.util.function.Supplier;
  */
 public class ModalFunctionConfigsMapStruct<C extends IContext> extends BaseValueMap<ModalFunctionHotKeyConfig<C>>
         implements IGenericRegistry<ModalFunctionConfig<C>> {
-    public final HotKeyConfigRegistry hotKeyConfigRegistry;
+    public final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
     private final GenericRegistry<ModalFunctionConfig<C>> registry = new GenericRegistry<>();
 
-    public ModalFunctionConfigsMapStruct(String id, HotKeyConfigRegistry hotKeyConfigRegistry) {
+    public ModalFunctionConfigsMapStruct(String id, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
     }

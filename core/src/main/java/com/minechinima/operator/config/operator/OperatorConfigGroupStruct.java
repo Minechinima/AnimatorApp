@@ -3,7 +3,6 @@ package com.minechinima.operator.config.operator;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.NullType;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
 import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.events.types.Event;
@@ -15,6 +14,7 @@ import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
 import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.OperatorType;
+import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -36,7 +36,7 @@ public class OperatorConfigGroupStruct<C extends IContext> extends ValueGroup {
         }
     };
 
-    private final HotKeyConfigRegistry hotKeyConfigRegistry;
+    private final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
 
     public OperatorConfigGroupStruct(UserFunctionalityConfigGroupStruct<C> opConfig) {
         super("");
