@@ -19,6 +19,26 @@ The order of operations is important e.g. "Add object A, set pointer to A", the 
 `IControllerCommand` is the interface for controller commands.
 
 # ControllerFactory
-Application layer (UI/Operators/Game logic) should only modify the database with `IControllerCommand`. Therefore a model class should expose the desired data operations via a 
-ControllerFactory. Thefore the ControllerFactory represents the public interface for modifying the data.
+Application layer (UI/Operators/Game logic) should only modify the database with `IControllerCommand`. 
+Therefore a model class should expose the desired data operations via a ControllerFactory. 
+The ControllerFactory represents the public setter interface for modifying the data.
+
+## Important when declaring and using ControllerFactor generics
+When implementing `IControllerFactoryProvider<ControllerFactory<?>>` do not bind the type `<T>` parameter of `ControllerFactory<T>`,
+as it will make extending and overriding the methods with different factories harder because of generics and clashes with
+the type parameters.
+<br><br>
+This means you also declare the factory provider method with a raw type, maybe with an extends, to allow for subclasses
+to override the method.
+<br><br>
+Example:
+```java
+public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T>, 
+                                                                                    IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
+    @Override
+    public ValueControllerFactory<T, ? extends ValuePointer<T>> controller() {
+        return this.controller;
+    }
+}
+```
 
