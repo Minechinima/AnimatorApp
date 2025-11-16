@@ -63,6 +63,10 @@ public class UIScreen<C extends IContext> extends UIElement<C> {
                 context.getContextBuilder().setClickedUIScreen(this);
             }
 
+            if (ImGui.isWindowHovered()) {
+                context.getContextBuilder().setCurrentHoveredUISpace(this.panel);
+            }
+
             if (ImGui.beginMenuBar()) {
                 ImGui.setNextItemWidth(ImGui.calcTextSizeX(this.panel.getPanelName()) + ImGui.getStyle().getFramePadding().x * 2);
                 if (ImGui.beginCombo("", this.panel.getPanelName(), ImGuiComboFlags.NoArrowButton)) {

@@ -13,7 +13,7 @@ import imgui.ImGui;
 import java.util.Comparator;
 import java.util.List;
 
-public class UIOutlinerPanel extends UISpace {
+public class UIOutlinerPanel extends UISpace<BBOperatorContext> {
     public UIOutlinerPanel(String panelName) {
         super(panelName);
     }
@@ -29,7 +29,7 @@ public class UIOutlinerPanel extends UISpace {
     }
 
     @Override
-    public void drawBody(UIContext context) {
+    public void drawBody(UIContext<BBOperatorContext> context) {
         BBDatabase data = ((BBOperatorContext) context.getOperatorContext()).bbContext().database;
         BBContext ctx = ((BBOperatorContext) context.getOperatorContext()).bbContext();
 
