@@ -515,8 +515,8 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                     //TODO ui mode very unfinished. How do we determine where UI modal spawns even...?
                     if (!(type instanceof UIOperatorType) && type instanceof IOTPropertyProvider otp
                             && op instanceof IPropertyOperator propOp) {
-                        this.handleWritingTransaction(type, op, currentCTX, commands, false);
-                        this._uimode(otp, propOp, currentCTX);
+                        //this.handleWritingTransaction(type, op, currentCTX, commands, false);
+                        //this._uimode(otp, propOp, currentCTX);
                     }
                 }
             }
@@ -619,7 +619,8 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     private <CTX extends IContext, P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<CTX, ?> & IOTPropertyProvider<?, P>>
+            OP extends IPropertyOperator<CTX, P>,
+            OT extends OperatorType<CTX, OP> & IOTPropertyProvider<OP, P>>
     boolean onUIPropertyChange(BaseStructure changed) {
         if (this.runningInUIMode == null || this.currentContext == null) return false;
         if (this.isUIPropChange || this.isExecuting) {

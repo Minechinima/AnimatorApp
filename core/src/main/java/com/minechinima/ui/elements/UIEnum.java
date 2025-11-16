@@ -11,7 +11,7 @@ import imgui.type.ImInt;
 
 import java.util.Map;
 
-public class UIEnum<T extends ILangKeyProvider, J extends BaseStructure & IValue<T> & IUIEnumValue<T, J>, C extends IContext> extends UIValueElement<T, J, C> {
+public class UIEnum<T extends ILangKeyProvider, J extends BaseStructure & IValue<T> & IUIEnumValue<T>, C extends IContext> extends UIValueElement<T, J, C> {
     private final String title;
     private final ImInt ptr = new ImInt();
 

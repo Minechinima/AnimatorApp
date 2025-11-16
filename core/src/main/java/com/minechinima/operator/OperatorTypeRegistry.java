@@ -57,10 +57,10 @@ public class OperatorTypeRegistry<C extends IContext> extends BaseValueMap<Opera
 
     public OperatorTypeRegistry(String id) {
         super(id, FORMAT);
-        this.add(this.dragUISlider);
-        this.add(this.undo);
-        this.add(this.redo);
-        this.add(this.changeSpaceType);
+        this.add((OperatorType<C, ?>) this.dragUISlider);
+        this.add((OperatorType<C, ?>) this.undo);
+        this.add((OperatorType<C, ?>) this.redo);
+        this.add((OperatorType<C, ?>) this.changeSpaceType);
     }
 
     @Override

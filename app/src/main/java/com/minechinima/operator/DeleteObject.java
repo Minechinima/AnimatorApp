@@ -4,6 +4,7 @@ import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.ot.commands.IOperator;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.utils.Pair;
@@ -13,16 +14,16 @@ import java.util.List;
 import java.util.Queue;
 
 public class DeleteObject implements IOperator<BBOperatorContext> {
-    public Pair<OpExecuteFlag, Queue<IControllerCommand>> execute(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.getReference() == null) return new Pair<>(OpExecuteFlag.CANCELLED, null);
+    public OPReturnValue<OpExecuteFlag> execute(BBOperatorContext context) throws UserException {
+        if (context.bbContext().activeObject.getReference() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED, null);
         BaseObject selection = context.bbContext().activeObject.getReference();
-        IControllerCommand delete = context.bbContext().database.objects.controllers().deleteObject(selection);
-        return new Pair<>(OpExecuteFlag.FINISHED, new LinkedList<>(List.of(delete)));
+        IControllerCommand delete = context.bbContext().database.objects.controller().deleteObject(selection);
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED, new LinkedList<>(List.of(delete)));
     }
 
     @Override
-    public Pair<OpInvokeFlag, Queue<IControllerCommand>> invoke(BBOperatorContext context) throws UserException {
-        Pair<OpExecuteFlag, Queue<IControllerCommand>> retval = this.execute(context);
-        return new Pair<>(OpInvokeFlag.from(retval.getA()), retval.getB());
+    public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
+        OPReturnValue<OpExecuteFlag> retval = this.execute(context);
+        return new OPReturnValue<>(OpInvokeFlag.from(retval.flag()), retval.commands());
     }
 }

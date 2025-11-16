@@ -14,4 +14,9 @@ public class CameraType extends ObjectType {
     public String getOutlinerIconUnicode() {
         return BBIconUnicodes.CAMERA_SOLID;
     }
+
+    @Override
+    public String title() {
+        return "Camera";
+    }
 }

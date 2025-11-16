@@ -20,7 +20,7 @@ import java.util.*;
  * @param <T>
  */
 public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T>,
-        IControllerFactoryProvider<ValueControllerFactory<T, BaseSingleValueHierarchy<T>>> {
+        IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     @Nullable
     private T value = null;
     private final ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controller = new ValueControllerFactory<>(this);
@@ -31,6 +31,11 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     protected BaseSingleValueHierarchy(String id, UUID uuid) {
         super(id, uuid, ValuePath.Format.PATH);
+    }
+
+    @Override
+    public ValueControllerFactory<T, ? extends BaseSingleValueHierarchy<T>> controller() {
+        return this.controller;
     }
 
     @Override
@@ -94,10 +99,6 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         }
 
         this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
-    }
-
-    public ValueControllerFactory<T, BaseSingleValueHierarchy<T>> controller() {
-        return this.controller;
     }
 
     @Override

@@ -9,10 +9,10 @@ public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOp
 
     public BBOperatorTypeRegistryGroupStruct(String id) {
         super(id);
-        this.addChild("translate", this.move);
-        this.addChild("delete", this.delete);
-        this.addChild("orbit", this.orbitViewport);
-        this.addChild("pan",  this.panViewport);
-        this.addChild("zoom", this.zoomViewport);
+        this.addChild(this.move);
+        this.addChild(this.delete);
+        this.addChild(this.orbitViewport);
+        this.addChild(this.panViewport);
+        this.addChild(this.zoomViewport);
     }
 }

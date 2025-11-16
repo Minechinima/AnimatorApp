@@ -1,14 +1,12 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.ot.commands.IModalOperator;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.ui.panels.UIViewport;
 import com.minechinima.utils.Pair;
 import org.joml.Vector3d;
-
-import java.util.Queue;
 
 public abstract class AbstractViewportControlOP implements IModalOperator<BBOperatorContext> {
     protected UIViewport viewport;
@@ -19,9 +17,9 @@ public abstract class AbstractViewportControlOP implements IModalOperator<BBOper
     private Vector3d originalOrbit;
 
     @Override
-    public Pair<OpInvokeFlag, Queue<IControllerCommand>> invoke(BBOperatorContext context) throws UserException {
+    public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
         if (!(context.getUIContext().clickedUISpace() instanceof UIViewport viewport)) {
-            return new Pair<>(OpInvokeFlag.CANCELLED, null);
+            return new OPReturnValue<>(OpInvokeFlag.CANCELLED, null);
         }
 
         this.viewport = viewport;
@@ -31,7 +29,7 @@ public abstract class AbstractViewportControlOP implements IModalOperator<BBOper
         this.originalPos = new Vector3d(viewport.getPos());
         this.originalOrbit = new Vector3d(viewport.getOrbitPos());
 
-        return new Pair<>(OpInvokeFlag.MODAL_RUNNING, null);
+        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING, null);
     }
 
     @Override

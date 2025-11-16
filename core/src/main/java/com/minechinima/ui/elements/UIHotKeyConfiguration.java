@@ -28,7 +28,7 @@ public class UIHotKeyConfiguration<C extends IContext> extends UIElement<C> {
 
     private void drawConfigCategories(UIContext<C> context, OperatorConfigCategoriesMapStruct<C> config) {
         for (Map.Entry<String, OperatorConfigCategoryGroupStruct<C>> category : config) {
-            if (ImGui.collapsingHeader(context.getTranslationBackpack().getTranslation(category.getValue().translationKey + ".title",
+            if (ImGui.collapsingHeader(context.getTranslationBackpack().getTranslation(category.getValue().getIdentifier() + ".title",
                     context.getLocale()))) {
                 this.drawConfigCategories(context, category.getValue().subcategories);
                 this.drawConfigs(context, category.getValue().configs);

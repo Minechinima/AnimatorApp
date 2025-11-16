@@ -9,4 +9,9 @@ public class EntityType extends ObjectType {
     public String getOutlinerIconUnicode() {
         return BBIconUnicodes.OBJECT_SOLID;
     }
+
+    @Override
+    public String title() {
+        return "Entity";
+    }
 }

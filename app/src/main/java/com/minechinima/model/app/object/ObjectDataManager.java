@@ -1,6 +1,7 @@
 package com.minechinima.model.app.object;
 
 import com.minechinima.controller.ObjectDataManagerController;
+import com.minechinima.controller.factories.IControllerFactoryProvider;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class ObjectDataManager extends BaseValueMap<BaseObject> {
+public class ObjectDataManager extends BaseValueMap<BaseObject> implements IControllerFactoryProvider<ObjectDataManagerController> {
     private final BBDatabase database;
     private final ObjectDataManagerController controller = new ObjectDataManagerController(this);
 
@@ -33,7 +34,8 @@ public class ObjectDataManager extends BaseValueMap<BaseObject> {
         return obj;
     }
 
-    public ObjectDataManagerController controllers() {
+    @Override
+    public ObjectDataManagerController controller() {
         return this.controller;
     }
 }

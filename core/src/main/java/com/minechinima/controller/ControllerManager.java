@@ -101,6 +101,7 @@ public class ControllerManager {
                 it.next().execute();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             if (this.nestedLevel > 1) this.e = e;
             this.abortTransaction();
             this.dataTree.getReferenceManager().reapplyCachedClearedReferences();

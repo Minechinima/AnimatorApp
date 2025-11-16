@@ -16,7 +16,6 @@ public class BBContext extends ValueGroup {
     public BBContext(String id, BBDatabase database) {
         super(id);
         this.database = database;
-        this.activeObject = new ValuePointer<>("active_object", BaseObject.class, this.database);
-        this.addChild("active_object", this.activeObject);
+        this.addChild("active_object", this.activeObject = new ValuePointer<>("active_object", BaseObject.class, this.database));
     }
 }
