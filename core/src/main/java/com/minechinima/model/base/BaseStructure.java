@@ -201,8 +201,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
          * e.g. children collections
          */
         try {
-            final boolean isAddedToTree = originalParent == null || (parent != null && !this.isInSameTree(parent));
-            final boolean isRemovedFromTree = originalParent != null && (parent == null || !this.isInSameTree(parent));
+            final boolean isInSameTree = this.isInSameTree(parent);
+            final boolean isAddedToTree = originalParent == null || (parent != null && !isInSameTree);
+            final boolean isRemovedFromTree = originalParent != null && (parent == null || !isInSameTree);
             /* parent change is in same tree */
             final boolean parentChange = !isAddedToTree && !isRemovedFromTree && this.parent != parent;
 
@@ -310,7 +311,8 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
 
             /* if this point is reached there was no exception and the operation is successful */
             if (parentChange) {
-                this.triggerEvent(new ParentChangeEvent(this, originalParent, this.parent));
+                //TODO currently deactivated as it has no use case and unecessary performacne waste.
+                //this.triggerEvent(new ParentChangeEvent(this, originalParent, this.parent));
             }
 
             /*
@@ -360,6 +362,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     void onParentChangeOfThis(@Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
     }
 
+    //TODO this might be performance overhead and currently only needed for ValuePointer because of relative pointer system (maybe remove relative pointer)
     private final void onParentChangeIterateChildren(@NotNull final BaseValueHierarchy<?> affectedNode,
                                                      @Nullable final BaseValueHierarchy<?> oldParent) throws SetParentNotAllowed {
         if (!(this instanceof BaseValueHierarchy<?> thisHierarchy)) return;
