@@ -4,6 +4,8 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
+import com.minechinima.ui.elements.window.UIRegion;
+import com.minechinima.ui.elements.window.UISpace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +35,22 @@ public class OperatorConfigCategoriesMapStruct<C extends IContext> extends BaseV
 
     public OperatorConfigCategoryGroupStruct<C> addConfigCategory(String id) {
         OperatorConfigCategoryGroupStruct<C> category = new OperatorConfigCategoryGroupStruct<>(id, this.opConfig);
+        category.initChildren();
+        this.add(category);
+        return category;
+    }
+
+    public OperatorConfigCategoryGroupStruct<C> addConfigCategory(String id, Class<? extends UISpace<C>> uispace) {
+        OperatorConfigCategoryGroupStruct<C> category = new OperatorConfigCategoryGroupStruct<>(id, uispace, this.opConfig);
+        category.initChildren();
+        this.add(category);
+        return category;
+    }
+
+    public OperatorConfigCategoryGroupStruct<C> addConfigCategory(String id,
+                                                                  @Nullable Class<? extends UISpace<C>> uispace,
+                                                                  @Nullable Class<? extends UIRegion<C>> uiRegion) {
+        OperatorConfigCategoryGroupStruct<C> category = new OperatorConfigCategoryGroupStruct<>(id, uispace, uiRegion, this.opConfig);
         category.initChildren();
         this.add(category);
         return category;
