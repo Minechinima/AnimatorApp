@@ -11,7 +11,7 @@ import java.util.Set;
  * @implNote Do not store a BaseStructure reference here. This could end up dangerous as the log contains a link to this,
  * which might lead to memory leaks.
  */
-public class DataOperationLogging {
+public class DataOperationBus {
     /**
      * The loggers that should store operations logged here.
      * @implNote Do not expose this. Only this logger should have access to it to log changes.

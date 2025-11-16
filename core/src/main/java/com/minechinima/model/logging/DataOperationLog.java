@@ -24,7 +24,7 @@ public class DataOperationLog {
     private final Set<IDataOperation<?>> cache = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean end;
     private boolean paused;
-    private final Set<DataOperationLogging> loggers = new HashSet<>();
+    private final Set<DataOperationBus> loggers = new HashSet<>();
 
     /**
      * @return copy of the log.
@@ -73,7 +73,7 @@ public class DataOperationLog {
      */
     public final void close() {
         this.end = true;
-        for (DataOperationLogging logger : this.loggers) {
+        for (DataOperationBus logger : this.loggers) {
             logger.removeLog(this);
         }
         this.loggers.clear();
@@ -97,10 +97,10 @@ public class DataOperationLog {
 
     /**
      * @param logger
-     * @implNote Package-private so only {@link DataOperationLogging} can add itself to the log.
+     * @implNote Package-private so only {@link DataOperationBus} can add itself to the log.
      * This should only happen when there is a link between a log and a logger.
      */
-    final void addLogger(DataOperationLogging logger) {
+    final void addLogger(DataOperationBus logger) {
         this.loggers.add(logger);
     }
 
@@ -110,7 +110,7 @@ public class DataOperationLog {
      *                 <b>It needs to be the uncleaned path that includes all nodes' path segments, even empties.</b>
      * @param dataOperation
      * @throws IllegalArgumentException
-     * @implNote Package-private so only the logger {@link DataOperationLogging} can log changes.
+     * @implNote Package-private so only the logger {@link DataOperationBus} can log changes.
      * The goal is to make this more secure that no other external system could inject log entries that were not triggered
      * by the source.
      * This also removes the logging/recording from the public interface of this log class, making it cleaner.

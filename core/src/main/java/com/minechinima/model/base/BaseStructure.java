@@ -7,7 +7,7 @@ import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.ParentChangeEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
-import com.minechinima.model.logging.DataOperationLogging;
+import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.memory.MemoryLeakError;
@@ -72,7 +72,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * which is different to this kind of link.
      */
     private final Set<ValuePointer<?>> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
-    private final DataOperationLoggingImpl logger = new DataOperationLoggingImpl();
+    private final DataOperationBusImpl logger = new DataOperationBusImpl();
 
     /**
      * @param id
@@ -127,7 +127,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     @Contract(pure = true)
-    public final DataOperationLogging getLogging() {
+    public final DataOperationBus getLogging() {
         return this.logger;
     }
 
@@ -856,7 +856,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     /**
      * Hide this class here to ensure that only the node where the change was triggered can log the operation.
      */
-    private class DataOperationLoggingImpl extends DataOperationLogging {
+    private class DataOperationBusImpl extends DataOperationBus {
         @Override
         protected void logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
             super.logDataOperation(context, dataOperation);
