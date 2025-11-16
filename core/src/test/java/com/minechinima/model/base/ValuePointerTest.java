@@ -318,7 +318,7 @@ public class ValuePointerTest {
         point.set(2D);
 
         DummyHistoryManager historyManager = new DummyHistoryManager(root);
-        root.getLogging().registerLog(historyManager);
+        root.getDataOperationBus().registerLog(historyManager);
 
         map.removeChild(point);
         Assertions.assertNull(pointer.getReference());
@@ -494,7 +494,7 @@ public class ValuePointerTest {
         map.add(ptr);
 
         DummyHistoryManager historyManager = new DummyHistoryManager(root);
-        root.getLogging().registerLog(historyManager);
+        root.getDataOperationBus().registerLog(historyManager);
 
         ptr.set(null);
 

@@ -22,7 +22,7 @@ public class BaseStructureSetIDTest {
         DummyBaseMutableHierarchy parent = new DummyBaseMutableHierarchy("test", ValuePath.Format.MAP);
         DummyIDMutable v = new DummyIDMutable("a");
         DataOperationLog log = new DataOperationLog();
-        parent.getLogging().registerLog(log);
+        parent.getDataOperationBus().registerLog(log);
 
         parent.add(v);
 

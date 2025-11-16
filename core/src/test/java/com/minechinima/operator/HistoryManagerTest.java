@@ -20,7 +20,7 @@ public class HistoryManagerTest {
         HistoryManager historyManager = new HistoryManager();
         FloatValue slider = new FloatValue("a");
         DataOperationLog log = new DataOperationLog();
-        slider.getLogging().registerLog(log);
+        slider.getDataOperationBus().registerLog(log);
         slider.set(1F);
         slider.set(2F);
         slider.set(3F);
@@ -42,7 +42,7 @@ public class HistoryManagerTest {
 
 
         DataOperationLog log = new DataOperationLog();
-        root.getLogging().registerLog(log);
+        root.getDataOperationBus().registerLog(log);
 
         slider.set(1F);
         slider.set(2F);
@@ -70,7 +70,7 @@ public class HistoryManagerTest {
 
 
         DataOperationLog log = new DataOperationLog();
-        root.getLogging().registerLog(log);
+        root.getDataOperationBus().registerLog(log);
 
         slider.set(1F);
         slider2.set(7F);
@@ -112,7 +112,7 @@ public class HistoryManagerTest {
         root.initChildren();
 
         DataOperationLog log = new DataOperationLog();
-        root.getLogging().registerLog(log);
+        root.getDataOperationBus().registerLog(log);
 
         slider.set(1F);
         slider2.set(7F);

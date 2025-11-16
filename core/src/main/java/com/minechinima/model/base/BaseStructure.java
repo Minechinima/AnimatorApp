@@ -58,10 +58,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     @Nullable
     private BaseValueHierarchy<? extends BaseStructure> parent;
     /**
-     * The bus for dispatching events that happen on this node.
-     */
-    private final EventBusImpl bus = new EventBusImpl(this);
-    /**
      * This set contains all pointers, that are part of the same tree, that point to this node.
      * <br><br>
      * Only using ValuePointer allows better tracking pointers and relations inside the database.
@@ -72,7 +68,13 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * which is different to this kind of link.
      */
     private final Set<ValuePointer<?>> pointersToThis = Collections.newSetFromMap(new IdentityHashMap<>());
+
+
     private final DataOperationBusImpl logger = new DataOperationBusImpl();
+    /**
+     * The bus for dispatching events that happen on this node.
+     */
+    private final EventBusImpl bus = new EventBusImpl(this);
 
     /**
      * @param id
@@ -127,7 +129,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     @Contract(pure = true)
-    public final DataOperationBus getLogging() {
+    public final DataOperationBus getDataOperationBus() {
         return this.logger;
     }
 
