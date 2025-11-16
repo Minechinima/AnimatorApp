@@ -1,7 +1,7 @@
 package com.minechinima.model;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
+import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
@@ -10,6 +10,7 @@ import com.minechinima.model.values.base.BaseValueList;
 import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.operator.BBOperatorTypeRegistryGroupStruct;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
+import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public class BBNameSpace extends BaseHierarchyRoot {
         }
     };
 
-    public BBNameSpace(String id, HotKeyConfigRegistry hotKeyConfigRegistry) {
+    public BBNameSpace(String id, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry) {
         super(id, ValuePath.Format.PATH);
         this.addChild("data", this.data);
         this.addChild("operator", this.ops);

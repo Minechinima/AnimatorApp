@@ -1,7 +1,7 @@
 package com.minechinima.operator.config.modal;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
+import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.values.base.BaseValueList;
 import com.minechinima.operator.OperatorPropertiesGroupStruct;
@@ -24,11 +24,11 @@ import java.util.function.Supplier;
  */
 public class PropertyModifiersListStruct<P extends OperatorPropertiesGroupStruct> extends BaseValueList<PropertyModifierHotKeyConfig<P>>
         implements IGenericRegistry<PropertyModifierConfig<P>> {
-    public final HotKeyConfigRegistry hotKeyConfigRegistry;
+    public final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
     public final Class<P> clazz;
     private final GenericRegistry<PropertyModifierConfig<P>> registry = new GenericRegistry<>();
 
-    public PropertyModifiersListStruct(String id, Class<P> propClazz, HotKeyConfigRegistry hotKeyConfigRegistry) {
+    public PropertyModifiersListStruct(String id, Class<P> propClazz, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
         this.clazz = propClazz;

@@ -44,6 +44,7 @@ import com.minechinima.ui.UIManager;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
+import com.minechinima.utils.GenericRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
@@ -77,14 +78,15 @@ public class Application {
     private final UIHandlerRegistry handlerRegistry;
     private final TranslationBackpack translationBackpack;
     private final Logger logger;
-    private final HotKeyConfigRegistry hotKeyConfigRegistry;
+    private final GenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
 
     public Application() {
         this.logger = LogManager.getLogger(Application.class);
         EventTypeRegistry dataEventTypes = new EventTypeRegistry();
         EventTypeRegistry.registerDefaultEventTypes(dataEventTypes);
 
-        this.hotKeyConfigRegistry = new HotKeyConfigRegistry(1, HotKeyKeyboardConfigGroupStruct.class, () -> new HotKeyKeyboardConfigGroupStruct("keyboard", "hi"));
+        this.hotKeyConfigRegistry = new GenericRegistry<>();
+        this.hotKeyConfigRegistry.register(1, HotKeyKeyboardConfigGroupStruct.class, () -> new HotKeyKeyboardConfigGroupStruct("key", "key"));
         this.hotKeyConfigRegistry.register(2, HotKeyMouseConfigGroupStruct.class, () -> new HotKeyMouseConfigGroupStruct("mouse", "hi"));
 
         this.dataTree = new BBDataTreeManager(dataEventTypes, this.hotKeyConfigRegistry);
@@ -95,7 +97,7 @@ public class Application {
 
         UserFunctionalityConfigGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
-        OperatorConfigCategoryGroupStruct object = opConfig.operators.addConfigCategory("object");
+        OperatorConfigCategoryGroupStruct object = opConfig.operators.addConfigCategory("Outliner", UIOutlinerPanel.class);
         OperatorConfigCategoryGroupStruct ui = opConfig.operators.addConfigCategory("ui");
         OperatorConfigCategoryGroupStruct viewport = ui.newCategory("viewport");
         OperatorConfigCategoryGroupStruct general = opConfig.operators.addConfigCategory("general");
