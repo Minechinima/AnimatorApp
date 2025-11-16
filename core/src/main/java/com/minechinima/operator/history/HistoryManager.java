@@ -239,21 +239,24 @@ public class HistoryManager {
             DataOperationLog.Entry nextEntry = log.get(i);
             boolean merged = false;
             boolean notParallel = false;
-            for (DataOperationLog.Entry cachedParallelEntry : parallel) {
+            for (int j = 0; j < parallel.size(); j++) {
+                DataOperationLog.Entry cachedParallelEntry = parallel.get(j);
                 if (!this.compressionStrategyRegistry.canBeParallel(cachedParallelEntry.getOperation(), nextEntry.getOperation())) {
                     notParallel = true;
                 }
 
                 MergeStrategy mergeStrategy = this.compressionStrategyRegistry.getMergeStrategy(cachedParallelEntry.getOperation().getClass(), nextEntry.getOperation().getClass());
-                IDataOperation mergedOp = null;
+                IDataOperation mergedOp;
                 /* merge strategy returns same type as current,
                  * assume that is still parallel to the cache, otherwise another for loop is required
                  * TODO review
                  */
                 if (mergeStrategy != null && (mergedOp = mergeStrategy.merge(cachedParallelEntry.getOperation(), nextEntry.getOperation())) != null) {
                     nextEntry = new HistoryLogEntry(cachedParallelEntry.getTimetamp(), mergedOp, cachedParallelEntry.getPath());
+                    /* assume when merging onto a parallel node that it stays parallel to the cache */
                     notParallel = false;
                     merged = true;
+                    parallel.set(j, nextEntry);
                     break;
                 }
             }
