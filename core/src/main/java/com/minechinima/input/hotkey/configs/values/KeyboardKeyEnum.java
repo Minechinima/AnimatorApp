@@ -9,8 +9,11 @@ import com.minechinima.utils.IGenericRegistry;
 import imgui.flag.ImGuiKey;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * All available keyboard keys for the hotkey configuration.
@@ -150,7 +153,7 @@ public enum KeyboardKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfig
 
         @Override
         public Map<Integer, KeyboardKeyEnum> getAllNew() {
-            return CollectionUtils.toMap(KeyboardKeyEnum.values());
+            return Stream.of(KeyboardKeyEnum.values()).collect(Collectors.toMap(this::getID, v -> v));
         }
 
         @Override
