@@ -4,7 +4,6 @@ import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
-import com.minechinima.model.base.dummies.DummyBaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DataOperationLog;
 import com.minechinima.model.logging.datainterfaces.IValueList;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -82,7 +80,7 @@ public class ListUndo {
     @MethodSource("provideAddLists")
     public <V, L extends BaseStructure & IValueList<V>> void undoAdd(L list, Function<L, V> addElement) {
         DataOperationLog log = new DataOperationLog();
-        list.getLogging().registerLog(log);
+        list.getDataOperationBus().registerLog(log);
         int prevSize = list.size();
 
         V value = testAddSuccess(list, addElement);
@@ -99,7 +97,7 @@ public class ListUndo {
     @MethodSource("provideAddLists")
     public <V, L extends BaseStructure & IValueList<V>> void undoAddAlreadyRemoved(L list, Function<L, V> addElement) {
         DataOperationLog log = new DataOperationLog();
-        list.getLogging().registerLog(log);
+        list.getDataOperationBus().registerLog(log);
         int prevSize = list.size();
 
         V value = testAddSuccess(list, addElement);

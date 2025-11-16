@@ -1,6 +1,5 @@
 package com.minechinima.model.logging;
 
-import com.minechinima.model.base.ValuePointer;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
 import com.minechinima.model.base.dummies.DummyDoubleValueMap;
@@ -40,7 +39,7 @@ public class LogTest {
         root.initChildren();
         map.add(value);
 
-        h2.getLogging().registerLog(log);
+        h2.getDataOperationBus().registerLog(log);
 
         value.set(1D);
         value.set(2D);
@@ -73,7 +72,7 @@ public class LogTest {
         root.initChildren();
         map.add(value);
 
-        root.getLogging().registerLog(log);
+        root.getDataOperationBus().registerLog(log);
 
         value.set(1D);
         value.set(2D);
