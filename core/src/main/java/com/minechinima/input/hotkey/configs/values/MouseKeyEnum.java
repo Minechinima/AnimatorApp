@@ -1,9 +1,7 @@
 package com.minechinima.input.hotkey.configs.values;
 
 import com.minechinima.input.hotkey.configs.AbstractHotKeyKeyConfigGroupStruct;
-import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.raw.Key;
-import com.minechinima.ui.utils.ILangKeyProvider;
 import com.minechinima.utils.CollectionUtils;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.Nullable;
@@ -11,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public enum MouseKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfigGroupStruct.IKeyEnum {
+public enum MouseKeyEnum implements AbstractHotKeyKeyConfigGroupStruct.IKeyEnum {
     MOUSE_BUTTON_1(0),
     MOUSE_BUTTON_2(1),
     MOUSE_BUTTON_3(2),
@@ -20,10 +18,6 @@ public enum MouseKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfigGro
     MOUSE_BUTTON_6(5),
     MOUSE_BUTTON_7(6),
     MOUSE_BUTTON_8(7),
-    MOUSE_BUTTON_LAST(7),
-    MOUSE_BUTTON_LEFT(0),
-    MOUSE_BUTTON_RIGHT(1),
-    MOUSE_BUTTON_MIDDLE(2),
     MOUSE_WHEEL_UP(8),
     MOUSE_WHEEL_DOWN(9);
 
@@ -89,7 +83,7 @@ public enum MouseKeyEnum implements ILangKeyProvider, AbstractHotKeyKeyConfigGro
     }
 
     @Override
-    public boolean equalKey(KeyMapKeyEvent event) {
-        return this.equalsRawKey(event.key());
+    public int keyCode() {
+        return this.imguiCode;
     }
 }

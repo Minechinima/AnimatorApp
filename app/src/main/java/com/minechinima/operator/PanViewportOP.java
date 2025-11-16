@@ -1,17 +1,16 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.api.IControllerCommand;
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.ot.commands.OpModalFlag;
+import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.ui.utils.Area;
 import com.minechinima.utils.MathUtils;
 import com.minechinima.utils.Pair;
 import com.minechinima.utils.RenderingMathUtils;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
-import org.joml.Vector2d;
 import org.joml.Vector3d;
 
 import java.util.Queue;

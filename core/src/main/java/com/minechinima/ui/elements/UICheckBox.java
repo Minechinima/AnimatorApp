@@ -19,8 +19,8 @@ public class UICheckBox<C extends IContext> extends UIValueElement<Boolean, Bool
         this.ptr.set(this.value.get());
         if (ImGui.checkbox(context.getTranslationBackpack().getTranslation(this.label + ".title", context.getLocale()), this.ptr)) {
             if (this.ptr.get() != this.value.get()) {
-                context.getUIManager().getOperatorManager().writeToTransaction(this.value.controllers().set(this.ptr.get()));
-                context.getUIManager().getOperatorManager().commitTransaction("Set checkbox", true);
+                context.getUIManager().getOperatorManager().executeTransaction("Set checkbox",
+                        this.value.controller().set(this.ptr.get()), true);
             }
         }
     }

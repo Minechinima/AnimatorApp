@@ -1,8 +1,11 @@
-package com.minechinima.ui.elements;
+package com.minechinima.ui.elements.window;
 
 import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorManager;
+import com.minechinima.operator.defaults.ChangeSpaceTypeProp;
 import com.minechinima.ui.UIContext;
 import com.minechinima.rendering.GLUtils;
+import com.minechinima.ui.elements.UIElement;
 import imgui.ImGui;
 import imgui.flag.ImGuiComboFlags;
 import imgui.flag.ImGuiCond;
@@ -14,6 +17,8 @@ import imgui.flag.ImGuiWindowFlags;
  */
 public class UIScreen<C extends IContext> extends UIElement<C> {
     private UISpace<C> panel;
+    //TODO better focus logic
+    private boolean focused = false;
 
     public UIScreen(UISpace<C> panelBody) {
         this.setPanel(panelBody);
@@ -25,6 +30,11 @@ public class UIScreen<C extends IContext> extends UIElement<C> {
         this.panel = panel;
         this.children.add(panel);
     }
+
+    public UISpace<C> getPanel() {
+        return panel;
+    }
+
 
     @Override
     public final void draw(UIContext<C> context) {
@@ -48,13 +58,20 @@ public class UIScreen<C extends IContext> extends UIElement<C> {
                 | ImGuiWindowFlags.NoTitleBar;
 
         if (ImGui.begin("   ##" + this.hashCode(), windowFlags)) {
+            if (ImGui.isWindowFocused() || this.focused) {
+                this.focused = true;
+                context.getContextBuilder().setClickedUIScreen(this);
+            }
+
             if (ImGui.beginMenuBar()) {
                 ImGui.setNextItemWidth(ImGui.calcTextSizeX(this.panel.getPanelName()) + ImGui.getStyle().getFramePadding().x * 2);
                 if (ImGui.beginCombo("", this.panel.getPanelName(), ImGuiComboFlags.NoArrowButton)) {
                     for (String name : context.getPanelFactory().getRegisteredNames()) {
                         boolean isSelected = name.equals(this.panel.getPanelName());
                         if (ImGui.selectable(name, isSelected)) {
-                            this.setPanel(context.getPanelFactory().createUIPanel(name));
+                            OperatorManager operatorManager = context.getUIManager().getOperatorManager();
+                            operatorManager.execute(operatorManager.getConfig().operatorTypeRegistry.changeSpaceType, new ChangeSpaceTypeProp(context.getPanelFactory().createUIPanel(name)));
+                            //this.setPanel(context.getPanelFactory().createUIPanel(name));
                         }
                         if (isSelected) ImGui.setItemDefaultFocus();
                     }

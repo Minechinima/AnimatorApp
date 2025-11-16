@@ -1,15 +1,18 @@
 package com.minechinima.operator.defaults;
 
-import com.minechinima.controller.api.IControllerCommand;
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseDragEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.FloatValue;
-import com.minechinima.operator.OperatorContext;
 import com.minechinima.operator.UIOperatorContext;
 import com.minechinima.operator.ot.commands.*;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
+import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
+import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
+import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.ui.elements.UIDragFloat;
 import com.minechinima.utils.Pair;
 import org.joml.Vector2d;
@@ -35,14 +38,14 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
     }
 
     @Override
-    public Pair<OpInvokeFlag, Queue<IControllerCommand>> invoke(UIOperatorContext context) throws UserException {
+    public OPReturnValue<OpInvokeFlag> invoke(UIOperatorContext context) throws UserException {
         if (context.currentHoveredWidget() instanceof UIDragFloat<?> dragFloat) {
             this.floatElements.add(new Pair<>(dragFloat.getValue().get(), dragFloat));
             dragFloat.highlight = true;
-            return new Pair<>(OpInvokeFlag.MODAL_RUNNING, null);
+            return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
         }
 
-        return new Pair<>(OpInvokeFlag.CANCELLED, null);
+        return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
     }
 
     private boolean containsUIDragFloat(UIDragFloat dragFloat) {
@@ -54,9 +57,8 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
     }
 
     @Override
-    public Pair<Modal, Queue<IControllerCommand>> modal(OperatorContext<UIOperatorContext> ctx, KeyMapEvent event) throws UserException {
+    public OPReturnValue<Modal> modal(UIOperatorContext context, KeyMapEvent event) throws UserException {
         //TODO execute after invoke directly once
-        UIOperatorContext context = ctx.current();
         if (this.startPos == null) this.startPos = new Vector2d(event.mouseX(), event.mouseY());
 
         if (event instanceof KeyMapMouseDragEvent mouseMoveEvent) {
@@ -67,7 +69,7 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
                     this.floatElements.add(new Pair<>(dragFloat.getValue().get(), dragFloat));
                 }
                 dragFloat.highlight = true;
-                return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+                return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING));
             } else if (isValueChanging) {
                 this.selectingElements = false;
             }
@@ -80,20 +82,20 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
                 FloatValue v = entry.getB().getValue();
                 double value = entry.getA() + (event.mouseX() - this.startPos.x()) * this.props.increment.get();
                 if (this.props.round.get()) value = Math.round(value);
-                commands.add(v.controllers().set((float) value));
+                commands.add(v.controller().set((float) value));
             }
         }
 
-        return new Pair<>(new Modal(OpModalFlag.MODAL_RUNNING), commands);
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), commands);
     }
 
     @Override
-    public Pair<OpExecuteFlag, Queue<IControllerCommand>> onUIPropChange(OperatorContext<UIOperatorContext> ctx, BaseStructure changedProp) throws UserException {
+    public OPReturnValue<OpExecuteFlag> onUIPropChange(UIOperatorContext ctx, BaseStructure changedProp) throws UserException {
         return null;
     }
 
     @Override
-    public String getTitle(OperatorContext<UIOperatorContext> context) {
+    public String getTitle(UIOperatorContext context) {
         //TODO we need more translation features like composite keys, or nesting?
         // example: "langkey.operator.set" + "label1key" + "label2key"
         String labels = "";

@@ -5,7 +5,7 @@ import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.UIContext;
 import com.minechinima.ui.elements.UIHotKeyConfiguration;
-import com.minechinima.ui.elements.UISpace;
+import com.minechinima.ui.elements.window.UISpace;
 import com.minechinima.ui.elements.properties.IUIPropertyContext;
 import com.minechinima.ui.elements.properties.PropertyContextRegistry;
 import imgui.ImColor;

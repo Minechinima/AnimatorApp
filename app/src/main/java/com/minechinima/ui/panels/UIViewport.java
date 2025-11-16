@@ -3,17 +3,14 @@ package com.minechinima.ui.panels;
 import com.minechinima.model.BBContext;
 import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.UIContext;
-import com.minechinima.ui.elements.UISpace;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UISpace;
+import com.minechinima.ui.elements.window.UIWindow;
 import com.minechinima.ui.utils.Area;
 import imgui.ImGui;
 import imgui.ImVec2;
-import org.jetbrains.annotations.Contract;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
-
-import java.util.Vector;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;

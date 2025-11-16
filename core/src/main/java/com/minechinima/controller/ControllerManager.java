@@ -70,7 +70,7 @@ public class ControllerManager {
         }
 
         this.currentTransaction = new Transaction();
-        this.dataTree.getRoot().getLogging().registerLog(this.currentTransaction.getLog());
+        this.dataTree.getRoot().getDataOperationBus().registerLog(this.currentTransaction.getLog());
     }
 
     /**

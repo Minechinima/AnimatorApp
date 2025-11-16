@@ -16,7 +16,7 @@ import java.util.function.Supplier;
  * Utility class that has common attributes and logic that are needed by an {@link OperatorType} which provides {@link OperatorPropertiesGroupStruct}.
  * @param <P>
  */
-public class OTPropertyStorage<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements IOTPropertyProvider<P> {
+public class OTPropertyStorage<P extends OperatorPropertiesGroupStruct> extends ValueGroup {
     /**
      * Runtime properties cached here so they can be undone and adressed properly.
      * TODO how to prevent these from being stored to harddrive? Not serializing sounds a bit too early in the process.
@@ -37,18 +37,15 @@ public class OTPropertyStorage<P extends OperatorPropertiesGroupStruct> extends 
         this.createProps = createProps;
     }
 
-    @Override
     public P createProps() {
         return this.createProps.get();
     }
 
-    @Override
     public final void addRuntimeProps(P props) {
         if (!props.isInitialized()) props.initChildren();
         this.runtimeProps.add(props);
     }
 
-    @Override
     public final void removeRuntimeProps(P props) {
         this.runtimeProps.remove(props);
     }

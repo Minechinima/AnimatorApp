@@ -1,7 +1,8 @@
-package com.minechinima.operator;
+package com.minechinima.operator.config.modal;
 
 import com.minechinima.model.values.base.ValueGroup;
-import com.minechinima.operator.ot.commands.IModalOperator;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.modal.IModalFunctionCommand;
 import com.minechinima.ui.utils.ILangKeyProvider;
 
 /**
@@ -12,11 +13,11 @@ import com.minechinima.ui.utils.ILangKeyProvider;
  * <br><br>
  * Is part of data model to allow configuration attributes
  */
-public abstract class ModalFunctionGroupStruct<C extends IContext> extends ValueGroup implements ILangKeyProvider {
+public abstract class ModalFunctionConfig<C extends IContext> extends ValueGroup implements ILangKeyProvider {
     private final String title;
     private final String description;
 
-    public ModalFunctionGroupStruct(String title, String description) {
+    public ModalFunctionConfig(String title, String description) {
         super("");
         this.title = title;
         this.description = description;
@@ -27,5 +28,5 @@ public abstract class ModalFunctionGroupStruct<C extends IContext> extends Value
         return this.title;
     }
 
-    public abstract void onEvent(OperatorManager<C> operatorManager, OperatorContext<C> context, IModalOperator<C> currentModal);
+    public abstract IModalFunctionCommand<C, ?> factory();
 }

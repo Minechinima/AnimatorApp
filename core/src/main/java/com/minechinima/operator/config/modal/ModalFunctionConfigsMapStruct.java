@@ -4,9 +4,8 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.input.hotkey.HotKeyConfigRegistry;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.ModalFunctionGroupStruct;
 import com.minechinima.utils.GenericRegistry;
-import com.minechinima.utils.IGenericDefaultRegistry;
+import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,10 +19,10 @@ import java.util.function.Supplier;
  * @param <C>
  * @implSpec is a map to retrieve modal functions by a key for easier runtime read/write access.
  */
-public class ModalFunctionConfigsMapStruct<C extends IContext> extends BaseValueMap<ModalFunctionConfigGroupStruct<C>>
-        implements IGenericDefaultRegistry<ModalFunctionGroupStruct<C>> {
+public class ModalFunctionConfigsMapStruct<C extends IContext> extends BaseValueMap<ModalFunctionHotKeyConfig<C>>
+        implements IGenericRegistry<ModalFunctionConfig<C>> {
     public final HotKeyConfigRegistry hotKeyConfigRegistry;
-    private final GenericRegistry<ModalFunctionGroupStruct<C>> registry = new GenericRegistry<>();
+    private final GenericRegistry<ModalFunctionConfig<C>> registry = new GenericRegistry<>();
 
     public ModalFunctionConfigsMapStruct(String id, HotKeyConfigRegistry hotKeyConfigRegistry) {
         super(id);
@@ -31,32 +30,27 @@ public class ModalFunctionConfigsMapStruct<C extends IContext> extends BaseValue
     }
 
     @Override
-    protected @NotNull ModalFunctionConfigGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) {
+    protected @NotNull ModalFunctionHotKeyConfig<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) {
         return null;
     }
 
     @Override
-    public @NotNull ModalFunctionGroupStruct<C> getNewDefault() {
-        return null;
-    }
-
-    @Override
-    public @Nullable ModalFunctionGroupStruct<C> getNew(int id) {
+    public @Nullable ModalFunctionConfig<C> getNew(int id) {
         return this.registry.getNew(id);
     }
 
     @Override
-    public @Nullable Integer getID(ModalFunctionGroupStruct<C> value) {
+    public @Nullable Integer getID(ModalFunctionConfig<C> value) {
         return this.registry.getID(value);
     }
 
     @Override
-    public Map<Integer, ModalFunctionGroupStruct<C>> getAllNew() {
+    public Map<Integer, ModalFunctionConfig<C>> getAllNew() {
         return this.registry.getAllNew();
     }
 
     @Override
-    public <J extends ModalFunctionGroupStruct<C>> void register(int id, Class<J> clazz, Supplier<J> constructor) throws IllegalArgumentException {
+    public <J extends ModalFunctionConfig<C>> void register(int id, Class<J> clazz, Supplier<J> constructor) throws IllegalArgumentException {
         this.registry.register(id, clazz, constructor);
     }
 }

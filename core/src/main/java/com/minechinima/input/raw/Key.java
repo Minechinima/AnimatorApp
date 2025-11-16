@@ -2,7 +2,7 @@ package com.minechinima.input.raw;
 
 import imgui.flag.ImGuiKey;
 
-public enum Key {
+public enum Key implements IKey {
     KEY_UNKNOWN(0),
     KEY_SPACE(ImGuiKey.Space),
     KEY_APOSTROPHE(ImGuiKey.Apostrophe),
@@ -195,5 +195,10 @@ public enum Key {
 
     public int imguiCode() {
         return imguiCode;
+    }
+
+    @Override
+    public int keyCode() {
+        return this.imguiCode;
     }
 }

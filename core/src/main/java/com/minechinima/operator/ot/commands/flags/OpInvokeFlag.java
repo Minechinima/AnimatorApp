@@ -1,4 +1,4 @@
-package com.minechinima.operator.ot.commands;
+package com.minechinima.operator.ot.commands.flags;
 
 public enum OpInvokeFlag {
     /**

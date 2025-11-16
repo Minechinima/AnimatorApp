@@ -1,8 +1,13 @@
-package com.minechinima.ui.elements;
+package com.minechinima.ui.elements.window;
 
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
+import com.minechinima.ui.elements.UIElement;
 
+/**
+ * One UISpace represents an editor and is made up of regions, with at least the Main region always showing.
+ * @param <C>
+ */
 public abstract class UISpace<C extends IContext> extends UIElement<C> {
     private final String panelName;
 

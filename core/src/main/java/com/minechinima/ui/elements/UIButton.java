@@ -12,7 +12,7 @@ import java.util.function.Consumer;
  */
 public class UIButton<C extends IContext> extends UIElement<C> {
     private final Consumer<UIButton<C>> onClick;
-    private final OperatorType<C> operatorType;
+    private final OperatorType<C, ?> operatorType;
     private final String key;
 
     public UIButton(String key, Consumer<UIButton<C>> onClick) {
@@ -21,13 +21,13 @@ public class UIButton<C extends IContext> extends UIElement<C> {
         this.key = key;
     }
 
-    public UIButton(String key, OperatorType<C> operatorType) {
+    public UIButton(String key, OperatorType<C, ?> operatorType) {
         this.onClick = null;
         this.operatorType = operatorType;
         this.key = key;
     }
 
-    public UIButton(String key, Consumer<UIButton<C>> onClick, OperatorType<C> operatorType) {
+    public UIButton(String key, Consumer<UIButton<C>> onClick, OperatorType<C, ?> operatorType) {
         this.onClick = onClick;
         this.operatorType = operatorType;
         this.key = key;

@@ -2,15 +2,15 @@ package com.minechinima.model.values;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
-import com.minechinima.ui.utils.IEnumValue;
+import com.minechinima.model.values.base.BaseValue;
+import com.minechinima.ui.utils.IUIEnumValue;
 import com.minechinima.ui.utils.ILangKeyProvider;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Acts like an enum value but the value is part of the tree structure.
  * @param <T>
  */
-public abstract class AbstractEnumValueHierarchy<T extends BaseStructure & ILangKeyProvider> extends BaseSingleValueHierarchy<T> implements IEnumValue<T> {
+public abstract class AbstractEnumValueHierarchy<T extends BaseStructure & ILangKeyProvider> extends BaseSingleValueHierarchy<T> implements IUIEnumValue<T, BaseValue<T>> {
     public AbstractEnumValueHierarchy(String id, T defaultValue) {
         super(id);
         this.set(defaultValue);
@@ -18,5 +18,10 @@ public abstract class AbstractEnumValueHierarchy<T extends BaseStructure & ILang
 
     public AbstractEnumValueHierarchy(String id) {
         super(id);
+    }
+
+    @Override
+    public T getCurrentValue() {
+        return this.get();
     }
 }

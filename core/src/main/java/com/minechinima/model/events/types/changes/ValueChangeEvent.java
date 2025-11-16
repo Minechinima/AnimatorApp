@@ -19,11 +19,11 @@ public class ValueChangeEvent extends ChangeEvent<ValueChange> {
         this.valueAfter = valueAfter;
     }
 
-    public Object getValueBefore() {
+    public BaseType<?> getValueBefore() {
         return this.valueBefore;
     }
 
-    public Object getValueAfter() {
+    public BaseType<?> getValueAfter() {
         return this.valueAfter;
     }
 }

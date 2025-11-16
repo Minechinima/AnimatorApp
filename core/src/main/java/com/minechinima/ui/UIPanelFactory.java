@@ -1,7 +1,7 @@
 package com.minechinima.ui;
 
 import com.minechinima.operator.IContext;
-import com.minechinima.ui.elements.UISpace;
+import com.minechinima.ui.elements.window.UISpace;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;

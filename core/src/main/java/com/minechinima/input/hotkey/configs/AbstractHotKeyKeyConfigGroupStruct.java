@@ -8,6 +8,7 @@ import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseDragEvent;
+import com.minechinima.input.raw.IKey;
 import com.minechinima.input.raw.Key;
 import com.minechinima.model.values.AbstractEnumValue;
 import com.minechinima.model.values.BooleanValue;
@@ -26,18 +27,12 @@ public abstract class AbstractHotKeyKeyConfigGroupStruct extends HotKeyConfigGro
     public final KeyModEnumValue mod = new KeyModEnumValue("mod", null);
     @InGui(as = UIEnum.class, translationPrefix = "key")
     public final AbstractEnumValue<AbstractHotKeyKeyConfigGroupStruct.IKeyEnum> key;
-    //TODO generic of keymod problematic because of generator framework
-
-    @InGui(as = UICheckBox.class, translationPrefix = "confirm on release")
-    public final BooleanValue confirmOnStop = new BooleanValue("stop_confirm", false);
-
 
     public <K extends AbstractHotKeyKeyConfigGroupStruct.IKeyEnum> AbstractHotKeyKeyConfigGroupStruct(String title, String tooltip, AbstractEnumValue<K> key) {
         super(title, tooltip);
         this.addChild("type", this.type);
         this.addChild("mod", this.mod);
         this.addChild("key", this.key = (AbstractEnumValue<IKeyEnum>) key);
-        this.addChild("stop_confirm", this.confirmOnStop);
     }
 
     @Override
@@ -48,7 +43,7 @@ public abstract class AbstractHotKeyKeyConfigGroupStruct extends HotKeyConfigGro
             keyEvent = dragEvent.key();
             typeEqual = true;
         } else if (event instanceof KeyMapKeyEvent keyEvent1) {
-            typeEqual = this.type.get().equalsKeyType(keyEvent1.type());
+            typeEqual = this.type.get().equalsKeyType(keyEvent1.type()) && keyEvent1.key().equalsKey(this.key.get());
         } else {
             return false;
         }
@@ -72,47 +67,9 @@ public abstract class AbstractHotKeyKeyConfigGroupStruct extends HotKeyConfigGro
         return true;
     }
 
-    @Override
-    public boolean useStopEvent() {
-        return this.confirmOnStop.get();
-    }
-
-    @Override
-    public boolean isStopEvent(KeyMapEvent event) {
-        if (!(event instanceof KeyMapKeyEvent keyEvent) || !this.key.get().equalKey(keyEvent)) return false;
-
-        switch (this.type.get()) {
-            case PRESS, REPEAT, CLICK, DOUBLECLICK, CLICKDRAG -> {
-                return keyEvent.type() == com.minechinima.input.keymap.events.KeyType.RELEASE;
-            } case RELEASE -> {
-                return keyEvent.type() == com.minechinima.input.keymap.events.KeyType.PRESS;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean hasReleaseEvent() {
-        switch (this.type.get()) {
-            case PRESS, REPEAT, CLICKDRAG -> {
-                return true;
-            } default -> {
-                return false;
-            }
-        }
-    }
-
-    @Override
-    public boolean isReleaseEvent(KeyMapEvent event) {
-        return event instanceof KeyMapKeyEvent keyEvent
-                && this.key.get().equalKey(keyEvent)
-                && keyEvent.type() == com.minechinima.input.keymap.events.KeyType.RELEASE;
-    }
-
     /**
      * interface for the key value so we can have a generic key enum here and common event checking logic.
      */
-    public interface IKeyEnum extends ILangKeyProvider {
-        boolean equalKey(KeyMapKeyEvent event);
+    public interface IKeyEnum extends IKey, ILangKeyProvider {
     }
 }

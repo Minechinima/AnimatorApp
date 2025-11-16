@@ -1,6 +1,6 @@
 package com.minechinima.input.hotkey;
 
-import com.minechinima.utils.IGenericDefaultRegistry;
+import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 /**
  * Registry and factory for available {@link HotKeyConfigGroupStruct} types.
  */
-public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfigGroupStruct> {
+public class HotKeyConfigRegistry implements IGenericRegistry<HotKeyConfigGroupStruct> {
     private final Map<Integer, Supplier<? extends HotKeyConfigGroupStruct>> registry = new HashMap<>();
     private final Map<Class<? extends HotKeyConfigGroupStruct>, Integer> idRegistry = new HashMap<>();
     private final Supplier<? extends HotKeyConfigGroupStruct> defaultConfig;
@@ -60,13 +60,5 @@ public class HotKeyConfigRegistry implements IGenericDefaultRegistry<HotKeyConfi
             map.put(entry.getKey(), config);
         }
         return map;
-    }
-
-    @Override
-    @NotNull
-    public HotKeyConfigGroupStruct getNewDefault() {
-        HotKeyConfigGroupStruct defaultconfig = this.defaultConfig.get();
-        defaultconfig.initChildren();
-        return defaultconfig;
     }
 }

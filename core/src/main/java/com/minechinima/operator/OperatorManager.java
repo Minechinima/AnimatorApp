@@ -3,32 +3,35 @@ package com.minechinima.operator;
 import com.minechinima.controller.ControllerManager;
 import com.minechinima.controller.ControllerResult;
 import com.minechinima.controller.ControllerUtils;
-import com.minechinima.controller.api.IControllerCommand;
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.hotkey.HotKeyConfigRegistry;
 import com.minechinima.input.keymap.IKeyMapEventListener;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.changes.ChangeEvent;
-import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.config.modal.ModalFunctionConfigGroupStruct;
-import com.minechinima.operator.config.operator.OperatorKeyConfigItemGroupStruct;
+import com.minechinima.operator.config.modal.*;
+import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
-import com.minechinima.operator.config.modal.PropertyModifierConfigGroupStruct;
-import com.minechinima.operator.config.modal.PropertyModifiersListStruct;
+import com.minechinima.operator.config.operator.OperatorModalConfirmConfig;
 import com.minechinima.operator.history.HistoryManager;
+import com.minechinima.operator.modal.*;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.UIOperatorType;
 import com.minechinima.operator.ot.commands.*;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
+import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
+import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
+import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.ui.UIManager;
 import com.minechinima.ui.annotation.IUIHandler;
 import com.minechinima.ui.elements.UIHandlerDummy;
 import com.minechinima.ui.elements.UIModal;
-import com.minechinima.utils.Pair;
+import com.minechinima.ui.elements.window.UIRegion;
+import com.minechinima.ui.elements.window.UISpace;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +55,6 @@ import java.util.*;
  *           infer C as the context type, as this is the only possible way of passing an operatortype into this class.
  */
 public class OperatorManager<C extends IContext> implements IKeyMapEventListener<KeyMapEvent> {
-    private final OperatorFactory factory;
     private final UserFunctionalityConfigGroupStruct<C> config;
     @Nullable
     private UIManager<C> uiManager;
@@ -62,28 +64,26 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     private final ControllerManager controller;
 
     @Nullable
-    private RunningModal<?> modal;
+    private RunningModal<?, ?> modal;
     /**
-     * If {@link HotKeyConfigGroupStruct#hasReleaseEvent()} is true,
-     * this will cache the hotkey, to block the event until it is released
-     * to prevent accidentally continuously
-     * triggering the operator.<br><br>
-     *
-     * Example of this:<br>
-     * User drags ui slider, presses right click (while still holding drag key), operator
-     * is aborted but now when the user moves again they will trigger the operator immediately again.
+     * Cache of keys that are pressed during modal and should now be blocked until they are released.
      */
-    @Nullable
-    private HotKeyConfigGroupStruct blockedModalEvent;
+    private Set<KeyMapEvent> cachedBlockedEvents = new HashSet<>();
+    /**
+     * Contains the logic which events to block.
+     * Each event class gets a set of strategies how to block that cached event.<br>
+     * Key is the class of the cached event in {@link #cachedBlockedEvents}.
+     */
+    private Map<Class<? extends KeyMapEvent>, Set<ICachedEventBlocker>> blockStrategies = new HashMap<>();
 
     /**
-     * Operator that is controlled by a UI popup.
+     * Operator that is controlled by a UI popup and blocks other operators.
+     * Only UI Operators can be executed while this is running.
      */
     @Nullable
-    private RunningUIMode<?, ?, ?> runningInUIMode;
+    private RunningUIMode<?, ?, ?, ?> runningInUIMode;
 
     private final Logger logger;
-    private final Class<C> contextClass;
     /**
      * Check if any kind of execution is currently performed to prevent nested calls.
      * Nesting OperatorManager.execute/invoke... calls is not supported, as the chronological order
@@ -104,22 +104,45 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      */
     @Nullable
     private C currentContext;
+    /**
+     * Cached operator for execution that were called while {@link #currentContext} was null.
+     */
     private final Queue<QueueEntry> queue = new LinkedList<>();
 
-    public OperatorManager(OperatorFactory factory, UserFunctionalityConfigGroupStruct<C> config,
-                           HistoryManager historyManager, ControllerManager controller, Logger logger, Class<C> contextClass) {
-        this(null, factory, config, historyManager, controller, logger, contextClass);
+
+    public OperatorManager(UserFunctionalityConfigGroupStruct<C> config,
+                           HistoryManager historyManager, ControllerManager controller, Logger logger) {
+        this(null, config, historyManager, controller, logger);
     }
 
-    public OperatorManager(UIManager<C> uiManager, OperatorFactory factory, UserFunctionalityConfigGroupStruct<C> config,
-                           HistoryManager historyManager, ControllerManager controller, Logger logger, Class<C> contextClass) {
+    public OperatorManager(UIManager<C> uiManager, UserFunctionalityConfigGroupStruct<C> config,
+                           HistoryManager historyManager, ControllerManager controller, Logger logger) {
         this.config = config;
         this.controller = controller;
-        this.factory = factory;
         this.uiManager = uiManager;
         this.logger = logger;
-        this.contextClass = contextClass;
         this.historyManager = historyManager;
+    }
+
+    /**
+     * Register a strategy for blocking cached events that were triggered during executing an operator
+     * in modal mode.
+     * This is used to prevent operators being triggered accidentally after finishing an operator.
+     * <br><br>
+     * Example: User presses a key while an operator is in modal mode.
+     * The user keeps the key down even after the operator finished.
+     * The key should only trigger an operator again after it was released, therefore it needs to be blocked.
+     * @param clazz
+     * @param strategy
+     * @param <T>
+     */
+    public <T extends KeyMapEvent> void registerEventBlockStrategy(Class<T> clazz, ICachedEventBlocker<T> strategy) {
+        //TODO should we use inheritance of class type e.g. the strategy is also applied on subclasses of the event?
+        Set<ICachedEventBlocker> strategies;
+        if ((strategies = this.blockStrategies.get(clazz)) == null) {
+            this.blockStrategies.put(clazz, strategies = new HashSet<>());
+        }
+        strategies.add(strategy);
     }
 
     public void setUIManager(UIManager<C> uiManager) {
@@ -166,23 +189,34 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     /**
-     * Writes to the currently running transaction or creates a new one.
-     * This does not commit the transaction.
-     * @param commands
-     * @return true if it was successful.
+     * @return true if an operator is running in ui mode.
      */
-    public boolean writeToTransaction(Queue<IControllerCommand> commands) {
-        if (!this.controller.isActive()) this.controller.startTransaction();
-        return this.controller.writeToTransaction(commands).state() == ControllerResult.State.SUCCESS;
+    public boolean isUIMode() {
+        return this.runningInUIMode != null;
     }
 
-    public boolean writeToTransaction(IControllerCommand command) {
-        return this.writeToTransaction(ControllerUtils.asQueue(command));
-    }
-
+    /**
+     * Only executes a transaction when there is no modal running. If you want a continuous transaction, you need to
+     * invoke a modal operator. Executing database transactions directly is only for simple one time commands so the UI
+     * can easily change data.
+     * <b>Does not commit when there is a modal operator running! See {@link #isModalMode()}</b>
+     * @param title
+     * @param commands
+     * @param pushUndo
+     * @return
+     */
     public boolean executeTransaction(String title, Queue<IControllerCommand> commands, boolean pushUndo) {
-        if (!this.writeToTransaction(commands)) return false;
-        return this.commitTransaction(title, pushUndo);
+        if (this.modal != null || this.controller.isActive()) return false;
+        this.controller.startTransaction();
+
+        if (this.controller.writeToTransaction(commands).state() != ControllerResult.State.SUCCESS) {
+            return false;
+        }
+
+        ControllerResult result = this.controller.commitTransaction(title);
+        if (result.state() != ControllerResult.State.SUCCESS) return false;
+        if (pushUndo) this.historyManager.pushUndo(result.transaction());
+        return true;
     }
 
     public boolean executeTransaction(String title, IControllerCommand command, boolean pushUndo) {
@@ -190,24 +224,15 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     /**
-     * Commits the current transaction.
-     * <br><br>
-     * <b>Does not commit when there is a modal operator running! See {@link #isModalMode()}</b>
-     * @param pushUndo whether to push the transaction, if committed successfully, into the history.
-     * @param title
+     * @return true if an undo step can be performed.
      */
-    public boolean commitTransaction(String title, boolean pushUndo) {
-        if (this.modal != null || !this.controller.isActive()) return false;
-        ControllerResult result = this.controller.commitTransaction(title);
-        if (result.state() != ControllerResult.State.SUCCESS) return false;
-        if (pushUndo) this.historyManager.pushUndo(result.transaction(), null, null);
-        return true;
-    }
-
     public boolean canUndo() {
         return this.modal == null && !this.controller.isActive();
     }
 
+    /**
+     * Undo the last operator.
+     */
     public void undo() {
         if (!this.canUndo()) {
             return;
@@ -215,7 +240,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         HistoryManager.UndoRedoStep undoStep = this.historyManager.popUndo(this.controller.getDataTree().getRoot());
         if (undoStep == null) return;
-        ControllerResult result = this.controller.executeTransaction("Undo: ", ControllerUtils.asQueue(undoStep.command));
+        ControllerResult result = this.controller.executeTransaction("Undo: ", ControllerUtils.asQueue(undoStep.getCommand()));
 
         if (result.state() == ControllerResult.State.ERROR) {
             System.out.println("Error " + result.userMessage());
@@ -228,11 +253,17 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         this.historyManager.pushRedo(result.transaction(), undoStep);
     }
 
+    /**
+     *
+     * @return true if a redo step can be performed.
+     */
     public boolean canRedo() {
         return this.modal == null && !this.controller.isActive();
     }
 
-
+    /**
+     * Redo the last undo step
+     */
     public void redo() {
         if (!this.canRedo()) {
             return;
@@ -240,7 +271,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         HistoryManager.UndoRedoStep redoStep = this.historyManager.popRedo(this.controller.getDataTree().getRoot());
         if (redoStep == null) return;
-        ControllerResult result = this.controller.executeTransaction("Redo: ", ControllerUtils.asQueue(redoStep.command));
+        ControllerResult result = this.controller.executeTransaction("Redo: ", ControllerUtils.asQueue(redoStep.getCommand()));
 
         if (result.state() == ControllerResult.State.ERROR) {
             return;
@@ -255,34 +286,51 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
 
 
-    public <OT extends OperatorType<C>> void execute(OT type) {
+    public <OP extends IOperator<C>,
+            OT extends OperatorType<C, OP>>
+    void execute(OT type) {
         this._executeOT(type, null);
     }
 
     public <P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<C> & IOTPropertyProvider<P>>
+            OP extends IPropertyOperator<C, P> & IOperator<C>,
+            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>>
     void execute(OT type, P props) {
         this._executeOT(type, props);
     }
 
-    public void execute(UIOperatorType type) {
+    public <OP extends IOperator<UIOperatorContext>,
+            OT extends UIOperatorType<OP>>
+    void execute(OT type) {
         this._executeOT(type, null);
     }
 
     public <P extends OperatorPropertiesGroupStruct,
-            OT extends UIOperatorType & IOTPropertyProvider<P>>
+            OP extends IPropertyOperator<UIOperatorContext, P> & IOperator<UIOperatorContext>,
+            OT extends UIOperatorType<OP> & IOTPropertyProvider<OP, P>>
     void execute(OT type, P props) {
         this._executeOT(type, props);
     }
 
+    /**
+     * @param props if this is not null it must have passed through the public API {@link #execute(OperatorType, OperatorPropertiesGroupStruct)},
+     *              which ensures that OperatorType implements {@link IOTPropertyProvider} and therefore casting is safe.
+     */
     private <CTX extends IContext,
+            OP extends IOperator<CTX>,
+            OPP extends IPropertyOperator<CTX, P> & IOperator<CTX>,
             P extends OperatorPropertiesGroupStruct,
-            OTP extends OperatorType<CTX> & IOTPropertyProvider<P>,
-            OT extends OperatorType<CTX>>
+            OTP extends OperatorType<CTX, OPP> & IOTPropertyProvider<OPP, P>,
+            OT extends OperatorType<CTX, OP>>
     void _executeOT(OT type, @Nullable P props) {
         if (this.isExecuting) {
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
+        }
+
+        if (this.controller.isActive() || this.modal != null ||
+                (this.runningInUIMode != null && !(type instanceof UIOperatorType))) {
+            return;
         }
 
         if (this.currentContext == null) {
@@ -292,29 +340,21 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         this.isExecuting = true;
         try {
-            try {
-                if (!this.poll(type)) return;
-            } catch (UserException e) {
-                //TODO
-                this.logger.info(e);
-                return;
-            }
-
-            this._execute(type, props == null ? this.factory.getOperator(type) : this.factory.getOperator((OTP) type, props));
+            if (!type.poll(this.getContextForType(type))) return;
+            this._execute(type, props == null ? type.getOperator() : (OP) ((OTP) type).getOperator(props));
+        } catch (Exception e) {
+            this.logger.info(e);
         } finally {
             this.isExecuting = false;
         }
     }
 
-    private <CTX extends IContext> void _execute(OperatorType<CTX> type, @Nullable IOperator<CTX> op) {
+    private <CTX extends IContext,
+            OP extends IOperator<CTX>>
+    void _execute(OperatorType<CTX, OP> type, OP op) {
         if (op == null) return;
-        final CTX ctx;
 
-        if ((ctx = this.getCurrentContextForType(type)) == null) {
-            //TODO
-            this.logger.info("Could not execute operator as no context is given.");
-            return;
-        }
+        final CTX ctx = this.getContextForType(type);
 
         /*
          * Cancel all other possible running operators if the executed operator is cancelled or fails.
@@ -323,25 +363,16 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
          * endangered.
          */
         try (op) {
-            Pair<OpExecuteFlag, Queue<IControllerCommand>> retval = op.execute(ctx);
-            final OpExecuteFlag flag = retval.getA();
-            final Queue<IControllerCommand> commands = retval.getB();
-
-            switch (flag) {
+            OPReturnValue<OpExecuteFlag> result = op.execute(ctx);
+            switch (result.flag()) {
                 case FINISHED -> {
-                    if (this.handleWritingTransaction(type, op, ctx, ctx, commands, !this.controller.isActive())) {
-                        this.cancelAll("Error in transaction of executed Operator");
-                    }
-                }
-                case CANCELLED -> {
-                    this.cancelAll("Executed Operator reported cancel.");
+                    this.handleWritingTransaction(type, op, ctx, result.commands(), !this.controller.isActive());
                 }
             }
         } catch (Exception e) {
-            /* UserException means the operator terminated itself -> not canceled by external systems*/
+            /* not a UserException means the operator did not terminate itself */
             if (!(e instanceof UserException)) op.cancel();
             this.logger.info(e);
-            this.cancelAll("Executed Operator had unexpected error.");
         }
     }
 
@@ -353,22 +384,28 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
 
 
+    public <OP extends IOperator<C>,
+            OT extends OperatorType<C, OP>>
+    void invoke(OT type) {
+        this._invokeOT(type, null);
+    }
+
     public <P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<C> & IOTPropertyProvider<P>>
+            OP extends IPropertyOperator<C, P> & IOperator<C>,
+            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>>
     void invoke(OT type, P props) {
         this._invokeOT(type, props);
     }
 
-    public <OT extends OperatorType<C>> void invoke(OT type) {
-        this._invokeOT(type, null);
-    }
-
-    public void invoke(UIOperatorType type) {
+    public <OP extends IOperator<UIOperatorContext>,
+            OT extends UIOperatorType<OP>>
+    void invoke(OT type) {
         this._invokeOT(type, null);
     }
 
     public <P extends OperatorPropertiesGroupStruct,
-            OT extends UIOperatorType & IOTPropertyProvider<P>>
+            OP extends IPropertyOperator<UIOperatorContext, P> & IOperator<UIOperatorContext>,
+            OT extends UIOperatorType<OP> & IOTPropertyProvider<OP, P>>
     void invoke(OT type, P props) {
         this._invokeOT(type, props);
     }
@@ -377,40 +414,45 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * @return true if the operator invoke method was called
      */
     private <CTX extends IContext,
+            OP extends IOperator<CTX>,
             P extends OperatorPropertiesGroupStruct,
-            OTP extends OperatorType<CTX> & IOTPropertyProvider<P>,
-            OT extends OperatorType<CTX>>
+            OT extends OperatorType<CTX, OP>>
     boolean _invokeOT(OT type, @Nullable P props) {
-        return this._invokeOT(type, props);
+        return this._invokeOT(type, props, null);
     }
 
     /**
      * @return true if the operator invoke method was called
      */
     private <CTX extends IContext,
+            OP extends IOperator<CTX>,
+            OPP extends IPropertyOperator<CTX, P> & IOperator<CTX>,
             P extends OperatorPropertiesGroupStruct,
-            OTP extends OperatorType<CTX> & IOTPropertyProvider<P>,
-            OT extends OperatorType<CTX>>
-    boolean _invokeOT(OT type, @Nullable P props, @Nullable HotKeyConfigGroupStruct invokedConfig) {
+            OTP extends OperatorType<CTX, OPP> & IOTPropertyProvider<OPP, P>,
+            OT extends OperatorType<CTX, OP>>
+    boolean _invokeOT(OT type, @Nullable P props, @Nullable OperatorConfigGroupStruct<CTX> invokedConfig) {
         if (this.isExecuting) {
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
         }
 
+        if (this.modal != null ||
+                (this.runningInUIMode != null && !(type instanceof UIOperatorType))) {
+            return false;
+        }
+
         if (this.currentContext == null) {
             this.queue.add(new QueueEntry(type, props, Method.INVOKE));
-            return false; //TODO what to return here? Do we need return value even?
+            return true;
         }
 
         this.isExecuting = true;
         try {
-            try {
-                if (!this.poll(type)) return false;
-            } catch (UserException e) {
-                e.printStackTrace();
-            }
-
-            return this._invoke(type, props == null ? this.factory.getOperator(type) : this.factory.getOperator((OTP) type, props), invokedConfig);
+            if (!type.poll(this.getContextForType(type))) return false;
+            return this._invoke(type, props == null ? type.getOperator() : (OP) ((OTP) type).getOperator(props), invokedConfig);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         } finally {
             this.isExecuting = false;
         }
@@ -424,82 +466,67 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * </ul>
      * @return true if the operator invoke method was called.
      */
-    private <CTX extends IContext, P extends OperatorPropertiesGroupStruct,
-            OTP extends OperatorType<CTX> & IOTPropertyProvider<P>,
-            OP extends IPropertyOperator<CTX, P>>
-    boolean _invoke(OperatorType<CTX> type, @Nullable IOperator<CTX> op, @Nullable HotKeyConfigGroupStruct invokedConfig) {
-        if (op == null || this.modal != null ||
-                (this.runningInUIMode != null && !(type instanceof UIOperatorType))) {
+    private <CTX extends IContext,
+            OP extends IOperator<CTX>>
+    boolean _invoke(OperatorType<CTX, OP> type, OP op, @Nullable OperatorConfigGroupStruct<CTX> invokedConfig) {
+        if (op == null) {
             return false;
         }
 
-        final CTX currentCTX;
-        if ((currentCTX = this.getCurrentContextForType(type)) == null) {
-            this.logger.info("No context available.");
-            return false;
-        }
+        final CTX currentCTX = this.getContextForType(type);
 
         /*
          * Invoking an operator while another is running only happens when
          * an operator is running in UI mode and user tries to interact with UI.
          * In this case cancel or failure of operator should not cancel the UI mode operator.
          */
+        OPReturnValue<OpInvokeFlag> result = null;
+        /*
+         * Some flags for the error handling code to correctly call things.
+         */
+        boolean closed = false;
+        boolean modal = false;
         try {
-            final Pair<OpInvokeFlag, Queue<IControllerCommand>> retval = op.invoke(currentCTX);
-            final OpInvokeFlag flag = retval.getA();
-            final Queue<IControllerCommand> commands = retval.getB();
+            result = op.invoke(currentCTX);
+            final Queue<IControllerCommand> commands = result.commands();
 
-            switch (flag) {
+            switch (result.flag()) {
                 case CANCELLED -> {
+                    closed = true;
                     op.close();
-                    break;
                 }
                 case FINISHED, MODAL_RUNNING -> {
-                    boolean runAsModal = flag == OpInvokeFlag.MODAL_RUNNING && op instanceof IModalOperator<CTX>;
+                    boolean runAsModal = result.flag() == OpInvokeFlag.MODAL_RUNNING && op instanceof IModalOperator;
+                    this.handleWritingTransaction(type, op, currentCTX, commands, result.flag() == OpInvokeFlag.FINISHED);
                     if (runAsModal) {
-                        /* originalProps the hotkeyconfig since it could change while we are performing the modal */
-                        HotKeyConfigGroupStruct hotKeyConfig = invokedConfig != null ? this.copyHotKeyConfig(invokedConfig) : null;
-                        OperatorPropertiesGroupStruct propsCopy = op instanceof IPropertyOperator<?,?> pOp ? this.copyProps(pOp.props()) : null;
-
-                        this.modal = new RunningModal<>(type, (IModalOperator<CTX>) op, currentCTX, hotKeyConfig, propsCopy);
-                        if (hotKeyConfig != null && hotKeyConfig.hasReleaseEvent()) {
-                            this.blockedModalEvent = hotKeyConfig;
-                        }
+                        if (!this.controller.isActive()) this.controller.startTransaction();
+                        modal = true;
+                        this.modal = new RunningModal(type, (IModalOperator) op, invokedConfig);
+                    } else {
+                        closed = true;
+                        op.close();
                     }
-
-                    if (flag == OpInvokeFlag.MODAL_RUNNING) {
-                        this.controller.startTransaction();
-                    }
-
-                    if (commands != null && !commands.isEmpty()) {
-                        this.handleWritingTransaction(type, op, currentCTX, currentCTX, commands, flag == OpInvokeFlag.FINISHED);
-                    }
-
-                    if (!runAsModal) op.close();
                 }
                 case RUN_IN_UI -> {
                     /*
                      * atm running a UIOperatorType in ui mode makes no sense
                      * as a UIOperator might be invoked while one is already in UI mode...
                      */
-                    if (!(type instanceof UIOperatorType) && type instanceof IOTPropertyProvider<?> otp
-                            && op instanceof IPropertyOperator<CTX, ?> propOp) {
-                        //TODO group the steps to so when the ui is closed they become one undo step
-                        if (commands != null) {
-                            this.handleWritingTransaction(type, op, currentCTX, currentCTX, commands, false);
-                        }
-
-                        this._uimode((OTP) otp, (OP) propOp, currentCTX);
+                    //TODO ui mode very unfinished. How do we determine where UI modal spawns even...?
+                    if (!(type instanceof UIOperatorType) && type instanceof IOTPropertyProvider otp
+                            && op instanceof IPropertyOperator propOp) {
+                        this.handleWritingTransaction(type, op, currentCTX, commands, false);
+                        this._uimode(otp, propOp, currentCTX);
                     }
                 }
             }
         } catch (Exception e) {
             this.logger.info(e);
-            e.printStackTrace();
             if (!(e instanceof UserException)) {
                 op.cancel();
-                op.close();
             }
+            if (!closed) op.close();
+            if (modal) this.modal = null;
         }
 
         return true;
@@ -513,18 +540,14 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
 
     private <CTX extends IContext, P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<CTX> & IOTPropertyProvider<P>>
-    void _uimode(OT type, IPropertyOperator<CTX, P> op, CTX currentContext) {
+            OT extends OperatorType<CTX, OP> & IOTPropertyProvider<OP, P>,
+            OP extends IPropertyOperator<CTX, P>>
+    void _uimode(OT type, OP op, CTX currentContext) {
         if (this.runningInUIMode != null) return;
 
         //TODO possible flaw: current hovered window and app context data might not align
         if (!this.uiManager.getActiveWindow().canOpenModal()) {
             return;
-        }
-
-        final IContext currentContextCopy = currentContext.copy();
-        if (!this.contextTypeSafety(type, currentContextCopy)) {
-            throw new ContractViolatedException("originalProps method not correct.");
         }
 
         UIModal<C> ui = op.propUI();
@@ -545,7 +568,6 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             @SubscribeEvent(type = SubscribeEvent.Type.ALL)
             public void onChange(ChangeEvent<?> change) {
                 if (!OperatorManager.this.onUIPropertyChange(change.getTrigger())) {
-                    OperatorManager.this.cancelAll(null);
                     busManager.unsubscribe(this);
                     type.removeRuntimeProps(op.props());
                 }
@@ -555,7 +577,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         type.addRuntimeProps(op.props());
         try {
             op.props().getEventBus().subscribe(subscriber);
-            this.runningInUIMode = new RunningUIMode<>(type, op, (CTX) currentContextCopy, subscriber);
+            this.runningInUIMode = new RunningUIMode<>(type, op, subscriber);
             this.uiManager.getActiveWindow().openModalAt(ui, 0, 0);
         } catch (Exception e) {
             type.removeRuntimeProps(op.props());
@@ -565,7 +587,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
     private void commitUIMode() {
         RunningUIMode uiMode = this.runningInUIMode;
-        this.controller.commitTransaction(this.getTitle(uiMode.type, uiMode.op, uiMode.triggered));
+        this.controller.commitTransaction(this.getTitle(uiMode.type, uiMode.op, this.getContextForType(uiMode.type)));
         this.runningInUIMode.op.close();
         this.runningInUIMode = null;
     }
@@ -575,20 +597,31 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         this.setUIModalNull();
     }
 
+    @NotNull
+    private <CTX extends IContext> CTX getContextForType(OperatorType<CTX, ?> type) {
+        return (CTX) (type instanceof UIOperatorType ? this.currentContext.getUIContext() : this.currentContext);
+    }
+
+    /**
+     * Closing method for modal operators.
+     */
     private void setModalNull() {
         this.modal.op.close();
         this.modal = null;
     }
 
+    /**
+     * Closing method for UI controlled operators.
+     */
     private void setUIModalNull() {
         this.runningInUIMode.op.close();
         this.runningInUIMode = null;
     }
 
     private <CTX extends IContext, P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<CTX> & IOTPropertyProvider<P>>
+            OT extends OperatorType<CTX, ?> & IOTPropertyProvider<?, P>>
     boolean onUIPropertyChange(BaseStructure changed) {
-        if (this.runningInUIMode == null) return false;
+        if (this.runningInUIMode == null || this.currentContext == null) return false;
         if (this.isUIPropChange || this.isExecuting) {
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
@@ -599,23 +632,24 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         RunningUIMode uimode = this.runningInUIMode;
         try {
-            final CTX currentCTX = this.getCurrentContextForType((OT) uimode.type);
+            final CTX currentCTX = this.getContextForType((OT) uimode.type);
             /* onUIPropChange() could theoretically close the ui model directly and therefore close ui mode */
-            Pair<OpExecuteFlag, Queue<IControllerCommand>> retval = uimode.op.onUIPropChange(new OperatorContext<>((CTX) uimode.type, currentCTX), changed);
+            OPReturnValue<OpExecuteFlag> retval = uimode.op.onUIPropChange(currentCTX, changed);
             if (this.runningInUIMode == null) {
                 this.logger.info("UI Mode was prematurely closed in onUIPropChange() method.");
                 return true;
             }
 
-            final OpExecuteFlag flag = retval.getA();
-            final Queue<IControllerCommand> commands = retval.getB();
+            final OpExecuteFlag flag = retval.flag();
+            final Queue<IControllerCommand> commands = retval.commands();
 
             switch (flag) {
                 case CANCELLED -> {
                     return false;
                 }
                 case FINISHED -> {
-                    return commands == null || this.handleWritingTransaction((OT) uimode.type, uimode.op, (CTX) uimode.triggered, currentCTX, commands, false);
+                    if (commands != null) this.handleWritingTransaction(uimode.type, uimode.op, currentCTX, commands, false);
+                    return true;
                 }
             }
         } catch (Exception e) {
@@ -638,49 +672,43 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             this.logger.debug("Do not nest OperatorManager calls. Use ControllerCommands, OperatorType switching or macros.");
             throw new UnsupportedOperationException(new UserException("Cannot nest operations. See log for further information."));
         }
+
+        final IModalOperator op = this.modal.op;
+        final OperatorType ot = this.modal.type;
         this.isExecuting = true;
-
+        boolean closed = false;
         try {
-            IContext currentCTX = this.getCurrentContextForType(this.modal.type);
-            IContext triggerCopy = this.modal.triggered.copy();
+            IContext context = this.getContextForType(this.modal.type);
 
-            if (!this.contextTypeSafety(this.modal.type, triggerCopy) ||
-                    !this.contextTypeSafety(this.modal.type, currentCTX)) {
-                this.modal.op.cancel();
-                this.setModalNull();
-                return;
-            }
-
-            OperatorContext opCtx = new OperatorContext<>(triggerCopy, currentCTX);
-            final Pair<IModalOperator.Modal, Queue<IControllerCommand>> retval = this.modal.op.modal(opCtx, event);
-            final OpModalFlag flag = retval.getA().flag();
-            final Queue<IControllerCommand> commands = retval.getB();
+            final OPReturnValue<IModalOperator.Modal> retval = op.modal(context, event);
+            final OpModalFlag flag = retval.flag().flag();
+            final Queue<IControllerCommand> commands = retval.commands();
 
             switch (flag) {
                 case CANCELLED -> {
                     if (this.controller.isActive()) this.controller.abortTransaction();
-                    this.setModalNull();
+                    this.modal = null;
+                    closed = true;
+                    op.close();
                 }
-                case FINISHED, MODAL_RUNNING -> {
-                    if (commands != null &&
-                            !this.handleWritingTransaction((OperatorType) this.modal.type, (IModalOperator) this.modal.op,
-                                    triggerCopy, currentCTX, commands, flag == OpModalFlag.FINISHED)) {
-                        this.setModalNull();
-                        break;
-                    }
-
-                    if (flag == OpModalFlag.FINISHED) {
-                        this.setModalNull();
-                    }
+                case FINISHED -> {
+                    this.handleWritingTransaction(ot, op, context, commands, true);
+                    this.modal = null;
+                    closed = true;
+                    op.close();
+                }
+                case MODAL_RUNNING -> {
+                    this.handleWritingTransaction(ot, op, context, commands, false);
                 }
             }
         } catch (Exception e) {
-            this.controller.abortTransaction();
+            if (this.controller.isActive()) this.controller.abortTransaction();
             /* UserException would come from the operator method itself, meaning operator is not cancelled by external systems */
             if (!(e instanceof UserException)) {
-                modal.op.cancel(); //TODO do not cancel in try statement -> cancel exception would lead to two cancel calls.
+                op.cancel();
             }
-            this.setModalNull();
+            if (!closed) op.close();
+            this.modal = null;
             this.logger.error(e);
         } finally {
             this.isExecuting = false;
@@ -700,21 +728,20 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     private void commitModal(@Nullable KeyMapEvent event) {
-        IContext context = this.getCurrentContextForType(this.modal.type);
-        OperatorContext ctx = new OperatorContext<>(this.modal.triggered.copy(), this.getCurrentContextForType(this.modal.type).copy());
+        IContext context = this.getContextForType(this.modal.type);
+        IModalOperator op = this.modal.op;
         try {
-            Pair<OpExecuteFlag, Queue<IControllerCommand>> ret = this.modal.op.confirmModal(ctx, event);
-            if (ret.getA() == OpExecuteFlag.CANCELLED) {
+            OPReturnValue<OpExecuteFlag> ret = op.confirmModal(context, event);
+            if (ret.flag() == OpExecuteFlag.CANCELLED) {
                 this.controller.abortTransaction();
                 return;
             }
 
-            if (ret.getB() != null) {
+            if (ret.commands() != null) {
                 this.handleWritingTransaction((OperatorType) this.modal.type, (IModalOperator) this.modal.op,
-                        this.modal.triggered, context, ret.getB(), true);
+                        context, ret.commands(), true);
             } else {
-                this.handleCommitTransaction((OperatorType) this.modal.type, (IModalOperator) this.modal.op,
-                        this.modal.triggered, context);
+                this.handleCommitTransaction((OperatorType) this.modal.type, (IModalOperator) this.modal.op, context);
             }
         } catch (UserException e) {
 
@@ -724,44 +751,13 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     @NotNull
-    private <CTX extends IContext> String getTitle(OperatorType<CTX> type, IOperator<CTX> op, CTX triggered) {
-        final CTX context;
-        if ((context = this.getCurrentContextForType(type)) == null || !(op instanceof ITitleProvider<CTX> titleProvider)) {
+    private <CTX extends IContext, OP extends IOperator<CTX>> String getTitle(OperatorType<CTX, OP> type, OP op, CTX ctx) {
+        if (!(op instanceof ITitleProvider titleProvider)) {
             return type.title;
         }
-        IContext triggeredCopy = triggered.copy();
-        if (!this.contextTypeSafety(type, triggeredCopy)) {
-            throw new ContractViolatedException("The originalProps() method of the context did not provide the correct type.");
-        }
 
-        OperatorContext<CTX> ctx = new OperatorContext<>((CTX) triggeredCopy, context);
         String title = titleProvider.getTitle(ctx);
         return title == null ? type.title : title;
-    }
-
-    private <CTX extends IContext> boolean poll(OperatorType<CTX> type) throws UserException {
-        final CTX ctx;
-        return ((ctx = this.getCurrentContextForType(type)) != null) && type.poll(ctx);
-    }
-
-    /**
-     * Cancels current running operators (UI/Modal)
-     * @param messsage the message for the user why the operators stopped
-     */
-    private void cancelAll(@Nullable String messsage) {
-        if (this.modal != null) {
-            this.cancelModal();
-        }
-
-        if (this.runningInUIMode != null) {
-            this.cancelUIMode();
-        }
-
-        //TODO we need to be able to detect whether the current transaction was started by operatorManager.
-        // Otherwise we might accidentally abort transactions that are not ours
-        if (this.controller.isActive()) {
-            this.controller.abortTransaction();
-        }
     }
 
     public void cancelModal() {
@@ -775,259 +771,316 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * Starts transaction if controller is not active.<br>
      * Cancels Operator on failure.<br>
      * Handles errors and UI presentation of errors.<br>
-     * Calls {@link IOperator#cancel()} on error.
-     * @param triggered the context the operator was triggered in, can be different from current context.
      * @return true on success.
      */
-    private <CTX extends IContext> boolean handleWritingTransaction(OperatorType<CTX> type, IOperator<CTX> op,
-                                                                    CTX triggered, CTX current, Queue<IControllerCommand> commands, boolean commit) {
-        if (commands.isEmpty()) return true;
+    private <CTX extends IContext, OP extends IOperator<CTX>>
+    void handleWritingTransaction(OperatorType<CTX, OP> type, OP op, CTX current,
+                                     Queue<IControllerCommand> commands, boolean commit) throws UserException {
+        if (commands.isEmpty()) {
+            if (op instanceof IUndoOperator undoOp && commit) {
+                OperatorPropertiesGroupStruct props = op instanceof IPropertyOperator<?,?> propOp ? propOp.props() : null;
+                this.historyManager.pushUndo(type, undoOp, props);
+            }
+            return;
+        }
         if (!this.controller.isActive()) this.controller.startTransaction();
 
         ControllerResult result = this.controller.writeToTransaction(commands);
 
         if (result.state() == ControllerResult.State.ERROR) {
             if (result.exception() != null) {
-                this.logger.error("An error occured: " + result.userMessage(), result.exception());
+                throw new UserException(result.userMessage(), result.exception());
             } else {
-                this.logger.error("An error occured: " + result.userMessage());
+                throw new UserException(result.userMessage());
             }
-
-            op.cancel();
-
-            return false;
         }
 
         if (commit) {
-            return this.handleCommitTransaction(type, op, triggered, current);
+            this.handleCommitTransaction(type, op, current);
         }
-
-        return true;
     }
 
     /**
      * Handles committing a transaction, if controller is active and pushing to history.<br>
      * Handles errors and UI presentation of errors.<br>
      * Calls {@link IOperator#cancel()} on error.
-     * @param triggered the context the operator was triggered in. Can be different from the current context.
      * @return true if it was successful
      */
-    private <CTX extends IContext> boolean handleCommitTransaction(OperatorType<CTX> type, IOperator<CTX> op, CTX triggered, CTX current) {
-        if (!this.controller.isActive()) {
-            return false;
-        }
-
-        ControllerResult result = this.controller.commitTransaction(this.getTitle(type, op, triggered));
+    private <CTX extends IContext, OP extends IOperator<CTX>>
+    void handleCommitTransaction(OperatorType<CTX, OP> type, OP op, CTX current) throws UserException {
+        ControllerResult result = this.controller.commitTransaction(this.getTitle(type, op, current));
         if (result.state() == ControllerResult.State.ERROR) {
             if (result.exception() != null) {
-                this.logger.error("An error occured: " + result.userMessage(), result.exception());
+                throw new UserException(result.userMessage(), result.exception());
             } else {
-                this.logger.error("An error occured: " + result.userMessage());
+                throw new UserException(result.userMessage());
             }
-
-            op.cancel();
-
-            return false;
         }
 
         OperatorPropertiesGroupStruct props = op instanceof IPropertyOperator<?,?> propOp ? propOp.props() : null;
-        if (type.pushUndo()) this.historyManager.pushUndo(result.transaction(), type, props);
-
-        return true;
-    }
-
-    @Nullable
-    private <CTX extends IContext> CTX getCurrentContextForType(OperatorType<CTX> type) {
-        final C ctx;
-
-        if ((ctx = this.currentContext) == null) {
-            return null;
-        }
-
-        try {
-            if (type instanceof UIOperatorType) {
-                return (CTX) ctx.getUIContext();
+        if (type.pushUndo()) {
+            if (op instanceof IUndoOperator undoOperator) {
+                this.historyManager.pushUndo(result.transaction(), type, undoOperator, props);
             } else {
-                return (CTX) this.contextClass.cast(ctx);
+                this.historyManager.pushUndo(result.transaction(), type, props);
             }
-        } catch (ClassCastException e) {
-            this.logger.error(e);
-            return null;
-        }
-    }
-
-    /**
-     * @param type
-     * @param context
-     * @return true if the given context is the correct type for the given {@link OperatorType}
-     */
-    private boolean contextTypeSafety(OperatorType type, IContext context) {
-        if (context == null) return true;
-        if (type instanceof UIOperatorType) {
-            return context instanceof UIOperatorContext;
-        } else {
-            return this.contextClass.isInstance(context);
         }
     }
 
     private void runModalFunctions(KeyMapEvent event) {
-        for (ModalFunctionConfigGroupStruct<C> func : this.config.modalFunctions.getChildren()) {
-            if (func.hotKeyConfigSelector.get().onEvent(event)) {
-                ModalFunctionGroupStruct modifier = func.modifier.get();
-                /*
-                 * ATTENTION: any states could be modified by this and need to be rechecked...
-                 */
-                modifier.onEvent(this, new OperatorContext(this.modal.triggered.copy(),
-                        this.currentContext), this.modal.op);
-                break;
-            }
-        }
-    }
+        if (this.currentContext == null) return;
 
-    private void runPropertyModifiers(KeyMapEvent event) {
-        if (!(this.modal.op instanceof IPropertyOperator propOp)) return;
-
-        Iterator<Pair<HotKeyConfigGroupStruct, PropertyModifierGroupStruct>> it = this.modal.executedModifiersWaiting.iterator();
+        Iterator<RunningModal.FunctionsRelease<?>> it = this.modal.functionsWaitingRelease.iterator();
         while (it.hasNext()) {
-            Pair<HotKeyConfigGroupStruct, PropertyModifierGroupStruct> pair = it.next();
-            if (pair.getA().isStopEvent(event)) {
-                pair.getB().onStopEvent(this.modal.originalProps.copy(), propOp.props());
+            RunningModal.FunctionsRelease pair = it.next();
+            if (pair.config.onEvent(event)) {
+                IModalFunctionReleasableCommand command = pair.command;
+                command.onReleaseEvent(this, this.currentContext, this.modal.op);
                 it.remove();
                 return;
             }
         }
 
-        PropertyModifiersListStruct<?> propertyModalKeymap;
-        if ((propertyModalKeymap = this.config.propModifiers.getModalKeymapForProps(propOp.props())) != null) {
-            for (PropertyModifierConfigGroupStruct<?> cfg : propertyModalKeymap.getChildren()) {
-                if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
-                    PropertyModifierGroupStruct modifier = cfg.modifier.get();
-                    modifier.onEvent(this.modal.originalProps.copy(), propOp.props());
-                    if (cfg.hotKeyConfigSelector.get().useStopEvent()) {
-                        this.modal.executedModifiersWaiting.add(new Pair<>(this.copyHotKeyConfig(cfg.hotKeyConfigSelector.get()), cfg.modifier.get()));
-                    }
-                    break;
+        for (ModalFunctionHotKeyConfig<C> func : this.config.modalFunctions.getChildren()) {
+            if (func.hotKeyConfigSelector.get().onEvent(event)) {
+                ModalFunctionConfig modifier = func.modalFunction.get();
+                IModalFunctionCommand command = modifier.factory();
+
+                /*
+                 * ATTENTION: any states could be modified by this and need to be rechecked...
+                 */
+                command.onEvent(this, this.currentContext, this.modal.op);
+                if (this.modal == null) return;
+
+                if (modifier instanceof ModalFunctionReleasableConfig<?> releaseableConfig
+                        && command instanceof IModalFunctionReleasableCommand<?,?> releasableCommand
+                        && releaseableConfig.toggleOnRelease.get()
+                        && func.modalReleaseHotKeySelector.get() != null
+                        && func.modalReleaseHotKeySelector.get().get() != null
+                        && !this.isModalFunctionWaiting(releasableCommand)) {
+                    this.modal.functionsWaitingRelease.add(
+                            new RunningModal.FunctionsRelease<>(func.modalReleaseHotKeySelector.get().get(), releasableCommand));
                 }
             }
         }
     }
 
-    private HotKeyConfigGroupStruct copyHotKeyConfig(HotKeyConfigGroupStruct invokedConfig) {
-        HotKeyConfigRegistry registry = this.config.hotKeyConfigRegistry;
-
-        Integer id;
-        if ((id = registry.getID(invokedConfig)) == null) {
-            throw new IllegalArgumentException("The hotkey configuration is not registered.");
+    private boolean isModalFunctionWaiting(IModalFunctionReleasableCommand command) {
+        for (RunningModal.FunctionsRelease func : this.modal.functionsWaitingRelease) {
+            if (func.command.getClass().equals(command.getClass())) {
+                return true;
+            }
         }
 
-        HotKeyConfigGroupStruct hotKeyConfig;
-        if ((hotKeyConfig = registry.getNew(id)) == null) {
-            throw new IllegalArgumentException("The hotkey configuration is not registered.");
-        }
-
-        hotKeyConfig.fromData(invokedConfig.toData());
-        return hotKeyConfig;
+        return false;
     }
 
-    private OperatorPropertiesGroupStruct copyProps(OperatorPropertiesGroupStruct props) {
-        OperatorPropertiesGroupStruct propsCopy = props.copy();
-        if (!propsCopy.getClass().equals(props.getClass())) {
-            throw new ContractViolatedException("The original property copy() method of the OperatorProperties is not implemented correctly.");
+    private void runPropertyModifiers(KeyMapEvent event) {
+        if (!(this.modal.op instanceof IPropertyOperator propOp)) return;
+
+        Iterator<RunningModal.ModifierRelease<?>> it = this.modal.modifiersWaitingRelease.iterator();
+        while (it.hasNext()) {
+            RunningModal.ModifierRelease pair = it.next();
+            if (pair.config.onEvent(event)) {
+                pair.command.onReleaseEvent(propOp.props());
+                it.remove();
+                return;
+            }
         }
 
-        return propsCopy;
+        List<PropertyModifierHotKeyConfig<OperatorPropertiesGroupStruct>> propertyModalKeymap = this.config.propModifiers.getConfigs(propOp.props());
+        for (PropertyModifierHotKeyConfig<?> cfg : propertyModalKeymap) {
+            if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
+                PropertyModifierConfig modifier = cfg.modifier.get();
+                IPropertyModifierCommand command = modifier.factory();
+                command.onEvent(propOp.props());
+                if (modifier instanceof PropertyModifierReleaseableConfig<?> releaseableConfig
+                        && command instanceof IPropertyModifierReleasableCommand<?,?> releasableCommand
+                        && releaseableConfig.toggleOnRelease.get()
+                        && cfg.modalReleaseHotKeySelector.get() != null
+                        && !this.isModifierWaiting(releasableCommand)) {
+                    this.modal.modifiersWaitingRelease.add(
+                            new RunningModal.ModifierRelease<>(cfg.modalReleaseHotKeySelector.get().get(), releasableCommand));
+                }
+                break;
+            }
+        }
+    }
+
+    private boolean isModifierWaiting(IPropertyModifierReleasableCommand command) {
+        for (RunningModal.ModifierRelease mod : this.modal.modifiersWaitingRelease) {
+            if (mod.command.getClass().equals(command.getClass())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean runModalEventLogic(KeyMapEvent event) {
+        if (this.modal == null) return false;
+
+        /* check if the given event should confirm the operator */
+        final OperatorModalConfirmConfig modalConfirmConfig;
+        final HotKeyConfigGroupStruct modalConfirmHotKey;
+        if (this.modal.config != null
+                && (modalConfirmConfig = this.modal.config.modalConfirmConfig.get()) != null
+                && (modalConfirmHotKey = modalConfirmConfig.hotKeyConfigSelector.get()) != null) {
+            if (modalConfirmConfig.confirmOnRelease.get() && modalConfirmHotKey.onEvent(event)) {
+                this.commitModal(event);
+                return true;
+            }
+        }
+
+        try {
+            this.runModalFunctions(event);
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.cancelModal();
+            return true;
+        }
+
+        /* modal functions could commit or cancel current operator,
+         * return true as it means the modal functions did something. */
+        if (this.modal == null) return true;
+
+        try {
+            this.runPropertyModifiers(event);
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.cancelModal();
+            return true;
+        }
+
+        if (this.modal == null) return true;
+
+        this._modal(event);
+        return true;
+    }
+
+    public boolean isEventBlocked(KeyMapEvent event) {
+        Iterator<KeyMapEvent> it = this.cachedBlockedEvents.iterator();
+
+        /*
+         * Go through the cached events and check for each if a strategy for the cached event blocks the incoming event.
+         */
+        while (it.hasNext()) {
+            final KeyMapEvent cached = it.next();
+            for (ICachedEventBlocker blockStrategy : this.blockStrategies.get(cached.getClass())) {
+                if (blockStrategy.isEventCleared(cached, event)) {
+                    it.remove();
+                    return true;
+                } else if (blockStrategy.isEventBlocked(cached, event)) {
+                    return true;
+                }
+            }
+        }
+
+        /*
+         * test if the event should be cached when it was not blocked already.
+         */
+        Set<ICachedEventBlocker> blockStrategies;
+        if ((blockStrategies = this.blockStrategies.get(event.getClass())) != null) {
+            for (ICachedEventBlocker blockStrategy : blockStrategies) {
+                if (blockStrategy.cacheEvent(event)) {
+                    this.cachedBlockedEvents.add(event);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
     public boolean onEvent(KeyMapEvent event) {
         if (this.currentContext == null) return false;
 
-        if (this.blockedModalEvent != null && this.blockedModalEvent.isReleaseEvent(event)) {
-            this.blockedModalEvent = null;
-        }
-
         //TODO operator type switching and Operator needs to receive previous properties so the previous operator could influence the next
-        /*
-         * Check if modal operator should be cancelled or committed.
-         */
-        if (this.modal != null) {
-            boolean isStopEvent = this.modal.hotkey != null && this.modal.hotkey.useStopEvent() && this.modal.hotkey.isStopEvent(event);
 
-            if (isStopEvent) {
-                this.commitModal(event);
-                return true;
-            }
-
-            /* no need to return true for executing modal functions/ property modifiers,
-            * as later the modal itself will return true for this event. */
-            try {
-                this.runModalFunctions(event);
-            } catch (Exception e) {
-                e.printStackTrace();
-                this.cancelModal();
-                return true;
-            }
-
-            if (this.modal == null) return true;
-
-            try {
-                this.runPropertyModifiers(event);
-            } catch (Exception e) {
-                e.printStackTrace();
-                this.cancelModal();
-                return true;
-            }
+        if (this.runModalEventLogic(event) || this.isEventBlocked(event)) {
+            return true;
         }
 
         /*
          * No Modal operator running, try and trigger?
          */
-        boolean isEventBlocked = this.blockedModalEvent != null && this.blockedModalEvent.onEvent(event);
-        if (this.modal == null && !isEventBlocked) {
-            // TODO Mittlere Maus ohne shift vs mittlere maus mit shift, welcher soll getriggered werden? Muss in hotkeyconfig implementiert werden
-            Set<OperatorKeyConfigItemGroupStruct<C>> configs = this.config.getConfigs(event);
-            for (OperatorKeyConfigItemGroupStruct<C> config : configs) {
-                OperatorType<C> ot;
-                if ((ot = config.operatorType.getReference()) == null) continue;
+        UISpace spaceType = this.currentContext.getUIContext().currentHoveredUISpace();
+        UIRegion regionType = this.currentContext.getUIContext().currentHoveredUIRegion();
+        if (this.modal == null && spaceType != null) {
+            if (regionType == null) {
+                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
+                    if (this.triggerOperatorConfig(config, event)) return true;
+                }
 
-                if (ot instanceof IOTPropertyProvider provider) {
-                    OperatorPropertiesGroupStruct newProps = provider.createProps();
-                    newProps.copyFrom(config.props.getProps());
-                    return this._invokeOT(ot, newProps, config.hotKeyConfigSelector.get());
-                } else {
-                    return this._invokeOT(ot, null, config.hotKeyConfigSelector.get());
+                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
+                    if (this.triggerOperatorConfig(config, event)) return true;
+                }
+            } else {
+                for (OperatorConfigGroupStruct<C> config : this.config.getConfigsForUISpaceRegion(spaceType.getClass(), regionType.getClass())) {
+                    if (this.triggerOperatorConfig(config, event)) return true;
+                }
+
+                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
+                    if (this.triggerOperatorConfig(config, event)) return true;
+                }
+
+                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
+                    if (this.triggerOperatorConfig(config, event)) return true;
                 }
             }
-        } else {
-            this._modal(event);
-            return true;
         }
 
         return false;
+    }
+
+    private boolean triggerOperatorConfig(OperatorConfigGroupStruct<C> config, KeyMapEvent event) {
+        HotKeyConfigGroupStruct hotkeyConfig = config.hotKeyConfigSelector.get();
+        if (hotkeyConfig == null || !hotkeyConfig.onEvent(event)) return false;
+        OperatorType<C, ?> ot;
+        if ((ot = config.operatorType.getReference()) == null) return false;
+        if (ot instanceof IOTPropertyProvider<?, ?> provider) {
+            OperatorPropertiesGroupStruct newProps = provider.createProps();
+            if (config.props.getProps() != null) newProps.copyFrom(config.props.getProps());
+            return this._invokeOT(ot, newProps, config);
+        } else {
+            return this._invokeOT(ot, null, config);
+        }
     }
 
     /**
      *
      * @param type
      * @param op
-     * @param triggered
-     * @param hotkey null if the modal operator was not triggered by a hotkey configuration.
-     * @param executedModifiersWaiting set of modifiers that await a stop event.
+     * @param modifiersWaitingRelease set of modifiers that await a release event.
      * @param <CTX>
      */
-    protected record RunningModal<CTX extends IContext>(OperatorType<CTX> type, IModalOperator<CTX> op, CTX triggered,
-                                                        @Nullable HotKeyConfigGroupStruct hotkey,
-                                                        @Nullable OperatorPropertiesGroupStruct originalProps,
-                                                        Set<Pair<HotKeyConfigGroupStruct, PropertyModifierGroupStruct>> executedModifiersWaiting) {
-        public RunningModal(OperatorType<CTX> type, IModalOperator<CTX> op, CTX triggered, @Nullable HotKeyConfigGroupStruct hotkey, @Nullable OperatorPropertiesGroupStruct copy) {
-            this(type, op, triggered, hotkey, copy, new HashSet<>());
+    protected record RunningModal<CTX extends IContext, OP extends IModalOperator<CTX>>
+            (OperatorType<CTX, OP> type, OP op,
+             @Nullable OperatorConfigGroupStruct<CTX> config,
+             Set<ModifierRelease<?>> modifiersWaitingRelease,
+             Set<FunctionsRelease<?>> functionsWaitingRelease)
+    {
+        public RunningModal(OperatorType<CTX, OP> type, OP op, @Nullable OperatorConfigGroupStruct<CTX> config) {
+            this(type, op, config, new HashSet<>(), new HashSet<>());
+        }
+
+        protected record ModifierRelease<P extends OperatorPropertiesGroupStruct>
+                (HotKeyConfigGroupStruct config, IPropertyModifierReleasableCommand<P, ?> command) {
+
+        }
+
+        protected record FunctionsRelease<CTX extends IContext>
+                (HotKeyConfigGroupStruct config, IModalFunctionReleasableCommand<CTX, ?> command) {
+
         }
     }
 
     protected record RunningUIMode<CTX extends IContext,
             P extends OperatorPropertiesGroupStruct,
-            OT extends OperatorType<CTX> & IOTPropertyProvider<P>>
-            (OT type, IPropertyOperator<CTX, P> op, CTX triggered, Object propSubscriber) {
+            OT extends OperatorType<CTX, OP> & IOTPropertyProvider<OP, P>,
+            OP extends IPropertyOperator<CTX, P>>
+            (OT type, OP op, Object propSubscriber) {
     }
 
     protected enum Method {

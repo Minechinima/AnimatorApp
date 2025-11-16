@@ -160,7 +160,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
     @Nullable
     private KeyMapKeyEvent getReleasedKeyByEqualKey(KeyMapKeyEvent target) {
         for (KeyMapKeyEvent key : this.releasedKeys.keySet()) {
-            if (key.equalKey(target)) return key;
+            if (key.key().keyCode() == target.key().keyCode()) return key;
         }
         return null;
     }

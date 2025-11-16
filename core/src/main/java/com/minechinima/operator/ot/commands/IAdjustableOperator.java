@@ -1,16 +1,13 @@
 package com.minechinima.operator.ot.commands;
 
-import com.minechinima.controller.api.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorContext;
 import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.ot.commands.flags.OPReturnValue;
+import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.ui.elements.UIElement;
-import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Queue;
 
 /**
  * For Operators that support adjust last operation from the history.
@@ -32,8 +29,8 @@ public abstract class IAdjustableOperator<C extends IContext, P extends Operator
      * @return
      * @throws UserException
      */
-    public Pair<OpExecuteFlag, OpExecuteFlag> invokeAdjustment(C context) throws UserException {
-        return new Pair<>(OpExecuteFlag.FINISHED, null);
+    public OPReturnValue<OpExecuteFlag> invokeAdjustment(C context) throws UserException {
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED);
     }
 
     /**
@@ -41,7 +38,7 @@ public abstract class IAdjustableOperator<C extends IContext, P extends Operator
      * @param context
      * @param prop the property that was changed
      */
-    public abstract Pair<OpExecuteFlag, Queue<IControllerCommand>> adjust(OperatorContext<C> context, BaseStructure prop) throws UserException;
+    public abstract OPReturnValue<OpExecuteFlag> adjust(C context, BaseStructure prop) throws UserException;
 
     /**
      * Called when the adjust last action is confirmed and the UI is closed.
@@ -50,8 +47,8 @@ public abstract class IAdjustableOperator<C extends IContext, P extends Operator
      * @param context
      * @return
      */
-    public Pair<OpExecuteFlag, Queue<IControllerCommand>> confirmAdjustment(C context) throws UserException {
-        return new Pair<>(OpExecuteFlag.FINISHED, null);
+    public OPReturnValue<OpExecuteFlag> confirmAdjustment(C context) throws UserException {
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED);
     }
 
     /**

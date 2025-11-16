@@ -13,13 +13,13 @@ import java.util.UUID;
  * list of operator configs
  * @param <C>
  */
-public class OperatorKeyConfigListStruct<C extends IContext> extends BaseValueList<OperatorKeyConfigItemGroupStruct<C>> {
-    public OperatorKeyConfigListStruct(String id) {
+public class OperatorConfigsListStruct<C extends IContext> extends BaseValueList<OperatorConfigGroupStruct<C>> {
+    public OperatorConfigsListStruct(String id) {
         super(id);
     }
 
     @Override
-    protected @NotNull OperatorKeyConfigItemGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed {
+    protected @NotNull OperatorConfigGroupStruct<C> instantiate(String id, @Nullable UUID uuid, BaseType<?> map) throws BaseTypeCannotBeParsed {
         return null;
     }
 }

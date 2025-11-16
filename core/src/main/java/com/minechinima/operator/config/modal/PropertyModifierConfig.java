@@ -1,8 +1,8 @@
-package com.minechinima.operator;
+package com.minechinima.operator.config.modal;
 
-import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.values.base.ValueGroup;
+import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.modal.IPropertyModifierCommand;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,37 +11,26 @@ import org.jetbrains.annotations.Nullable;
  * Example use case: Modal Operator to move an object -> while moving you can press X to only move on the X axis. This will
  * call this class which will set the corresponding property.
  * <br><br>
- * The command methods are executed on the configuration instances, YOU CANNOT STORE RUNTIME STATES HERE AS THESE INSTANCES ARE REUSED.
- * <br><br>
  * Is part of data model to allow configuration attributes<br>
  * Modifier to adjust dragging increments: float value to configure increment steps
  * <br><br>
- * Reasoning for the split into separate property modifier commands:<br>
+ * Reasoning splitting operator up into operator commands and separate modifier commands:<br>
  * More transparency how the behavior of the operator is influenced.<br>
  * The Operator does not need to implement any hotkey logic, only logic based on the attributes.<br>
  * Higher flexibility with hotkey configuration.
  * @param <P>
  */
-public abstract class PropertyModifierGroupStruct<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements ILangKeyProvider {
+public abstract class PropertyModifierConfig<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements ILangKeyProvider {
     private final String title;
     private final String description;
 
-    public PropertyModifierGroupStruct(String title, String description) {
+    public PropertyModifierConfig(String title, String description) {
         super("");
         this.title = title;
         this.description = description;
     }
 
-
-    public abstract void onEvent(P originalProps, P props);
-
-    /**
-     * See {@link HotKeyConfigGroupStruct#isStopEvent(KeyMapEvent)}<br>
-     * Can be used to implement toggle modifier that undo the action when the key is released.
-     * <br><br>
-     * Might not always be called!
-     */
-    public abstract void onStopEvent(P originalProps, P props);
+    public abstract IPropertyModifierCommand<P, ?> factory();
 
     @Override
     public String title() {

@@ -5,9 +5,10 @@ import com.minechinima.operator.IContext;
 import com.minechinima.operator.UIOperatorContext;
 import com.minechinima.rendering.IWindow;
 import com.minechinima.ui.elements.UIElement;
-import com.minechinima.ui.elements.UIScreen;
-import com.minechinima.ui.elements.UISpace;
-import com.minechinima.ui.elements.UIWindow;
+import com.minechinima.ui.elements.window.UIRegion;
+import com.minechinima.ui.elements.window.UIScreen;
+import com.minechinima.ui.elements.window.UISpace;
+import com.minechinima.ui.elements.window.UIWindow;
 import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import imgui.ImGui;
 import imgui.flag.ImGuiKey;
@@ -250,10 +251,12 @@ public class UIContext<C extends IContext> {
         private UIWindow<C> clickedWindow;
         private UIScreen<C> clickedUIScreen;
         private UISpace<C> clickedUISpace;
+        private UIRegion<C> clickedUIRegion;
         private UIElement<C> clickedWidget;
         private UIWindow<C> currentHoveredWindow;
         private UIScreen<C> currentHoveredUIScreen;
         private UISpace<C> currentHoveredUISpace;
+        private UIRegion<C> currentHoveredUIRegion;
         private UIElement<C> currentHoveredWidget;
 
         public void reset() {
@@ -292,6 +295,24 @@ public class UIContext<C extends IContext> {
         public void setClickedUISpace(UISpace<C> clickedUISpace) {
             if (this.clickedUISpace != null) return;
             this.clickedUISpace = clickedUISpace;
+        }
+
+        public UIRegion<C> getClickedUIRegion() {
+            return clickedUIRegion;
+        }
+
+        public void setClickedUIRegion(UIRegion<C> clickedUIRegion) {
+            if (this.clickedUIRegion != null) return;
+            this.clickedUIRegion = clickedUIRegion;
+        }
+
+        public UIRegion<C> getCurrentHoveredUIRegion() {
+            return currentHoveredUIRegion;
+        }
+
+        public void setCurrentHoveredUIRegion(UIRegion<C> currentHoveredUIRegion) {
+            if (this.currentHoveredUIRegion != null) return;
+            this.currentHoveredUIRegion = currentHoveredUIRegion;
         }
 
         public UIElement<C> getClickedWidget() {
@@ -344,10 +365,12 @@ public class UIContext<C extends IContext> {
                     this.clickedWindow,
                     this.clickedUIScreen,
                     this.clickedUISpace,
+                    this.clickedUIRegion,
                     this.clickedWidget,
                     this.currentHoveredWindow,
                     this.currentHoveredUIScreen,
                     this.currentHoveredUISpace,
+                    this.currentHoveredUIRegion,
                     this.currentHoveredWidget,
                     UIContext.this.manager);
         }

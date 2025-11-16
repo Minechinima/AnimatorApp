@@ -7,7 +7,7 @@ import com.minechinima.model.base.BaseStructure;
 import com.minechinima.operator.BBOperatorContext;
 import com.minechinima.ui.BBIconUnicodes;
 import com.minechinima.ui.UIContext;
-import com.minechinima.ui.elements.UISpace;
+import com.minechinima.ui.elements.window.UISpace;
 import imgui.ImGui;
 
 import java.util.Comparator;

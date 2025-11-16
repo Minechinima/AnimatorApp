@@ -15,22 +15,4 @@ public interface IContext {
      * @param operatorContext
      */
     void setUIContext(UIOperatorContext operatorContext);
-
-    /**
-     * @return a new {@link IContext} instance.<br>
-     * Whether it is a deep copy is up to the implementation.
-     */
-    @NotNull
-    IContext copy();
-
-    /**
-     * This tests whether this and the other context represent the same application context.<br><br>
-     * This should not check for reference equality of the {@link IContext} instances, as those might be different, but
-     * the actual data (e.g. {@link UIOperatorContext} or other app relevant context data) are equal references!<br><br>
-     * This method is used to determine if the application context changed.
-     * @param other
-     * @return true if the contexts are the same.<br>false if the contexts are not equal and should be treated as a changed context.
-     * TODO review
-     */
-    boolean contextEquals(IContext other);
 }

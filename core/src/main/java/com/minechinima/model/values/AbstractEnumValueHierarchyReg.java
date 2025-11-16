@@ -1,18 +1,21 @@
 package com.minechinima.model.values;
 
-import com.minechinima.data.types.BaseType;
+import com.minechinima.data.types.*;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import com.minechinima.utils.IGenericRegistry;
 import com.minechinima.utils.RegistryUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * template class that utilizes {@link com.minechinima.utils.IGenericRegistry}
+ * <br>
+ * <b>Important:</b> This does not support deserializing identifiers or uuids.
  * @param <T>
  */
 public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & ILangKeyProvider> extends AbstractEnumValueHierarchy<T> {
@@ -22,6 +25,10 @@ public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & IL
         super(id);
         this.registry = registry;
         this.set(defaultValue);
+    }
+
+    public AbstractEnumValueHierarchyReg(String id, IGenericRegistry<T> registry) {
+        this(id, registry, null);
     }
 
     @Override
@@ -34,12 +41,20 @@ public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & IL
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return this.get() == null ? null : RegistryUtils.serializeObjectData(this.registry, this.get());
+    protected final T instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
+        return RegistryUtils.deserializeObjectData(this.registry, data);
     }
 
     @Override
-    public @Nullable T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
+    public BaseType<?> valueToData() {
+        if (this.get() == null) return NullType.INSTANCE;
+        return RegistryUtils.serializeObjectData(this.registry, this.get());
+    }
+
+    @Override
+    @Nullable
+    public T valueFromData(BaseType<?> data) throws BaseTypeCannotBeParsed {
+        if (data instanceof NullType) return null;
         return RegistryUtils.deserializeObjectData(this.registry, data);
     }
 
@@ -47,12 +62,12 @@ public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & IL
     public Map<Integer, T> getAvailableValues() {
         Map<Integer, T> values = this.registry.getAllNew();
         /* overwrite the instance so it contains the correct data of current value */
-        values.put(this.getCurrentValue(), this.get());
+        values.put(this.getCurrentValueIndex(), this.get());
         return values;
     }
 
     @Override
-    public Integer getCurrentValue() {
+    public Integer getCurrentValueIndex() {
         return this.registry.getID(this.get());
     }
 }
