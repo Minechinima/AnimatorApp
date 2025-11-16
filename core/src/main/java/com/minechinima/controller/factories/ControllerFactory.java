@@ -1,5 +1,6 @@
-package com.minechinima.controller.api;
+package com.minechinima.controller.factories;
 
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
@@ -7,7 +8,7 @@ import com.minechinima.model.logging.datainterfaces.IDMutable;
 import java.util.List;
 import java.util.Optional;
 
-public class ControllerFactory<T extends BaseStructure> {
+public class ControllerFactory<T extends BaseStructure & IControllerFactoryProvider> {
     protected final T owner;
 
     public ControllerFactory(T owner) {

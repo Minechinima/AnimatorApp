@@ -1,4 +1,4 @@
-package com.minechinima.controller.api;
+package com.minechinima.controller;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Allows to reuse other controllers in a composition of controller commands.
  */
-public class ControllerChain implements IControllerCommand {
+public class ControllerChain extends IControllerCommand {
     @NotNull
     private final IControllerCommand command;
     @Nullable
