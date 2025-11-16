@@ -560,8 +560,8 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @throws ContractViolatedException {@link BaseValueHierarchy#getPathSegmentPrefixForChild(BaseStructure)}
      */
     private final void appendPathSegmentWithParent(ValuePath path) {
-        Pair<ID, ValuePath.Format> pair = this.parent.getPathSegmentPrefixForChild(this);
-        ValuePath.Format idFormat = this.parent.getPathFormat();
+        Pair<ID, ValuePath.IFormat> pair = this.parent.getPathSegmentPrefixForChild(this);
+        ValuePath.IFormat idFormat = this.parent.getPathFormat();
         if (pair.getB() != null) {
             if (pair.getA() == null) {
                 throw new IllegalStateException("This is not a child of this.parent according to getIdentifierPrefixForChild().");
