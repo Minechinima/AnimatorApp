@@ -693,18 +693,19 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *
      * @param event
      */
-    private void logChangeEvent(ChangeEvent<?> event) {
+    private void bubbleDataOperation(ChangeEvent<?> event) {
         this.logger.logDataOperation(event.getTrigger(), event.getDataOperation());
 
         if (this.parent != null) {
-            ((BaseStructure) this.parent).logChangeEvent(event);
+            ((BaseStructure) this.parent).bubbleDataOperation(event);
         }
     }
 
-    private final <T extends Event> void triggerChildEvent(T event) {
+    private final <T extends Event> void bubbleChildEvent(T event) {
+        this.onChildEvent(event);
         this.bus._dispatchEventFromChildNode(event);
         if (this.parent != null) {
-            ((BaseStructure) this.parent).triggerChildEvent(event);
+            ((BaseStructure) this.parent).bubbleChildEvent(event);
         }
     }
 
@@ -736,7 +737,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
              * Events might result in new changes, so first record the source change for correct chronological order.
              */
             if (event instanceof ChangeEvent<?> changeEvent) {
-                this.logChangeEvent(changeEvent);
+                this.bubbleDataOperation(changeEvent);
             }
         } catch (Exception e) {
             /*
@@ -756,7 +757,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
          * FurryFlo war auch dabei.
          */
         if (this.parent != null) {
-            ((BaseStructure) this.parent).triggerChildEvent(event);
+            ((BaseStructure) this.parent).bubbleChildEvent(event);
         }
     }
 
@@ -765,6 +766,12 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @param event
      */
     protected void onEvent(Event event) { }
+
+    /**
+     * For internal event handling code without the event bus overhead.
+     * @param event
+     */
+    protected void onChildEvent(Event event) { }
 
     /**
      * Template method pattern, also enforce important things that should always happen when removing from the tree.
