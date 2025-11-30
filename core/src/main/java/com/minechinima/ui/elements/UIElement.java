@@ -5,6 +5,7 @@ import com.minechinima.ui.UIContext;
 import com.minechinima.ui.annotation.IUIElement;
 import imgui.ImGui;
 
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 public abstract class UIElement<C extends IContext> implements IUIElement<UIContext<C>> {
@@ -52,6 +53,10 @@ public abstract class UIElement<C extends IContext> implements IUIElement<UICont
         this.shown = true;
         ImGui.pushID(this.hashCode());
         this.draw(context);
+        Iterator<UIElement<C>> it = this.children.iterator();
+        while (it.hasNext()) {
+            it.next().render(context);
+        }
         ImGui.popID();
     }
 

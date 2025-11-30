@@ -23,7 +23,7 @@ public class UIAccordion<C extends IContext> extends UIGroup<C> {
     public void draw(UIContext<C> context) {
         if (ImGui.collapsingHeader(context.getTranslationBackpack().getTranslation(this.label + ".title", context.getLocale()))) {
             for (IUIElement<UIContext<C>> child : this.children) {
-                child.draw(context);
+                child.render(context);
             }
         }
     }

@@ -60,6 +60,7 @@ public class UIScreen<C extends IContext> extends UIElement<C> {
         if (ImGui.begin("   ##" + this.hashCode(), windowFlags)) {
             if (ImGui.isWindowFocused() || this.focused) {
                 this.focused = true;
+                context.getContextBuilder().setCurrentHoveredUISpace(this.panel);
                 context.getContextBuilder().setClickedUIScreen(this);
             }
 
