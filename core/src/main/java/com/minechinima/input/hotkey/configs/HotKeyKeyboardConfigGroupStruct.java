@@ -16,7 +16,9 @@ public class HotKeyKeyboardConfigGroupStruct extends AbstractHotKeyKeyConfigGrou
         if (this.type.get() == KeyType.DOUBLECLICK || this.type.get() == KeyType.CLICK) return null;
 
         HotKeyKeyboardConfigGroupStruct cfg = new HotKeyKeyboardConfigGroupStruct(this.title(), this.tooltip());
+        cfg.initChildren();
         cfg.key.set(this.key.get());
+        cfg.mod.any.set(true);
         if (this.type.get() == KeyType.RELEASE) {
             cfg.type.set(KeyType.PRESS);
         } else {

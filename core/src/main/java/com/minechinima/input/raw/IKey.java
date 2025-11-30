@@ -11,6 +11,6 @@ public interface IKey {
     int keyCode();
     default boolean equalsKey(IKey key) {
         //TODO do we need equalsKey? equalsKey would not guarantee commmutativity a.equalsKey(b) == b.equalsKey(a)
-        return key.keyCode() == this.keyCode();
+        return key != null && key.keyCode() == this.keyCode();
     }
 }
