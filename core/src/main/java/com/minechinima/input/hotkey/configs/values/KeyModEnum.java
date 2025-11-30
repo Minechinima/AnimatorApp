@@ -1,5 +1,6 @@
 package com.minechinima.input.hotkey.configs.values;
 
+import com.minechinima.input.raw.IKey;
 import com.minechinima.input.raw.Key;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import com.minechinima.utils.CollectionUtils;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public enum KeyModEnum implements ILangKeyProvider {
+public enum KeyModEnum implements ILangKeyProvider, IKey {
     CONTROL(Key.KEY_LEFT_CONTROL, Key.KEY_RIGHT_CONTROL, Key.MOD_CONTROL),
     ALT(Key.KEY_LEFT_ALT, Key.KEY_RIGHT_ALT, Key.MOD_ALT),
     SHIFT(Key.KEY_LEFT_SHIFT, Key.KEY_RIGHT_SHIFT, Key.MOD_SHIFT);
@@ -64,5 +65,19 @@ public enum KeyModEnum implements ILangKeyProvider {
     @Override
     public @Nullable String tooltip() {
         return this.name();
+    }
+
+    @Override
+    public int keyCode() {
+        //TODO REVISE IKey interfaces
+        return 0;
+    }
+
+    @Override
+    public boolean equalsKey(IKey key) {
+        for (Key originalKey : this.keys) {
+            if (key != null && originalKey.keyCode() == key.keyCode()) return true;
+        }
+        return false;
     }
 }
