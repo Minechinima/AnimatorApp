@@ -45,7 +45,7 @@ public class UIOutlinerPanel extends UISpace<BBOperatorContext> {
 
     private void renderObject(UIContext uictx, BBContext ctx, BaseObject obj) {
         String icon = obj.data.get() != null ? obj.data.get().getOutlinerIconUnicode() : BBIconUnicodes.OBJECT_OUTLINE;
-        if (ImGui.selectable(icon + " " + obj.getIdentifier(), obj == ctx.activeObject.getReference())) {
+        if (ImGui.selectable(icon + " " + obj.getIdentifier(), obj == ctx.activeObject.get())) {
             uictx.getUIManager().getOperatorManager().executeTransaction("select", ctx.activeObject.controller().set(obj), true);
         }
     }

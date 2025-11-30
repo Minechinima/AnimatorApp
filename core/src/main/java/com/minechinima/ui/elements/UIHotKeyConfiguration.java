@@ -2,6 +2,8 @@ package com.minechinima.ui.elements;
 
 import com.minechinima.input.hotkey.*;
 import com.minechinima.model.base.BaseValueHierarchy;
+import com.minechinima.model.events.bus.SubscribeEvent;
+import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoryGroupStruct;
@@ -12,55 +14,64 @@ import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class UIHotKeyConfiguration<C extends IContext> extends UIElement<C> {
+    private Consumer<UIContext<C>> cachedUpdate;
 
     public UIHotKeyConfiguration() {
 
     }
 
-    @Override
-    public void draw(UIContext<C> context) {
-        UserFunctionalityConfigGroupStruct<C> config = context.getUIManager().getOperatorManager().getConfig();
-        this.drawConfigCategories(context, config.operators);
+    @SubscribeEvent(type= SubscribeEvent.Type.IN_CHILDREN)
+    private void onChange(ChangeEvent event) {
+        this.cachedUpdate = this::_onShow;
     }
 
-    private void drawConfigCategories(UIContext<C> context, OperatorConfigCategoriesMapStruct<C> config) {
+    @Override
+    protected void _onShow(UIContext<C> context) {
+        UserFunctionalityConfigGroupStruct<C> config = context.getUIManager().getOperatorManager().getConfig();
+        //config.getEventBus().subscribe(this);
+
+        this.createUI(context, config.operators);
+    }
+
+    protected void createUI(UIContext<C> context, OperatorConfigCategoriesMapStruct<C> config) {
+        this.children.clear();
+
         for (Map.Entry<String, OperatorConfigCategoryGroupStruct<C>> category : config) {
-            if (ImGui.collapsingHeader(context.getTranslationBackpack().getTranslation(category.getValue().getIdentifier() + ".title",
-                    context.getLocale()))) {
-                this.drawConfigCategories(context, category.getValue().subcategories);
-                this.drawConfigs(context, category.getValue().configs);
+            UIAccordion<C> uiAccordion = new UIAccordion<>(category.getValue().getIdentifier() + ".title");
+            this.children.add(uiAccordion);
+            this.createCategories(category.getValue().subcategories, uiAccordion);
+
+            for (OperatorConfigGroupStruct<C> cfg : category.getValue().configs) {
+                UIOperatorConfigElement<C> opCfgUI = new UIOperatorConfigElement<>(cfg);
+                uiAccordion.addChild(opCfgUI);
             }
         }
-
     }
 
-    private void drawConfigs(UIContext<C> context, OperatorConfigsListStruct<C> config) {
-        for (OperatorConfigGroupStruct<C> cfg : config) {
-            UIEnum<HotKeyConfigGroupStruct, HotKeyConfigSelectorEnumStruct, C> hotkey = new UIEnum<>("hotkey");
-            hotkey.init(cfg.hotKeyConfigSelector);
-            hotkey.draw(context);
+    protected void createCategories(OperatorConfigCategoriesMapStruct<C> config, UIAccordion<C> parentAccordion) {
+        for (Map.Entry<String, OperatorConfigCategoryGroupStruct<C>> category : config) {
+            UIAccordion<C> uiAccordion = new UIAccordion<>(category.getValue().getIdentifier() + ".title");
+            parentAccordion.addChild(uiAccordion);
+            this.createCategories(category.getValue().subcategories, uiAccordion);
 
-            if (hotkey.getValue().get() != null) {
-                context.getUiHandlerRegistry().getUnnamedHandlersFor(hotkey.getValue().get()).forEach(
-                        hotKeyConfigIUIHandler -> {
-                            hotKeyConfigIUIHandler.draw(context, hotkey.getValue().get());
-                        });
+            for (OperatorConfigGroupStruct<C> cfg : category.getValue().configs) {
+                UIOperatorConfigElement<C> opCfgUI = new UIOperatorConfigElement<>(cfg);
+                uiAccordion.addChild(opCfgUI);
             }
+        }
+    }
 
-
-            if (cfg.props.getProps() != null) {
-                context.getUiHandlerRegistry().getUnnamedHandlersFor(cfg.props.getProps()).forEach(
-                        hotKeyConfigIUIHandler -> {
-                            hotKeyConfigIUIHandler.draw(context, cfg.props.getProps());
-                        });
-            }
-
-            UIPointerTargetSelector<OperatorType, C> uiptr = new UIPointerTargetSelector<>("OperatorType");
-            uiptr.setSourceList((BaseValueHierarchy<OperatorType>) cfg.operatorType.getReferenceFrame());
-            uiptr.init(cfg.operatorType).draw(context);
+    @Override
+    public void draw(UIContext<C> context) {
+        if (this.cachedUpdate != null) {
+            this.cachedUpdate.accept(context);
+            this.cachedUpdate = null;
         }
     }
 }

@@ -23,8 +23,16 @@ public class ImmutableVector2d {
         return this.y;
     }
 
+    /**
+     * @return mutable copy of this vector.
+     */
     public Vector2d getVector2d() {
         return new Vector2d(this.x, this.y);
+    }
+
+    @Override
+    public String toString() {
+        return this.x + " " + this.y;
     }
 }
 
