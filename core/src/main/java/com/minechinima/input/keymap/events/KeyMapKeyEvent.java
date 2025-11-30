@@ -1,10 +1,11 @@
 package com.minechinima.input.keymap.events;
 
 import com.minechinima.input.keymap.PressedKeySet;
+import com.minechinima.input.raw.IKey;
 import com.minechinima.input.raw.Key;
 import com.minechinima.ui.elements.window.UIWindow;
 
-public class KeyMapKeyEvent extends KeyMapEvent {
+public class KeyMapKeyEvent extends KeyMapEvent implements IKeyMapKeyEvent {
     /**
      * @implNote this is not used in the core framework of keymap stuff. Instead, the more general equalKey method is
      * used to allow future subclasses with custom keys and better runtime extensibility.
@@ -24,5 +25,10 @@ public class KeyMapKeyEvent extends KeyMapEvent {
 
     public KeyType type() {
         return this.type;
+    }
+
+    @Override
+    public boolean isKeyDown(IKey key) {
+        return this.key.equalsKey(key);
     }
 }
