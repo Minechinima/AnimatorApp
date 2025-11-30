@@ -71,6 +71,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
         for (IKeyMapEventBuilder builder : set) {
             builder.setInputEvent(event);
 
+            //TODO cache builders that influence the state of this to execute first.
             /* event converter provides mouse position */
             if (builder instanceof IMousePosEventProvider mousePosProvider) {
                 Vector2d pos = mousePosProvider.getMousePos();
@@ -93,7 +94,7 @@ public class KeyMapEventManager implements IInputEventListener<InputEvent> {
 
             KeyMapEvent result = builder.getResult();
 
-            if (result == null) return;
+            if (result == null) continue;
 
             this.handleEvent(builder, result);
 
