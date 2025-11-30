@@ -7,12 +7,18 @@ import com.minechinima.input.keymap.events.KeyMapEvent;
  * <br><br>
  * This is used to prevent keys that are held down while an operator is executed to immediately trigger a new operator.
  * The user should first release the key.
+ * <br><br>
+ * The strategies are always called, they can be used as a state machine (to store their own cache variables).
  * @param <T> type of the cached event.
  */
 public interface ICachedEventBlocker<T extends KeyMapEvent> {
     /**
      * @param cache
-     * @return true if the event should be cached and used for next events to block.
+     * @return true if the event should be cached and used for next events to block.<br><br>
+     *         If this returns true, this strategy will always be called for upcoming events
+     *         for this cached event.<br><br>
+     *         The strategy can cache multiple events,
+     *         which will result in multiple {@link #isEventBlocked(KeyMapEvent, KeyMapEvent)} calls.
      */
     boolean cacheEvent(T cache);
 
@@ -25,7 +31,8 @@ public interface ICachedEventBlocker<T extends KeyMapEvent> {
 
     /**
      * @param triggered
-     * @return true if the cached event should be cleared from the cache if the triggered event arrives.
+     * @return true if the cached event should be cleared from the cache and whether to stop calling this strategy,
+     *         if it did not cache any other key.
      */
-    boolean isEventCleared(T cached, KeyMapEvent triggered);
+    boolean clearCachedEvent(T cached, KeyMapEvent triggered);
 }
