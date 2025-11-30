@@ -1,9 +1,6 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.ControllerManager;
-import com.minechinima.controller.ControllerResult;
-import com.minechinima.controller.ControllerUtils;
-import com.minechinima.controller.IControllerCommand;
+import com.minechinima.controller.*;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.input.keymap.IKeyMapEventListener;
 import com.minechinima.input.keymap.events.KeyMapEvent;
@@ -12,10 +9,10 @@ import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.config.ReleaseConfirmHotKey;
 import com.minechinima.operator.config.modal.*;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.UserFunctionalityConfigGroupStruct;
-import com.minechinima.operator.config.operator.OperatorModalConfirmConfig;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.modal.*;
 import com.minechinima.operator.ot.OperatorType;
@@ -32,6 +29,7 @@ import com.minechinima.ui.elements.UIHandlerDummy;
 import com.minechinima.ui.elements.UIModal;
 import com.minechinima.ui.elements.window.UIRegion;
 import com.minechinima.ui.elements.window.UISpace;
+import com.minechinima.utils.Pair;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +66,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     /**
      * Cache of keys that are pressed during modal and should now be blocked until they are released.
      */
-    private Set<KeyMapEvent> cachedBlockedEvents = new HashSet<>();
+    private Set<Pair<KeyMapEvent, ICachedEventBlocker>> cachedBlockedEvents = new HashSet<>();
     /**
      * Contains the logic which events to block.
      * Each event class gets a set of strategies how to block that cached event.<br>
@@ -373,6 +371,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             /* not a UserException means the operator did not terminate itself */
             if (!(e instanceof UserException)) op.cancel();
             this.logger.info(e);
+            e.printStackTrace();
         }
     }
 
@@ -777,11 +776,8 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     private <CTX extends IContext, OP extends IOperator<CTX>>
     void handleWritingTransaction(OperatorType<CTX, OP> type, OP op, CTX current,
                                      Queue<IControllerCommand> commands, boolean commit) throws UserException {
-        if (commands.isEmpty()) {
-            if (op instanceof IUndoOperator undoOp && commit) {
-                OperatorPropertiesGroupStruct props = op instanceof IPropertyOperator<?,?> propOp ? propOp.props() : null;
-                this.historyManager.pushUndo(type, undoOp, props);
-            }
+        if (commands.isEmpty() && commit) {
+            this.handleCommitTransaction(type, op, current);
             return;
         }
         if (!this.controller.isActive()) this.controller.startTransaction();
@@ -809,21 +805,25 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      */
     private <CTX extends IContext, OP extends IOperator<CTX>>
     void handleCommitTransaction(OperatorType<CTX, OP> type, OP op, CTX current) throws UserException {
-        ControllerResult result = this.controller.commitTransaction(this.getTitle(type, op, current));
-        if (result.state() == ControllerResult.State.ERROR) {
-            if (result.exception() != null) {
-                throw new UserException(result.userMessage(), result.exception());
-            } else {
-                throw new UserException(result.userMessage());
+        Transaction transaction = null;
+        if (this.controller.isActive()) {
+            ControllerResult result = this.controller.commitTransaction(this.getTitle(type, op, current));
+            transaction = result.transaction();
+            if (result.state() == ControllerResult.State.ERROR) {
+                if (result.exception() != null) {
+                    throw new UserException(result.userMessage(), result.exception());
+                } else {
+                    throw new UserException(result.userMessage());
+                }
             }
         }
 
         OperatorPropertiesGroupStruct props = op instanceof IPropertyOperator<?,?> propOp ? propOp.props() : null;
         if (type.pushUndo()) {
             if (op instanceof IUndoOperator undoOperator) {
-                this.historyManager.pushUndo(result.transaction(), type, undoOperator, props);
+                this.historyManager.pushUndo(transaction, type, undoOperator, props);
             } else {
-                this.historyManager.pushUndo(result.transaction(), type, props);
+                this.historyManager.pushUndo(transaction, type, props);
             }
         }
     }
@@ -842,9 +842,9 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             }
         }
 
-        for (ModalFunctionHotKeyConfig<C> func : this.config.modalFunctions.getChildren()) {
-            if (func.hotKeyConfigSelector.get().onEvent(event)) {
-                ModalFunctionConfig modifier = func.modalFunction.get();
+        for (ModalFunctionHotKeyConfig<C> cfg : this.config.modalFunctions.getChildren()) {
+            if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
+                ModalFunctionConfig modifier = cfg.modalFunction.get();
                 IModalFunctionCommand command = modifier.factory();
 
                 /*
@@ -853,14 +853,18 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                 command.onEvent(this, this.currentContext, this.modal.op);
                 if (this.modal == null) return;
 
-                if (modifier instanceof ModalFunctionReleasableConfig<?> releaseableConfig
+                /*
+                 * Check if the Modifier has the capabilities to be released
+                 * and if the modifier config has a modal release confirm module and a hotkey set for
+                 * the release confirm.
+                 */
+                if (modifier instanceof ModalFunctionReleasableConfig<?>
                         && command instanceof IModalFunctionReleasableCommand<?,?> releasableCommand
-                        && releaseableConfig.toggleOnRelease.get()
-                        && func.modalReleaseHotKeySelector.get() != null
-                        && func.modalReleaseHotKeySelector.get().get() != null
+                        && cfg.modalConfirmConfig.get() != null
+                        && cfg.modalConfirmConfig.get().hotKeyConfigSelector.get() != null
                         && !this.isModalFunctionWaiting(releasableCommand)) {
                     this.modal.functionsWaitingRelease.add(
-                            new RunningModal.FunctionsRelease<>(func.modalReleaseHotKeySelector.get().get(), releasableCommand));
+                            new RunningModal.FunctionsRelease<>(cfg.modalConfirmConfig.get().hotKeyConfigSelector.get(), releasableCommand));
                 }
             }
         }
@@ -883,7 +887,13 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         while (it.hasNext()) {
             RunningModal.ModifierRelease pair = it.next();
             if (pair.config.onEvent(event)) {
-                pair.command.onReleaseEvent(propOp.props());
+                ControllerResult result = this.controller.writeToTransaction(pair.command.onReleaseEvent(propOp.props()));
+
+                if (result.state() != ControllerResult.State.SUCCESS) {
+                    this.cancelModal();
+                    return;
+                }
+
                 it.remove();
                 return;
             }
@@ -894,20 +904,37 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
                 PropertyModifierConfig modifier = cfg.modifier.get();
                 IPropertyModifierCommand command = modifier.factory();
-                command.onEvent(propOp.props());
+
+                ControllerResult result = this.controller.writeToTransaction(command.modify(propOp.props()));
+
+                if (result.state() != ControllerResult.State.SUCCESS) {
+                    this.cancelModal();
+                    return;
+                }
+
+                /*
+                 * Check if the Modifier has the capabilities to be released
+                 * and if the modifier config has a modal release confirm module and a hotkey set for
+                 * the release confirm.
+                 */
                 if (modifier instanceof PropertyModifierReleaseableConfig<?> releaseableConfig
                         && command instanceof IPropertyModifierReleasableCommand<?,?> releasableCommand
-                        && releaseableConfig.toggleOnRelease.get()
-                        && cfg.modalReleaseHotKeySelector.get() != null
+                        && cfg.modalConfirmConfig.get() != null
+                        && cfg.modalConfirmConfig.get().hotKeyConfigSelector.get() != null
                         && !this.isModifierWaiting(releasableCommand)) {
                     this.modal.modifiersWaitingRelease.add(
-                            new RunningModal.ModifierRelease<>(cfg.modalReleaseHotKeySelector.get().get(), releasableCommand));
+                            new RunningModal.ModifierRelease<>(cfg.modalConfirmConfig.get().hotKeyConfigSelector.get(), releasableCommand));
                 }
                 break;
             }
         }
     }
 
+    /**
+     * Check if the modifier command was already triggered and waits for a release
+     * @param command
+     * @return
+     */
     private boolean isModifierWaiting(IPropertyModifierReleasableCommand command) {
         for (RunningModal.ModifierRelease mod : this.modal.modifiersWaitingRelease) {
             if (mod.command.getClass().equals(command.getClass())) {
@@ -922,7 +949,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         if (this.modal == null) return false;
 
         /* check if the given event should confirm the operator */
-        final OperatorModalConfirmConfig modalConfirmConfig;
+        final ReleaseConfirmHotKey.Config modalConfirmConfig;
         final HotKeyConfigGroupStruct modalConfirmHotKey;
         if (this.modal.config != null
                 && (modalConfirmConfig = this.modal.config.modalConfirmConfig.get()) != null
@@ -960,32 +987,36 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     public boolean isEventBlocked(KeyMapEvent event) {
-        Iterator<KeyMapEvent> it = this.cachedBlockedEvents.iterator();
+        Iterator<Pair<KeyMapEvent, ICachedEventBlocker>> it = this.cachedBlockedEvents.iterator();
 
         /*
          * Go through the cached events and check for each if a strategy for the cached event blocks the incoming event.
          */
+        boolean result = false;
         while (it.hasNext()) {
-            final KeyMapEvent cached = it.next();
-            for (ICachedEventBlocker blockStrategy : this.blockStrategies.get(cached.getClass())) {
-                if (blockStrategy.isEventCleared(cached, event)) {
-                    it.remove();
-                    return true;
-                } else if (blockStrategy.isEventBlocked(cached, event)) {
-                    return true;
-                }
+            final Pair<KeyMapEvent, ICachedEventBlocker> cached = it.next();
+            if (cached.getB().clearCachedEvent(cached.getA(), event)) {
+                it.remove();
+                /* call the clearCachedEvent on every strategy to avoid memory leaks */
+                result = true;
+            } else if (cached.getB().isEventBlocked(cached.getA(), event)) {
+                result = true;
             }
         }
 
-        /*
-         * test if the event should be cached when it was not blocked already.
-         */
-        Set<ICachedEventBlocker> blockStrategies;
-        if ((blockStrategies = this.blockStrategies.get(event.getClass())) != null) {
-            for (ICachedEventBlocker blockStrategy : blockStrategies) {
-                if (blockStrategy.cacheEvent(event)) {
-                    this.cachedBlockedEvents.add(event);
-                    return true;
+        if (result) return true;
+
+        if (this.isModalMode()) {
+            /*
+             * test if the event should be cached when it was not blocked already.
+             */
+            Set<ICachedEventBlocker> blockStrategies;
+            if ((blockStrategies = this.blockStrategies.get(event.getClass())) != null) {
+                for (ICachedEventBlocker blockStrategy : blockStrategies) {
+                    if (blockStrategy.cacheEvent(event)) {
+                        this.cachedBlockedEvents.add(new Pair<>(event, blockStrategy));
+                        return true;
+                    }
                 }
             }
         }
@@ -999,7 +1030,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         //TODO operator type switching and Operator needs to receive previous properties so the previous operator could influence the next
 
-        if (this.runModalEventLogic(event) || this.isEventBlocked(event)) {
+        if (this.runModalEventLogic(event) | this.isEventBlocked(event)) {
             return true;
         }
 
@@ -1039,7 +1070,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         HotKeyConfigGroupStruct hotkeyConfig = config.hotKeyConfigSelector.get();
         if (hotkeyConfig == null || !hotkeyConfig.onEvent(event)) return false;
         OperatorType<C, ?> ot;
-        if ((ot = config.operatorType.getReference()) == null) return false;
+        if ((ot = config.operatorType.get()) == null) return false;
         if (ot instanceof IOTPropertyProvider<?, ?> provider) {
             OperatorPropertiesGroupStruct newProps = provider.createProps();
             if (config.props.getProps() != null) newProps.copyFrom(config.props.getProps());
@@ -1050,7 +1081,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     /**
-     *
+     * Every data / command that is needed during running a modal operator. This represents on modal operator process.
      * @param type
      * @param op
      * @param modifiersWaitingRelease set of modifiers that await a release event.
