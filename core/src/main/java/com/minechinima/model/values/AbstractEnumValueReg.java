@@ -25,6 +25,10 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
         this.registry = registry;
     }
 
+    public IGenericRegistry<T> getRegistry() {
+        return this.registry;
+    }
+
     @Override
     public void set(T value) {
         if (value != null && this.registry.getID(value) == null) {
