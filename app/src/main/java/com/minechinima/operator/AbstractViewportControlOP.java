@@ -19,7 +19,7 @@ public abstract class AbstractViewportControlOP implements IModalOperator<BBOper
     @Override
     public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
         if (!(context.getUIContext().clickedUISpace() instanceof UIViewport viewport)) {
-            return new OPReturnValue<>(OpInvokeFlag.CANCELLED, null);
+            return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
         }
 
         this.viewport = viewport;
@@ -29,7 +29,7 @@ public abstract class AbstractViewportControlOP implements IModalOperator<BBOper
         this.originalPos = new Vector3d(viewport.getPos());
         this.originalOrbit = new Vector3d(viewport.getOrbitPos());
 
-        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING, null);
+        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
     }
 
     @Override

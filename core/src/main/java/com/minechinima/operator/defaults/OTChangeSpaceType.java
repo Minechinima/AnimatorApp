@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class OTChangeSpaceType extends OperatorTypePropertyProvider<ChangeSpaceTypeProp, ChangeSpaceTypeOperator, IContext> {
     public OTChangeSpaceType(String id, String title, String description) {
-        super(id, title, description);
+        super(id, title, description, true);
     }
 
     @Override

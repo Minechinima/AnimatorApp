@@ -9,6 +9,8 @@ import com.minechinima.input.keymap.builder.KeyEventBuilder;
 import com.minechinima.input.keymap.builder.MouseDragKeyMapBuilder;
 import com.minechinima.input.keymap.builder.MouseMoveKeyMapBuilder;
 import com.minechinima.input.keymap.builder.MouseScrollBuilder;
+import com.minechinima.input.keymap.events.KeyMapKeyEvent;
+import com.minechinima.input.keymap.events.KeyMapMouseDragEvent;
 import com.minechinima.input.raw.*;
 import com.minechinima.input.raw.lwjgl.LWJGLInputEventManager;
 import com.minechinima.i18n.ClasspathBundleProvider;
@@ -31,6 +33,8 @@ import com.minechinima.operator.defaults.modal.CancelModal;
 import com.minechinima.operator.defaults.modal.ConfirmModal;
 import com.minechinima.operator.defaults.modal.uidrag.DragIncrementModal;
 import com.minechinima.operator.defaults.modal.uidrag.RoundModal;
+import com.minechinima.operator.eventblockers.KeyMapKeyBlocker;
+import com.minechinima.operator.eventblockers.KeyMapMouseDragBlocker;
 import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.rendering.IWindow;
@@ -123,27 +127,26 @@ public class Application {
         undoConfig.operatorType.set(bb.ops.undo);
         undoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
-        ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
+        ((HotKeyKeyboardConfigGroupStruct) undoConfig.hotKeyConfigSelector.get()).mod.ctrl.set(true);
 
         OperatorConfigGroupStruct redoConfig = general.newConfig();
         redoConfig.operatorType.set(bb.ops.redo);
         redoConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
-        ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).mod.set(KeyModEnum.CONTROL);
+        ((HotKeyKeyboardConfigGroupStruct) redoConfig.hotKeyConfigSelector.get()).mod.ctrl.set(true);
 
         OperatorConfigGroupStruct orbitCfg = viewport.newConfig();
         orbitCfg.operatorType.set(bb.ops.orbitViewport);
-        orbitCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
-        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_E);
-        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
-        ((HotKeyKeyboardConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
+        orbitCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
+        ((HotKeyMouseConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_3);
+        ((HotKeyMouseConfigGroupStruct) orbitCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
 
         OperatorConfigGroupStruct panCfg = viewport.newConfig();
         panCfg.operatorType.set(bb.ops.panViewport);
         panCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
         ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_3);
         ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).type.set(KeyType.CLICKDRAG);
-        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).mod.set(KeyModEnum.SHIFT);
+        ((HotKeyMouseConfigGroupStruct) panCfg.hotKeyConfigSelector.get()).mod.shift.set(true);
 
         OperatorConfigGroupStruct zoomInCfg = viewport.newConfig();
         zoomInCfg.operatorType.set(bb.ops.zoomViewport);
@@ -163,6 +166,8 @@ public class Application {
 
         this.operatorManager = new OperatorManager<>(opConfig, new HistoryManager(logCompReg),
                 this.controller, this.logger);
+        this.operatorManager.registerEventBlockStrategy(KeyMapKeyEvent.class, new KeyMapKeyBlocker());
+        this.operatorManager.registerEventBlockStrategy(KeyMapMouseDragEvent.class, new KeyMapMouseDragBlocker());
     }
 
     public void setupModal() {
@@ -236,6 +241,7 @@ public class Application {
         cancelCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(2));
         ((HotKeyMouseConfigGroupStruct) cancelCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_BUTTON_2);
         ((HotKeyMouseConfigGroupStruct) cancelCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyMouseConfigGroupStruct) cancelCfg.hotKeyConfigSelector.get()).mod.any.set(true);
     }
 
     public void init() {

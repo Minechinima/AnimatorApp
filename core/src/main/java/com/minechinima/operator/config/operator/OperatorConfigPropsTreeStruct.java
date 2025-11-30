@@ -48,11 +48,11 @@ public class OperatorConfigPropsTreeStruct extends BaseMutableValueHierarchy<Ope
      * @return
      */
     protected void reloadProps(boolean force) {
-        if (!(this.ptr.getReference() instanceof IOTPropertyProvider) && this.props != null) {
+        if (!(this.ptr.get() instanceof IOTPropertyProvider) && this.props != null) {
             this.removeChild(this.props);
         }
 
-        if (this.ptr.getReference() instanceof IOTPropertyProvider propProvider
+        if (this.ptr.get() instanceof IOTPropertyProvider propProvider
                 && (force || this.props == null)) {
             this.props = propProvider.createProps();
             this.props.initChildren();

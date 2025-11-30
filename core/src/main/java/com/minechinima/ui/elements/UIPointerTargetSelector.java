@@ -39,7 +39,7 @@ public class UIPointerTargetSelector<T extends BaseStructure, C extends IContext
     @Override
     protected void drawElement(UIContext context) {
         try {
-            T currentTarget = this.value.getReference();
+            T currentTarget = this.value.get();
             String preview = currentTarget != null ? currentTarget.getIdentifier() : this.defaultLabel;
             if (ImGui.beginCombo("", preview, ImGuiComboFlags.NoArrowButton)) {
                 if (this.sourceList != null) {
@@ -63,7 +63,6 @@ public class UIPointerTargetSelector<T extends BaseStructure, C extends IContext
                 ImGui.endCombo();
             }
         } finally {
-            this.sourceList = null;
         }
     }
 }

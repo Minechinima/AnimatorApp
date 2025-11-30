@@ -62,8 +62,8 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
         if (this.startPos == null) this.startPos = new Vector2d(event.mouseX(), event.mouseY());
 
         if (event instanceof KeyMapMouseDragEvent mouseMoveEvent) {
-            boolean isValueChanging = mouseMoveEvent.direction() == KeyMapMouseMoveEvent.Direction.LEFT ||
-                    mouseMoveEvent.direction() == KeyMapMouseMoveEvent.Direction.RIGHT;
+            boolean isValueChanging = mouseMoveEvent.getCurrentDirection() == KeyMapMouseMoveEvent.Direction.LEFT ||
+                    mouseMoveEvent.getCurrentDirection() == KeyMapMouseMoveEvent.Direction.RIGHT;
             if (!isValueChanging && this.selectingElements && context.currentHoveredWidget() instanceof UIDragFloat<?> dragFloat) {
                 if (!this.containsUIDragFloat(dragFloat)) {
                     this.floatElements.add(new Pair<>(dragFloat.getValue().get(), dragFloat));
@@ -75,9 +75,8 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
             }
         }
 
-        Queue<IControllerCommand> commands = null;
+        Queue<IControllerCommand> commands = new LinkedList<>();
         if (!this.selectingElements) {
-            commands = new LinkedList<>();
             for (Pair<Float, UIDragFloat<?>> entry : this.floatElements) {
                 FloatValue v = entry.getB().getValue();
                 double value = entry.getA() + (event.mouseX() - this.startPos.x()) * this.props.increment.get();

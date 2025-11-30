@@ -1,11 +1,12 @@
 package com.minechinima.operator;
 
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.panels.UIViewport;
 import org.jetbrains.annotations.NotNull;
 
-public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewportOperator> {
+public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewportOperator> implements IOTModal<OrbitViewportOperator> {
     public OTOrbitViewport(String id, String title, String description) {
         super(id, title, description);
     }
@@ -19,5 +20,10 @@ public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewpo
     @Override
     public OrbitViewportOperator getOperator() {
         return new OrbitViewportOperator();
+    }
+
+    @Override
+    public boolean confirmOnReleaseDefault() {
+        return true;
     }
 }

@@ -13,7 +13,6 @@ import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
-import com.minechinima.utils.Pair;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
 
@@ -28,15 +27,15 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
 
     @Override
     public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.getReference() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
-        this.startTranslation = context.bbContext().activeObject.getReference().translation.asVector3f();
+        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
+        this.startTranslation = context.bbContext().activeObject.get().translation.asVector3f();
         return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING, null);
     }
 
     @Override
     public OPReturnValue<OpExecuteFlag> execute(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.getReference() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED, null);
-        BaseObject object = context.bbContext().activeObject.getReference();
+        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED, null);
+        BaseObject object = context.bbContext().activeObject.get();
         Vector3fValue translation = object.translation;
         Vector3f offset = this.props.value.asVector3f();
         Vector3f rot = object.rotation.asVector3f();
@@ -69,7 +68,7 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
             this.props.value.y.set((float) (this.props.value.y.get() - moveEvent.dragY() * 0.005));
         }
 
-        BaseObject object = context.bbContext().activeObject.getReference();
+        BaseObject object = context.bbContext().activeObject.get();
         Vector3fValue translation = object.translation;
         Vector3f offset = this.props.value.asVector3f();
         Vector3f rot = object.rotation.asVector3f();
