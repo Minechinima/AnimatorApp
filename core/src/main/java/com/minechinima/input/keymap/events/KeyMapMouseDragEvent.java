@@ -1,41 +1,68 @@
 package com.minechinima.input.keymap.events;
 
 import com.minechinima.input.keymap.PressedKeySet;
+import com.minechinima.input.raw.IKey;
 import com.minechinima.input.raw.Key;
 import com.minechinima.ui.elements.window.UIWindow;
 import com.minechinima.utils.Pair;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Triggered for a key when a certain threshold of mouse movement.
  */
-public class KeyMapMouseDragEvent extends KeyMapMouseMoveEvent {
-    /**
-     * Store the event here to allow custom data
-     */
-    private final Key key;
-    private final Direction direction;
+public class KeyMapMouseDragEvent extends KeyMapMouseMoveEvent implements IKeyMapKeyEvent {
+    private final Map<KeyMapKeyEvent, Direction> keys = new HashMap<>();
+    private final Direction currentDirection;
 
-    private final Set<Pair<Key, Direction>> keys = new HashSet<>();
-
-    public KeyMapMouseDragEvent(Key key, double mouseX, double mouseY, double prevMouseX, double prevMouseY, Direction direction,
-                                UIWindow window, PressedKeySet pressedKeys) {
-        super(mouseX, mouseY, prevMouseX, prevMouseY, window, pressedKeys);
-        this.key = key;
-        this.direction = direction;
+    public KeyMapMouseDragEvent(double mouseX, double mouseY, double prevMouseX, double prevMouseY,
+                                UIWindow window, PressedKeySet pressedKeySet,
+                                Map<KeyMapKeyEvent, Direction> draggedKeys,
+                                Direction currentDirection) {
+        super(mouseX, mouseY, prevMouseX, prevMouseY, window, pressedKeySet);
+        this.keys.putAll(draggedKeys);
+        this.currentDirection = currentDirection;
     }
 
-    public Direction direction() {
-        return this.direction;
+    public Map<KeyMapKeyEvent, Direction> getDraggedKeys() {
+        Map<KeyMapKeyEvent, Direction> keysCopy = new HashMap<>();
+        keysCopy.putAll(keys);
+        return keysCopy;
     }
 
-    /**
-     * @return the keyevent for which the dragging threshold was surpassed.
-     * This is a cached event and might contain outdated information.
-     */
-    public Key key() {
-        return this.key;
+    public boolean isKeyDragged(IKey searchKey) {
+        for (Map.Entry<KeyMapKeyEvent, Direction> entry : this.keys.entrySet()) {
+            final KeyMapKeyEvent keyEvent = entry.getKey();
+            if (keyEvent.key().equalsKey(searchKey)) return true;
+        }
+        return false;
+    }
+
+    @Nullable
+    public KeyMapKeyEvent getKeyMapEvent(IKey searchKey) {
+        for (Map.Entry<KeyMapKeyEvent, Direction> entry : this.keys.entrySet()) {
+            final KeyMapKeyEvent keyEvent = entry.getKey();
+            if (keyEvent.key().equalsKey(searchKey)) return keyEvent;
+        }
+        return null;
+    }
+
+    @Nullable
+    public Direction getKeyDirection(IKey searchKey) {
+        for (Map.Entry<KeyMapKeyEvent, Direction> entry : this.keys.entrySet()) {
+            final KeyMapKeyEvent keyEvent = entry.getKey();
+            if (keyEvent.key().equalsKey(searchKey)) return entry.getValue();
+        }
+        return null;
+    }
+
+    public Direction getCurrentDirection() {
+        return this.currentDirection;
+    }
+
+    @Override
+    public boolean isKeyDown(IKey key) {
+        return this.getKeyMapEvent(key) != null;
     }
 }
