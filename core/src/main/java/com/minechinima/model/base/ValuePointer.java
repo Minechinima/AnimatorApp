@@ -264,7 +264,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
         }
     }
 
-    public T getReference() {
+    public T get() {
         if (this.referenced == null && this.cachedUniquePath != null) {
             T newValue = this.getTargetFromPath(this.cachedUniquePath);
             if (newValue != null) this.set(newValue);
@@ -323,7 +323,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
         for (BaseStructure child : childrenOfParent) {
             if (child instanceof ValuePointer<?> ptr
-                    && ptr != this && ptr.getReference() == newValue) {
+                    && ptr != this && ptr.get() == newValue) {
                 return true;
             }
         }
