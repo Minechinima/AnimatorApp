@@ -17,4 +17,8 @@ public class KeyboardKeyEnumValue extends AbstractEnumValueReg<KeyboardKeyEnum> 
     public KeyboardKeyEnumValue(String id, @NotNull KeyboardKeyEnum defaultValue) {
         super(id, defaultValue, KeyboardKeyEnum.REGISTRY);
     }
+
+    public KeyboardKeyEnumValue(String id) {
+        super(id, null, KeyboardKeyEnum.REGISTRY);
+    }
 }

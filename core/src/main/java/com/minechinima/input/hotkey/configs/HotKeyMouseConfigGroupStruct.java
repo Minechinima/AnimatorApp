@@ -18,11 +18,11 @@ public class HotKeyMouseConfigGroupStruct extends AbstractHotKeyKeyConfigGroupSt
 
     @Override
     public boolean onEvent(KeyMapEvent event) {
-        //TODO get rid of abstract super class and generic shit
         MouseKeyEnum key = (MouseKeyEnum) this.key.get();
         if (key == MOUSE_WHEEL_UP || key == MouseKeyEnum.MOUSE_WHEEL_DOWN) {
             if (!(event instanceof KeyMapScrollEvent scrollEvent)) return false;
-            return (scrollEvent.getyOffset() > 0 && key == MOUSE_WHEEL_UP)
+            return this.mod.isModPressed(event.getPressedKeys())
+                    && (scrollEvent.getyOffset() > 0 && key == MOUSE_WHEEL_UP)
                     || (scrollEvent.getyOffset() < 0 && key == MouseKeyEnum.MOUSE_WHEEL_DOWN);
         } else {
             return super.onEvent(event);
@@ -34,8 +34,9 @@ public class HotKeyMouseConfigGroupStruct extends AbstractHotKeyKeyConfigGroupSt
         if (this.type.get() == KeyType.DOUBLECLICK || this.type.get() == KeyType.CLICK) return null;
         if (this.key.get() == MOUSE_WHEEL_UP || this.key.get() == MOUSE_WHEEL_DOWN) return null;
 
-        HotKeyKeyboardConfigGroupStruct cfg = new HotKeyKeyboardConfigGroupStruct(this.title(), this.tooltip());
+        HotKeyMouseConfigGroupStruct cfg = new HotKeyMouseConfigGroupStruct(this.title(), this.tooltip());
         cfg.key.set(this.key.get());
+        cfg.mod.any.set(true);
         if (this.type.get() == KeyType.RELEASE) {
             cfg.type.set(KeyType.PRESS);
         } else {
