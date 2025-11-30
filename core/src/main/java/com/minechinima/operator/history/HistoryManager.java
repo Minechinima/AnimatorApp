@@ -38,12 +38,21 @@ public class HistoryManager {
             throw new IllegalArgumentException("Provided a IOTPropertyProvider without OperatorProperties.");
         }
 
-        if (transaction.getState() != Transaction.State.COMMITTED) {
+        if (transaction != null && transaction.getState() != Transaction.State.COMMITTED) {
             throw new IllegalArgumentException("Transaction is not commited, cannot be pushed as undo step.");
         }
 
-        StepData data = new StepData(type, op, props, this.compressLog(transaction.getDataOperationStack()));
-        this.undos.push(new HistoryStep(transaction.getLocalizedTitle(), data, markers));
+        StepData data;
+        String title;
+        if (transaction != null) {
+            data = new StepData(type, op, props, this.compressLog(transaction.getDataOperationStack()));
+            title = transaction.getLocalizedTitle();
+        } else {
+            data = new StepData(type, op, props);
+            title = type.title;
+        }
+
+        this.undos.push(new HistoryStep(title, data, markers));
     }
 
     public void pushUndo(OperatorType type,
@@ -97,13 +106,14 @@ public class HistoryManager {
              * (important to keep track of IUndoOperator for custom undo/redo on operator level)
              */
             for (StepData undoStepData : redoUndoStep.historyStep.steps) {
+                if (undoStepData.ot == null) continue;
                 steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props));
             }
             /*
              * push the dummy redo/undo step at the top so it gets executed first
              * Important because we want the Operator.redo() method to work on the redone database
              */
-            steps.push(new StepData(null, null, null, compressedStepOperations));
+            steps.push(new StepData(compressedStepOperations));
         } else if (redoUndoStep.historyStep.steps.size() == 1) {
             StepData undoStepData = redoUndoStep.historyStep.steps.get(0);
             steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props, compressedStepOperations));
@@ -144,7 +154,7 @@ public class HistoryManager {
         if (this.undos.isEmpty()) return null;
         HistoryStep step = this.undos.pop();
 
-        return new UndoRedoStep(step, this.stepCommand(relative, step), true);
+        return new UndoRedoStep(step, this.stepCommand(relative, step, true), true);
     }
 
     @Nullable
@@ -152,10 +162,10 @@ public class HistoryManager {
         if (this.redos.isEmpty()) return null;
         HistoryStep step = this.redos.pop();
 
-        return new UndoRedoStep(step, this.stepCommand(relative, step), false);
+        return new UndoRedoStep(step, this.stepCommand(relative, step, false), false);
     }
 
-    protected IControllerCommand stepCommand(BaseValueHierarchy relative, HistoryStep step) {
+    protected IControllerCommand stepCommand(BaseValueHierarchy relative, HistoryStep step, boolean isUndo) {
         return new IControllerCommand() {
             @Override
             public void execute() throws UserException {
@@ -188,7 +198,8 @@ public class HistoryManager {
                     }
 
                     if (step.op != null) {
-                        step.op.undo();
+                        if (isUndo) step.op.undo();
+                        else step.op.redo();
                     }
                 }
             }
@@ -316,8 +327,12 @@ public class HistoryManager {
                               @Nullable IUndoOperator op,
                               @Nullable OperatorPropertiesGroupStruct props,
                               Stack<DataOperationLog.Entry> log) {
-        public StepData(@Nullable OperatorType ot, @Nullable IUndoOperator op, @Nullable OperatorPropertiesGroupStruct props) {
+        public StepData(OperatorType ot, IUndoOperator op, OperatorPropertiesGroupStruct props) {
             this(ot, op, props, new Stack<>());
+        }
+
+        public StepData(Stack<DataOperationLog.Entry> log) {
+            this(null, null, null, new Stack<>());
         }
     }
 
