@@ -31,6 +31,10 @@ public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & IL
         this(id, registry, null);
     }
 
+    public IGenericRegistry<T> getRegistry() {
+        return this.registry;
+    }
+
     @Override
     public void set(T value) {
         if (value != null && this.registry.getID(value) == null) {
