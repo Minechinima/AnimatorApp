@@ -2,6 +2,7 @@ package com.minechinima.input.keymap;
 
 import com.minechinima.input.keymap.events.KeyMapKeyEvent;
 import com.minechinima.input.keymap.events.KeyType;
+import com.minechinima.input.raw.IKey;
 import com.minechinima.input.raw.Key;
 import com.minechinima.utils.ImmutableVector2d;
 import org.jetbrains.annotations.NotNull;
@@ -107,6 +108,14 @@ public class PressedKeySet implements Set<KeyMapKeyEvent> {
     public KeyMapKeyEvent getEventByKey(Key key) {
         for (KeyMapKeyEvent event : this.keys.keySet()) {
             if (event.key() == key) return event;
+        }
+        return null;
+    }
+
+    @Nullable
+    public KeyMapKeyEvent getEventByKey(IKey key) {
+        for (KeyMapKeyEvent event : this.keys.keySet()) {
+            if (key.equalsKey(event.key())) return event;
         }
         return null;
     }
