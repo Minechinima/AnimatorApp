@@ -193,7 +193,7 @@ public class ValuePointerTest {
         root.add(ref.add(pointer, point));
 
         pointer.set(point);
-        assertEquals(point, pointer.getReference());
+        assertEquals(point, pointer.get());
         assertEquals("a", pointer.getCachedUniquePath());
     }
 
@@ -208,7 +208,7 @@ public class ValuePointerTest {
 
         Exception e = assertThrowsExactly(IllegalArgumentException.class, () -> pointer.set(point));
         assertEquals("Cannot point to a node that is not a child of the pointer's reference frame.", e.getMessage());
-        assertNull(pointer.getReference());
+        assertNull(pointer.get());
     }
 
     @Test
@@ -222,7 +222,7 @@ public class ValuePointerTest {
 
         Exception e = assertThrowsExactly(IllegalStateException.class, () -> pointer.set(point));
         assertEquals("ValuePointer is not initialized.", e.getMessage());
-        assertNull(pointer.getReference());
+        assertNull(pointer.get());
     }
 
     @Test
@@ -236,7 +236,7 @@ public class ValuePointerTest {
 
         Exception e = assertThrowsExactly(IllegalArgumentException.class, () -> pointer.set(point));
         assertEquals("Cannot point to a node as it is not addressable with a path.", e.getMessage());
-        assertNull(pointer.getReference());
+        assertNull(pointer.get());
     }
 
     @Test
@@ -251,7 +251,7 @@ public class ValuePointerTest {
         testSetPointerSuccess(pointer, point);
 
         pointer.setNullPointer();
-        Assertions.assertNull(pointer.getReference());
+        Assertions.assertNull(pointer.get());
         Assertions.assertEquals(null, pointer.getCachedUniquePath());
     }
 
@@ -270,9 +270,9 @@ public class ValuePointerTest {
     }
 
     private static <T extends BaseStructure> void testSetPointerSuccess(ValuePointer<T> pointer, T newReference) throws NoSuchFieldException, IllegalAccessException {
-        T prev = pointer.getReference();
+        T prev = pointer.get();
         pointer.set(newReference);
-        Assertions.assertEquals(newReference, pointer.getReference());
+        Assertions.assertEquals(newReference, pointer.get());
 
         Field pointersToThisField = BaseStructure.class.getDeclaredField("pointersToThis");
         pointersToThisField.setAccessible(true);
@@ -300,7 +300,7 @@ public class ValuePointerTest {
         pointer.set(point);
 
         ref.removeChild(point);
-        Assertions.assertNull(pointer.getReference());
+        Assertions.assertNull(pointer.get());
     }
 
     @Test
@@ -321,12 +321,12 @@ public class ValuePointerTest {
         root.getDataOperationBus().registerLog(historyManager);
 
         map.removeChild(point);
-        Assertions.assertNull(pointer.getReference());
+        Assertions.assertNull(pointer.get());
         historyManager.commitUndoStep();
 
         historyManager.undo();
         Assertions.assertNotNull(map.get("a"));
-        Assertions.assertEquals(2D, pointer.getReference().get());
+        Assertions.assertEquals(2D, pointer.get().get());
     }
 
     @Test
@@ -375,7 +375,7 @@ public class ValuePointerTest {
         Exception e = assertThrows(Exception.class, () -> ptr.set(target));
         Assertions.assertEquals("Parent does not allow duplicate pointer targets.", e.getMessage());
         Assertions.assertTrue(map.contains(ptr));
-        Assertions.assertNull(ptr.getReference());
+        Assertions.assertNull(ptr.get());
     }
 
     @Test
@@ -398,7 +398,7 @@ public class ValuePointerTest {
         ptr.set(target);
 
         Assertions.assertFalse(map.contains(ptr));
-        Assertions.assertEquals(target, ptr.getReference());
+        Assertions.assertEquals(target, ptr.get());
     }
 
     @Test
@@ -418,7 +418,7 @@ public class ValuePointerTest {
         Exception e = assertThrows(Exception.class, () -> ptr.set(null));
         Assertions.assertEquals("Parent does not allow null pointers.", e.getMessage());
         Assertions.assertTrue(map.contains(ptr));
-        Assertions.assertEquals(target, ptr.getReference());
+        Assertions.assertEquals(target, ptr.get());
     }
 
     @Test
@@ -439,7 +439,7 @@ public class ValuePointerTest {
         ptr.set(null);
 
         Assertions.assertFalse(map.contains(ptr));
-        Assertions.assertNull(ptr.getReference());
+        Assertions.assertNull(ptr.get());
     }
 
     @Test
@@ -458,17 +458,17 @@ public class ValuePointerTest {
 
         BaseType ptrSerialized = ptr.toData();
 
-        assertEquals(target, ptr.getReference());
+        assertEquals(target, ptr.get());
 
         map.removeChild(target);
-        assertNull(ptr.getReference());
+        assertNull(ptr.get());
 
         ptr.fromData(ptrSerialized);
         assertNotNull(ptr.getCachedUniquePath());
-        assertNull(ptr.getReference());
+        assertNull(ptr.get());
 
         map.add(target);
-        assertEquals(target, ptr.getReference());
+        assertEquals(target, ptr.get());
 
     }
 
@@ -500,11 +500,11 @@ public class ValuePointerTest {
 
         historyManager.commitUndoStep();
         Assertions.assertFalse(map.contains(ptr));
-        Assertions.assertNull(ptr.getReference());
+        Assertions.assertNull(ptr.get());
 
         historyManager.undo();
         Assertions.assertNotNull(map.get("ptr"));
-        Assertions.assertEquals(target, map.get("ptr").getReference());
+        Assertions.assertEquals(target, map.get("ptr").get());
     }
 
     @Test

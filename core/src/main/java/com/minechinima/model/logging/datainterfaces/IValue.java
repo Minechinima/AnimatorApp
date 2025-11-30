@@ -50,4 +50,8 @@ public interface IValue<T> {
 
     @Contract(pure = false)
     void set(T value);
+
+    @Contract(pure = true)
+    @Nullable
+    T get();
 }

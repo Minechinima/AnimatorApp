@@ -789,7 +789,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     private void afterRemoveFromTreeIteration() {
         for (ValuePointer<?> pointer : this.pointersToThis) {
             pointer.set(null);
-            if (pointer.getReference() == this) {
+            if (pointer.get() == this) {
                 throw new MemoryLeakError("Could not clear pointer.");
             }
         }
@@ -820,7 +820,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             throw new IllegalArgumentException("Tried adding a pointer to a node that is not part of the same data tree.");
         }
 
-        if (pointer.getReference() != this) {
+        if (pointer.get() != this) {
             throw new IllegalArgumentException("Cannot add a pointer to a node that does not reference the node.");
         }
 
@@ -836,7 +836,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @implNote package-private so only ValuePointer can remove itself as a pointer to a tree node.
      */
     final void removePointer(ValuePointer<?> pointer) {
-        if (pointer.getReference() == this) {
+        if (pointer.get() == this) {
             throw new IllegalArgumentException("Cannot remove a pointer from a referenced node that still points to it.");
         }
         this.pointersToThis.remove(pointer);

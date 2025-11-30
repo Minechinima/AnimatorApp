@@ -71,7 +71,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
     public void addPointer(int index, T pointerTarget) {
         ValuePointer<T> p = new ValuePointer<>("", this.type, this.relative);
         p.set(pointerTarget);
-        if (p.getReference() == pointerTarget) {
+        if (p.get() == pointerTarget) {
             this.addListElement(index, new ListElement<>(UUID.randomUUID(), p));
         } else {
             throw new RuntimeException("Could not set pointer target.");
@@ -101,7 +101,7 @@ public class ValuePointerList<T extends BaseStructure> extends BaseValueList<Val
     public List<T> getPointerTargets() {
         List<T> targets = new ArrayList<>();
         for (ValuePointer<T> pointer : this.getChildren()) {
-            targets.add(pointer.getReference());
+            targets.add(pointer.get());
         }
         return targets;
     }
