@@ -23,6 +23,6 @@ public class OrbitViewportOperator extends AbstractViewportControlOP {
             this.viewport.getPos().set(basis.add(this.viewport.getOrbitPos()));
         }
 
-        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING));
     }
 }

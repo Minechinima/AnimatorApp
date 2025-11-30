@@ -1,6 +1,5 @@
 package com.minechinima.operator;
 
-import com.minechinima.model.BBContext;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.ot.OperatorTypePropertyProvider;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +11,7 @@ public class OTTranslateObject extends OperatorTypePropertyProvider<TranslatePro
 
     @Override
     public boolean poll(BBOperatorContext context) throws UserException {
-        return context.bbContext().activeObject.getReference() != null;
+        return context.bbContext().activeObject.get() != null;
     }
 
     @Override

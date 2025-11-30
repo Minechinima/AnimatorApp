@@ -19,5 +19,5 @@ public abstract class IPropertyModifierCommand<P extends OperatorPropertiesGroup
      * @implNote Does not return {@link IControllerCommand} so it cant perform complex logic and only
      * modify the properties.
      */
-    public abstract Queue<IControllerCommand> onEvent(P props);
+    public abstract Queue<IControllerCommand> modify(P props);
 }

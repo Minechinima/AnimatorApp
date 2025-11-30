@@ -21,7 +21,7 @@ public abstract class TranslateModalAxis extends PropertyModifierConfig<Translat
     public IPropertyModifierCommand<TranslateProps, ?> factory() {
         return new IPropertyModifierCommand<>(this) {
             @Override
-            public Queue<IControllerCommand> onEvent(TranslateProps props) {
+            public Queue<IControllerCommand> modify(TranslateProps props) {
                 if (props.axis.get() == this.modifierConfig.axisToSet) {
                     return new LinkedList<>(List.of(props.transformOnAxis.controller().set(false)));
                 }

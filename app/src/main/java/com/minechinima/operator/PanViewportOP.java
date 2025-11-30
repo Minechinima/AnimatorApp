@@ -16,7 +16,7 @@ import org.joml.Vector3d;
 public class PanViewportOP extends AbstractViewportControlOP {
     @Override
     public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
-        if (event.getClass() != KeyMapMouseMoveEvent.class) return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        if (event.getClass() != KeyMapMouseMoveEvent.class) return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING));
         //TODO triggered multiple times because moseMoveEvent has many sublcasses...
         // what to do with subclasses, how do we prevent a modal from executing its logic multiple times
         Vector3d viewVector = new Vector3d(0,0,-1);
@@ -54,6 +54,6 @@ public class PanViewportOP extends AbstractViewportControlOP {
         this.viewport.getPos().add(drag);
         this.viewport.getOrbitPos().add(drag);
 
-        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), null);
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING));
     }
 }
