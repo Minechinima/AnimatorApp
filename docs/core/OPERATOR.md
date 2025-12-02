@@ -49,7 +49,7 @@ While an Operator is running in modal mode, the user might hold down keys. When 
 <br><br>
 Example: the user presses G (holds down) to move the object, presses right click to abort but because G is still held down it will move the object again.
 <br><br>
-Implement `ICachedEventBlocker` to create a strategy how to block events and when to unblock.
+Implement `ICachedEventBlocker` to create a strategy how to block events and when to unblock and register it to the OperatorManager.
 
 ## History
 The OperatorManager manages the user history and encapsulates it. It has API functions for undo and redo.
@@ -59,12 +59,8 @@ The OperatorManager manages the user history and encapsulates it. It has API fun
 - Do not expose `HistoryManager` as the `OperatorManager` manages it in the context of currently running Operators.
 
 # OperatorType
-The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator. OperatorTypes are part of the data tree to
+The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator and how the engine should handle it. The seperation of Type and command also allows to map an Operator to multiple types. OperatorTypes are part of the data tree to
 make use of the path system for unique identifiers. This way, the identifier can be used to reference an OperatorType. So the UI only references the OperatorType and can already use that to query information about the Operator, like the name, tooltip or if the operator can be executed in the current context (determined by calling the poll(...) method) (see [Blender documentation](https://developer.blender.org/docs/features/interface/operators/#operator-types))
-
-
-It allows to map one Operator to multiple OperatorTypes and is used for registration.
-OperatorTypes provide information how the engine should handle the Operator.
 <br><br>
 There are many interfaces with special flags for different kinds of OperatorTypes that need to be implemented for the engine to handle it correctly.
 <br><br>
@@ -98,8 +94,11 @@ Modal Operators are user actions that are invoked once and continously run for e
 Example use cases: Moving/rotating/scaling a model, dragging a UI slider.
 
 ## Modal Keymap
-Implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.<br>
+Implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.
+<br><br>
 Extend `PropertyModifierConfig` to implement the factory for the commands and provide configuration of the command.
+<br><br>
+To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`
 <br><br>
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
