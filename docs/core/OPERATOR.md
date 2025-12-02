@@ -34,8 +34,7 @@ Operators should also not be able to access the database through the UI or any o
 the entire app data.
 
 # OperatorManager
-Operators are handled in `OperatorManager` and need to be executed through it. OperatorManager is the API for the Controller Layer and sits on top of it.
-Therefore, the only way to execute database changes is via `OperatorManager`.
+Operators are handled in `OperatorManager` and need to be executed through it. OperatorManager is the API for the Controller Layer and sits on top of it. For simple tasks you can use the `OperatorManager` API to execute controllers. Therefore, the only way to execute database changes is via `OperatorManager`.
 <br><br>
 To execute an Operator you pass the `OperatorType` to `invoke(...)` or `execute(...)`.
 
@@ -45,8 +44,19 @@ When executing an Operator the `execute(...)` function is called and the Operato
 ## Invoking Operators
 Invoking an Operator is used in most places of the UI and by the hotkey engine when a user triggers an action. Invoking allows the operator to decide whether to open a UI popup or transition into modal mode.
 
+## Event blockers
+While an Operator is running in modal mode, the user might hold down keys. When the Operator finishes modal mode, these keys that are still held down should not trigger a new Operator until they are released. This is needed to prevent Operators from beeing executed immediately again after finishing which is bad UX.
+<br><br>
+Example: the user presses G (holds down) to move the object, presses right click to abort but because G is still held down it will move the object again.
+<br><br>
+Implement `ICachedEventBlocker` to create a strategy how to block events and when to unblock.
+
+## History
+The OperatorManager manages the user history and encapsulates it. It has API functions for undo and redo.
+
 ## Important notes about design.
-Do not expose `ControllerManager`, only `OperatorManager` should access it.
+- Do not expose `ControllerManager`, only `OperatorManager` should access it.
+- Do not expose `HistoryManager` as the `OperatorManager` manages it in the context of currently running Operators.
 
 # OperatorType
 The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator. OperatorTypes are part of the data tree to
