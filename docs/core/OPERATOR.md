@@ -1,5 +1,5 @@
 # Concept
-The concept is inspired by Blender's Operators, see https://developer.blender.org/docs/features/interface/operators/.
+The concept is inspired by Blender's Operators, see (see [Blender Operators documentation](https://developer.blender.org/docs/features/interface/operators)).
 The design principle is "Command". 
 One Operator is a functionality the user can perform, e.g. dragging a UI slider. 
 Operators operate on a context and might have input parameters.
@@ -49,7 +49,11 @@ Invoking an Operator is used in most places of the UI and by the hotkey engine w
 Do not expose `ControllerManager`, only `OperatorManager` should access it.
 
 # OperatorType
-The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for user functionality without the user logic. It allows to map one Operator to multiple OperatorTypes and is used for registration.
+The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator. OperatorTypes are part of the data tree to
+make use of the path system for unique identifiers. This way, the identifier can be used to reference an OperatorType. So the UI only references the OperatorType and can already use that to query information about the Operator, like the name, tooltip or if the operator can be executed in the current context (determined by calling the poll(...) method) (see [Blender documentation](https://developer.blender.org/docs/features/interface/operators/#operator-types))
+
+
+It allows to map one Operator to multiple OperatorTypes and is used for registration.
 OperatorTypes provide information how the engine should handle the Operator.
 <br><br>
 There are many interfaces with special flags for different kinds of OperatorTypes that need to be implemented for the engine to handle it correctly.
