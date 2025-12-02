@@ -10,7 +10,7 @@ to focus on rendering logic.
 <br><br>
 In contrast to Blender, the Operator layer is not equal to the Controller Layer, as our App is further separated into Controller Layer.
 <br><br>
-Operators are separated into `Operator`, the logic / action command and `OperatorType`.
+Operators are separated into `Operator`, the logic / action command, and `OperatorType`, the declaration and registration.
 
 # Reasoning and advantages
 Operators are registered in a central place and can be easily handled at runtime. The HotKey system maps an Operator to a
@@ -24,6 +24,7 @@ be a generic object and is defined as `IContext`. However, every context will al
 clicked UI elements, hovered UI elements etc. Implementations of `IContext` will represent the specific application context that provides more data
 like focues object, selected models, available database etc.
 <br><br>
+
 ## Important notes about access restrictions
 Operators should not be able to access `IContext` objects through the UI, as this will lead to coupling and spaghetti code. 
 Operators only access the context by the method parameter in the interfaces.
@@ -32,24 +33,29 @@ The `IContext` will be dynamically passed through the UI and Operator Manager an
 Operators should also not be able to access the database through the UI or any other indirect way to seperate UIOperators from Operators for
 the entire app data.
 
-# OperatorManager API
+# OperatorManager
 Operators are handled in `OperatorManager` and need to be executed through it. OperatorManager is the API for the Controller Layer and sits on top of it.
 Therefore, the only way to execute database changes is via `OperatorManager`.
 <br><br>
 To execute an Operator you pass the `OperatorType` to `invoke(...)` or `execute(...)`.
 
 ## Executing Operators
+When executing an Operator the `execute(...)` function is called and the Operator is only called once and finishes.
 
 ## Invoking Operators
+Invoking an Operator is used in most places of the UI and by the hotkey engine when a user triggers an action. Invoking allows the operator to decide whether to open a UI popup or transition into modal mode.
 
 ## Important notes about design.
 Do not expose `ControllerManager`, only `OperatorManager` should access it.
 
 # OperatorType
-The `OperatorType` is used as a declaration for user functionality without the user logic. It allows to map one Operator to multiple OperatorTypes.
+The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for user functionality without the user logic. It allows to map one Operator to multiple OperatorTypes and is used for registration.
 OperatorTypes provide information how the engine should handle the Operator.
 <br><br>
-There are many interfaces with special flags for different kinds of OperatorTypes that need to be implemend for the engine to handle it correctly.
+There are many interfaces with special flags for different kinds of OperatorTypes that need to be implemented for the engine to handle it correctly.
+<br><br>
+OperatorTypes instantiate the Operator commands. Operator commands are kept alive as long as they run. After they finished they are
+garbage collected to prevent memory leaks from temporary cache variables inside the Operator.
 
 ## UIOperatorType
 Use `UIOperatorType` for Operators that can only access the UI and should be executed while an Operator is run with blocking UI popup.
@@ -59,7 +65,10 @@ can be executed while another Operator is executed in blocking mode with a UI po
 access the entire database or any other app data that is not directly part of the UI rendering, e.g. it can only access the Float data object of the
 active UI slider.
 
-## Operators with Properties
+## poll(context)
+The poll function in the OperatorType is for checking if the Operator can be executed / invoked. This can be used to prevent the Operator command from being instantiated and throw a meaningful error for the user.
+
+# Operators with input parameters
 OperatorType needs to extend `OperatorTypePropertyProvider` or `UIOperatorTypePropertyProvider`, which have pre existing utility code for the data management.
 Alternatively you can implement `IOTPropertyProvider` yourself and write your own data objects.
 <br><br>
@@ -87,9 +96,25 @@ Modal Operators should have no way to access hotkey configurations to avoid hotk
 hotkeys from the actual user logic.
 
 # Adjustable Operators
-OperatorType needs to implement `IOTAdjustable`
+OperatorType needs to implement `IOTAdjustable`.
+<br><br>
+Operators that are adjustable can be adjusted after they finished execution.
 
 # Repeatable Operators
-OperatorType needs to implement `IOTRepeatable`
+OperatorType needs to implement `IOTRepeatable`.
+<br><br>
+Operators that are repeatable can be executed multiple times.
 
-# Operator Command
+# Custom Undo/Redo Operators
+OperatorType needs to implement `IOTCustomUndo`
+<br><br>
+<b>TODO maybe not good idea - forces operatorproperties only for helper variables - which would lead to cluttered properties. Maybe
+factory for undo commands to seperate operator and undo states... this would require generics for properties again...</b>
+Operators can have custom undo redo logic that is executed besides the history of data operations. This allows to undo things in the UI.
+The instance of `IUndoOperator` is also not cached in the history to avoid memory leaks. Objects should not be cached directly in the OperatorProperties to help the undo logic
+should also
+
+# Custo dynamic Undo title
+Operator needs to implement `ITitleProvider`.
+<br><br>
+This allows to provide a title for the history log based on the execution of the Operator.
