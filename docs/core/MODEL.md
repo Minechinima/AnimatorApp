@@ -3,6 +3,7 @@
     - Successful AND logged, making it revert-able
     - Unsuccessful (exception was thrown preventing follow-up operations), not logged, and the tree / values did not change
     - Successful but logging failed, letting the app crash
+- every successful granular data change is logged on the lowest level (e.g. value change, remove object from one map)
 - anything in model is free to throw a lot of exceptions for any illegal arguments, things that could go wrong etc.
 Programming in that layer should follow the paradigm "Never trust user input" 
 but in this case, the "user input" are the variables of the program. Always perform safety checks to ensure that
