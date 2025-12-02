@@ -25,9 +25,9 @@ The `core` allows for any application to be built with it, that has the followin
 central places to be shared with other parts of the application instead of copied. This allows changes to data to 
 propagate through the application immediately, as they share the same references.
 - change management: the application requires a history management system for undo-redo. However, the app is too complex
-to use the command-pattern for undo-redo, as there will be a lot of user actions in the future. Any changes to the data
+to use the command-pattern on user action level for undo-redo, as there will be a lot of user commands in the future. Any changes to the data
 need to be automatically tracked and able to undo/redo.
-- any data in the application needs to be addressable at runtime with locators, like paths.
+- any data in the application needs to be addressable at runtime with unique locators, like string paths.
 - the application needs a pointer-like structure, which is automatically cleared when the pointer target data is 
 removed from the application. This allows for data to reference other data and automatically clear 
 that reference when the application wants to delete it.
@@ -38,7 +38,7 @@ that reference when the application wants to delete it.
 - a UI, with adjustable panels/windows, that immediately reflects the data changes.
 - every user action should be encapsulated in an operator that is reusable, registered to keybinds, customizable in the config 
 and automatically triggered. Additionally, operators should be automatically displayed in the context menu for the UI 
-they are available in and can be triggered on with a keybind.
+they are available in and can be triggered on with a keybind. This is the same system as in Blender.
 
 ### App module
 The `app` is the concrete animation app that is built with the `core`. 
