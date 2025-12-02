@@ -5,10 +5,10 @@ One Operator is a functionality the user can perform, e.g. dragging a UI slider.
 Operators operate on a context and might have input parameters.
 <br><br>
 Operators are the main abstraction of user functionality and connect the UI with the data.
-They separate the business-logic / controllers from the UI and also separates the UI from most of the UX logic. This allows the UI
+They separate the business-logic / controllers from the UI and also separate the UI from most of the UX logic. This allows the UI
 to focus on rendering logic.
 <br><br>
-In contrast to Blender, the Operator layer is not equal to the Controller Layer, as our App is further separated into Controller Layer.
+In contrast to Blender, the Operator layer is not equal to the Controller Layer, as our App further separates the "controller" logic from Blender into Controller and Operator Layer.
 <br><br>
 Operators are separated into `Operator`, the logic / action command, and `OperatorType`, the declaration and registration.
 
@@ -22,7 +22,7 @@ the User. A user can right click on a button that has an operator and assign a s
 Just like in Blender, an Operator is executed with a context. Since our app is separated into core frameworks and app, our context has to
 be a generic object and is defined as `IContext`. However, every context will always provide a `UIOperatorContext`, which gives UI information like
 clicked UI elements, hovered UI elements etc. Implementations of `IContext` will represent the specific application context that provides more data
-like focues object, selected models, available database etc.
+like focused object, selected models, available database etc.
 <br><br>
 
 ## Important notes about access restrictions
@@ -30,8 +30,7 @@ Operators should not be able to access `IContext` objects through the UI, as thi
 Operators only access the context by the method parameter in the interfaces.
 The `IContext` will be dynamically passed through the UI and Operator Manager and should not be accessible via a getter / attribute in some object / class.
 <br><br>
-Operators should also not be able to access the database through the UI or any other indirect way to seperate UIOperators from Operators for
-the entire app data.
+Operators should also not be able to access the database through the UI or any other indirect way so UIOperators are seperated from Operators. UIOperators should not be abused to perform complex operations on the database as they should only interact with the UI.
 
 # OperatorManager
 Operators are handled in `OperatorManager` and need to be executed through it. OperatorManager is the API for the Controller Layer and sits on top of it. For simple tasks you can use the `OperatorManager` API to execute controllers. Therefore, the only way to execute database changes is via `OperatorManager`.
@@ -59,8 +58,8 @@ The OperatorManager manages the user history and encapsulates it. It has API fun
 - Do not expose `HistoryManager` as the `OperatorManager` manages it in the context of currently running Operators.
 
 # OperatorType
-The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator and how the engine should handle it. The seperation of Type and command also allows to map an Operator to multiple types. OperatorTypes are part of the data tree to
-make use of the path system for unique identifiers. This way, the identifier can be used to reference an OperatorType. So the UI only references the OperatorType and can already use that to query information about the Operator, like the name, tooltip or if the operator can be executed in the current context (determined by calling the poll(...) method) (see [Blender documentation](https://developer.blender.org/docs/features/interface/operators/#operator-types))
+The app needs to have a registry of all known Operators and how to handle them. The `OperatorType` is used as a declaration for the Operators without the user logic. It is essentially the blueprint for constructing the actual Operator and how the engine should handle it. The seperation of type and command also allows to map an Operator to multiple OperatorTypes. OperatorTypes are part of the data tree to
+make use of the path system for unique identifiers. This way, the identifier can be used to reference an OperatorType. So the UI only references the OperatorType and can already use that to query information about the Operator, like the name, tooltip or if the operator can be executed in the current context (determined by calling the poll(...) method) (see [Blender documentation](https://developer.blender.org/docs/features/interface/operators/#operator-types)).
 <br><br>
 There are many interfaces with special flags for different kinds of OperatorTypes that need to be implemented for the engine to handle it correctly.
 <br><br>
@@ -68,7 +67,7 @@ OperatorTypes instantiate the Operator commands. Operator commands are kept aliv
 garbage collected to prevent memory leaks from temporary cache variables inside the Operator.
 
 ## UIOperatorType
-Use `UIOperatorType` for Operators that can only access the UI and should be executed while an Operator is run with blocking UI popup.
+Use `UIOperatorType` for Operators that can only access the UI and should be executed while an Operator is run with a UI popup that blocks other Operators.
 <br><br>
 The `UIOperatorType` is for Operators that only use the `UIOperatorContext`. This is required for Operators that only act on the UI and therefore
 can be executed while another Operator is executed in blocking mode with a UI popup. They can only access the UI and should not be able to
@@ -89,24 +88,26 @@ Operators can use `OperatorProperties` for input parameters and modal keymapping
 # Modal Operators
 OperatorType needs to impelement `IOTModal`. This provides flags for the OperatorManager and for the HotKey configuration engine.
 <br><br>
+Operator needs to implement `IModalOperator`
+<br><br>
 Modal Operators are user actions that are invoked once and continously run for every input event until it is confirmed or cancelled.
 <br><br>
 Example use cases: Moving/rotating/scaling a model, dragging a UI slider.
 
 ## Modal Keymap
-Implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.
+To create a command that modifies the operator properties, implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.
 <br><br>
 Extend `PropertyModifierConfig` to implement the factory for the commands and provide configuration of the command.
 <br><br>
-To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`
+To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`.
 <br><br>
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
-changes the attributes of the operator properties which then influences the modal logic.
+changes the attributes of the operator properties which then influences the modal logic. The modal method of the Operator is called after the property modifier commands.
 
-## Important notes about access restrictions
-Modal Operators should have no way to access hotkey configurations to avoid hotkey checks inside the modal logic. This should decouple
-hotkeys from the actual user logic.
+## Important notes about design
+- Modal Operators should have no way to access hotkey configurations to avoid hotkey checks inside the modal logic. This should decouple hotkeys from the actual user logic.
+- the property modifier commands should not modify anything other than the properties. <b>TODO: currently no way to enforce as controller commands are returned</b>
 
 # Adjustable Operators
 OperatorType needs to implement `IOTAdjustable`.
