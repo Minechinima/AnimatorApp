@@ -20,8 +20,8 @@ public class IntValue extends BaseValueNumber<Integer> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return new IntType(this.get());
+    public BaseType<?> valueToData(Integer v) {
+        return new IntType(v);
     }
 
     @Override

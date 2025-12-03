@@ -17,8 +17,8 @@ public class StringValue extends BaseValue<String> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return this.get() == null ? new StringType("") : new StringType(this.get());
+    public BaseType<?> valueToData(String value) {
+        return value == null ? new StringType("") : new StringType(value);
     }
 
     @Override

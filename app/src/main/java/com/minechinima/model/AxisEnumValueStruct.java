@@ -20,7 +20,7 @@ public class AxisEnumValueStruct extends AbstractEnumValue<AxisEnumValueStruct.A
 
     @Override
     public BaseType<?> toData() {
-        return this.valueToData();
+        return this.valueToData(this.get());
     }
 
     @Override
@@ -30,8 +30,8 @@ public class AxisEnumValueStruct extends AbstractEnumValue<AxisEnumValueStruct.A
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return RegistryUtils.serialize(AxisEnumValueStruct.Axis.REGISTRY, this.get());
+    public BaseType<?> valueToData(AxisEnumValueStruct.Axis obj) {
+        return RegistryUtils.serialize(AxisEnumValueStruct.Axis.REGISTRY, obj);
     }
 
     @Override

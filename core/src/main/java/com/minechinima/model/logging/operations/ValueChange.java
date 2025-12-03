@@ -16,7 +16,7 @@ public class ValueChange implements IDataOperation<IValue<?>> {
 
     public <T extends BaseStructure & IValue> ValueChange(T value, BaseType<?> oldValue) {
         this.oldValue = oldValue;
-        this.newValue = value.valueToData();
+        this.newValue = value.valueToData(value.get());
         this.path = value.getFullPath().toUniquePath();
     }
 

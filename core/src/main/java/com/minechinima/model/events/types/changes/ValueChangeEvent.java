@@ -6,24 +6,28 @@ import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.base.BaseStructure;
 
 public class ValueChangeEvent extends ChangeEvent<ValueChange> {
-    private final BaseType<?> valueBefore;
-    private final BaseType<?> valueAfter;
+    private final BaseType<?> valueBeforeSerialized;
+    private final Object valueBefore;
+    private final BaseType<?> valueAfterSerialized;
+    private final Object valueAfter;
 
     /**
      * @param trigger the trigger (before the value is changed)
      * @param valueAfter the value that is set. No valueBefore parameter forces to give the old BaseValue state.
      */
-    public <T extends BaseStructure & IValue> ValueChangeEvent(T trigger, BaseType<?> valueBefore, BaseType<?> valueAfter) {
-        super(trigger, new ValueChange(trigger, valueBefore));
-        this.valueBefore = valueBefore;
+    public <T extends BaseStructure & IValue<J>, J> ValueChangeEvent(T trigger, J valueBefore, J valueAfter) {
+        super(trigger, new ValueChange(trigger, trigger.valueToData(valueBefore)));
+        this.valueBeforeSerialized = trigger.valueToData(valueBefore);
+        this.valueAfterSerialized = trigger.valueToData(trigger.get());
         this.valueAfter = valueAfter;
+        this.valueBefore = valueBefore;
     }
 
     public BaseType<?> getValueBefore() {
-        return this.valueBefore;
+        return this.valueBeforeSerialized;
     }
 
     public BaseType<?> getValueAfter() {
-        return this.valueAfter;
+        return this.valueAfterSerialized;
     }
 }
