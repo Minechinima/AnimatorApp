@@ -20,7 +20,7 @@ public interface IValue<T> {
      * @return a serialized value that can be parsed again by {@link #valueFromData(BaseType)}
      */
     @Contract(pure = true)
-    BaseType<?> valueToData();
+    BaseType<?> valueToData(T value);
 
     /**
      * @param data

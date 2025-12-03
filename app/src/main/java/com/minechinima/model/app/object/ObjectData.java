@@ -32,14 +32,14 @@ public class ObjectData extends AbstractEnumValueHierarchyReg<ObjectType> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
+    public BaseType<?> valueToData(ObjectType obj) {
         MapType map = new MapType(new HashMap<>());
-        if (this.get() == null) return map;
+        if (obj == null) return map;
 
         for (Pair<Long, Class<? extends ObjectType>> registered : OBJECT_TYPE_FACTORY.keySet()) {
-            if (registered.getB().equals(this.get().getClass())) {
+            if (registered.getB().equals(obj.getClass())) {
                 map.getValue().put("type_id", new LongType(registered.getA()));
-                map.getValue().put("data", this.get().toData());
+                map.getValue().put("data", obj.toData());
                 break;
             }
         }

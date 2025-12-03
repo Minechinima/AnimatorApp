@@ -21,8 +21,8 @@ public class FloatValue extends BaseValueNumber<Float> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return new FloatType(this.get());
+    public BaseType<?> valueToData(Float v) {
+        return new FloatType(v);
     }
 
     @Override

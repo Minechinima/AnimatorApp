@@ -21,8 +21,8 @@ public class LongValue extends BaseValueNumber<Long> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return new LongType(this.get());
+    public BaseType<?> valueToData(Long v) {
+        return new LongType(v);
     }
 
     @Override

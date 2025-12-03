@@ -21,8 +21,8 @@ public class DoubleValue extends BaseValueNumber<Double> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return new DoubleType(this.get());
+    public BaseType<?> valueToData(Double v) {
+        return new DoubleType(v);
     }
 
     @Override

@@ -223,7 +223,6 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
 
     @Override
     public void fromData(BaseType<?> data) {
-        //TODO revisit serialization, something is sus... especially instantiate vs valueToData/valueFromData
         MapType mapType;
         if ((mapType = data.asMapType()) == null) return;
 

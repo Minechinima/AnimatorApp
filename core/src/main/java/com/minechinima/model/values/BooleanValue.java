@@ -16,8 +16,8 @@ public class BooleanValue extends BaseValue<Boolean> {
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return new ByteType(this.get());
+    public BaseType<?> valueToData(Boolean v) {
+        return new ByteType(v);
     }
 
     @Override

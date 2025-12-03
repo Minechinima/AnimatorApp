@@ -218,7 +218,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             }
 
             this.cachedUniquePath = null;
-            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevCachedPath), new StringType("")));
+            this.triggerEvent(new ValueChangeEvent(this, prev, null));
         } else {
             /* change pointer */
             ValuePath path = value.getRelativePath(this.referenceFrame);
@@ -260,7 +260,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
             String prevPath = this.cachedUniquePath;
             this.cachedUniquePath = uniquePath;
-            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevPath), new StringType(uniquePath)));
+            this.triggerEvent(new ValueChangeEvent(this, prev, value));
         }
     }
 
@@ -332,8 +332,8 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     }
 
     @Override
-    public StringType valueToData() {
-        return new StringType(this.cachedUniquePath);
+    public StringType valueToData(T obj) {
+        return new StringType(obj == null ? "" : obj.getRelativePath(this.referenceFrame).toUniquePath());
     }
 
     @Override
@@ -369,7 +369,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
     @Override
     public StringType toData() {
-        return this.valueToData();
+        return this.valueToData(this.get());
     }
 
     @Override

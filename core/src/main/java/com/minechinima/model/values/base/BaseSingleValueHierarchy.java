@@ -57,15 +57,12 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     public void set(@Nullable T value) {
         if (this.get() == value) return;
         final T prevValue = this.get();
-        final BaseType<?> valueBefore = this.valueToData();
-        final BaseType<?> valueAfter;
 
         /*
          * Perform valueAfter serialization in case it causes an exception, so we can recover.
          */
         try {
             this.value = value;
-            valueAfter = this.valueToData();
         } catch (Exception e){
             /* in case of exception: revert */
             this.value = prevValue;
@@ -98,7 +95,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
             }
         }
 
-        this.triggerEvent(new ValueChangeEvent(this, valueBefore, valueAfter));
+        this.triggerEvent(new ValueChangeEvent(this, prevValue, value));
     }
 
     @Override
@@ -131,14 +128,14 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     @Nullable
-    public BaseType<?> valueToData() {
-        if (this.value == null) return NullType.INSTANCE;
+    public BaseType<?> valueToData(T obj) {
+        if (obj == null) return NullType.INSTANCE;
         Map<String, BaseType<?>> map = new HashMap<>();
-        map.put("id", new StringType(this.value.getIdentifier()));
-        map.put("data", this.value.toData());
+        map.put("id", new StringType(obj.getIdentifier()));
+        map.put("data", obj.toData());
 
-        if (this.value.getID().uuid() != null) {
-            map.put("uuid", new UUIDType(this.value.getID().uuid()));
+        if (obj.getID().uuid() != null) {
+            map.put("uuid", new UUIDType(obj.getID().uuid()));
         }
 
         return new MapType(map);
@@ -157,6 +154,6 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
 
     @Override
     public BaseType<?> toData() {
-        return this.valueToData();
+        return this.valueToData(this.get());
     }
 }
