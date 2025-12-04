@@ -15,8 +15,8 @@ Operators are separated into `Operator`, the logic / action command, and `Operat
 # Reasoning and advantages
 Operators are registered in a central place and can be easily handled at runtime. The HotKey system maps an Operator to a
 key combination and a UI space / region. This abstraction allows to automatically fetch all Operators / user functionality in a UI
-and automatically automatically build the right-click context menu. It allows to dynamically build the UI and display useful information for
-the User. A user can right click on a button that has an operator and assign a shortcut to that operator.
+and automatically build the right-click context menu. It allows to dynamically build the UI, construct a header with all available functions in dropdown menus and display useful information for
+the user. A user can right click on a button that has an operator and assign a shortcut to that operator.
 
 # Operators and Context
 Just like in Blender, an Operator is executed with a context. Since our app is separated into core frameworks and app, our context has to
@@ -25,7 +25,7 @@ clicked UI elements, hovered UI elements etc. Implementations of `IContext` will
 like focused object, selected models, available database etc.
 <br><br>
 
-## Important notes about access restrictions
+## Important notes about design
 Operators should not be able to access `IContext` objects through the UI, as this will lead to coupling and spaghetti code. 
 Operators only access the context by the method parameter in the interfaces.
 The `IContext` will be dynamically passed through the UI and Operator Manager and should not be accessible via a getter / attribute in some object / class.
@@ -77,6 +77,12 @@ active UI slider.
 ## poll(context)
 The poll function in the OperatorType is for checking if the Operator can be executed / invoked. This can be used to prevent the Operator command from being instantiated and throw a meaningful error for the user.
 
+## Macros
+Every `OperatorType` can define a list of other operator types that should be executed after the current one finishes successfully.
+This allows to create a chain of operators and reuse other operators.
+<br><br>
+Example use case: duplicate_move operator will first duplicate the object and then directly invoke the translate modal operator.
+
 # Operators with input parameters
 OperatorType needs to extend `OperatorTypePropertyProvider` or `UIOperatorTypePropertyProvider`, which have pre existing utility code for the data management.
 Alternatively you can implement `IOTPropertyProvider` yourself and write your own data objects.
@@ -104,6 +110,12 @@ To let the engine automatically create the configuration category, implement `IO
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
 changes the attributes of the operator properties which then influences the modal logic. The modal method of the Operator is called after the property modifier commands.
+
+## Modal OperatorType switching
+A modal OperatorType `IOTModal` can provide a set of other operatortypes that the user can switch to while the operator is running in modal mode.
+The engine will automatically display the available operatortypes and hotkeys for switching.
+<br><br>
+Example use case: The transform operators (translate, rotate, scale) can be switched between each other.
 
 ## Important notes about design
 - Modal Operators should have no way to access hotkey configurations to avoid hotkey checks inside the modal logic. This should decouple hotkeys from the actual user logic.
