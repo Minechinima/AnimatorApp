@@ -108,6 +108,7 @@ changes the attributes of the operator properties which then influences the moda
 ## Important notes about design
 - Modal Operators should have no way to access hotkey configurations to avoid hotkey checks inside the modal logic. This should decouple hotkeys from the actual user logic.
 - the property modifier commands should not modify anything other than the properties. <b>TODO: currently no way to enforce as controller commands are returned</b>
+- the separation with property modifier commands is supposed to make the Operator Modal logic less cluttered with helper variables, hotkey logic and anything other than the actual data modification. Keeping the Modal keymap separated makes it more clear how a Modal Operator is influenced without analyzing the Operator code.
 
 # Adjustable Operators
 OperatorType needs to implement `IOTAdjustable`.
