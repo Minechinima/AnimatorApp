@@ -5,6 +5,7 @@ import com.minechinima.controller.factories.ValueControllerFactory;
 import com.minechinima.data.types.*;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.datainterfaces.IValue;
@@ -58,17 +59,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         if (this.get() == value) return;
         final T prevValue = this.get();
 
-        /*
-         * Perform valueAfter serialization in case it causes an exception, so we can recover.
-         */
-        try {
-            this.value = value;
-        } catch (Exception e){
-            /* in case of exception: revert */
-            this.value = prevValue;
-            throw new UnsupportedOperationException(e);
-        }
-
+        this.value = value;
         /* try to remove prevValue from tree */
         if (prevValue != null) {
             try {
@@ -79,23 +70,46 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
             }
         }
 
+        /* try to set the parent of the new value to this */
+        final ValueChangeEvent event;
+        final BaseValueHierarchy valuePrevParent = value != null ? value.getParent() : null;
         if (value != null) {
             try {
                 value.setParent(this);
-            } catch (SetParentNotAllowed e) {
+            } catch (Exception e) {
                 this.value = prevValue;
-                if (prevValue != null) {
-                    try {
+                /* try to set the parent back of the old value */
+                try {
+                    if (prevValue != null) {
                         prevValue.setParent(this);
-                    } catch (SetParentNotAllowed e1) {
-                        throw new Error("Could not recover from failed tree method.", e1);
                     }
+                } catch (SetParentNotAllowed e1) {
+                    throw new Error("Could not recover from failed tree method.", e1);
                 }
                 throw new UnsupportedOperationException(e);
             }
         }
 
-        this.triggerEvent(new ValueChangeEvent(this, prevValue, value));
+        /* try to create change event */
+        try {
+            event = new ValueChangeEvent(this, prevValue, value);
+        } catch (Exception e) {
+            this.value = prevValue;
+            /* try to set the parents back of new and previous value */
+            try {
+                if (value != null) {
+                    value.setParent(valuePrevParent);
+                }
+                if (prevValue != null) {
+                    prevValue.setParent(this);
+                }
+            } catch (SetParentNotAllowed ex) {
+                throw new Error("Could not recover from failed tree method.", ex);
+            }
+            throw e;
+        }
+
+        this.triggerEvent(event);
     }
 
     @Override
