@@ -28,7 +28,7 @@ public class EventSubscriptionTest {
 
         val.getEventBus().subscribe(tester);
 
-        val._triggerEvent(new ValueChangeEvent(val, val.valueToData(), val.valueToData()));
+        val._triggerEvent(new ValueChangeEvent(val,val.get(), val.get()));
         Assertions.assertEquals(1, tester.onEventAll);
         Assertions.assertEquals(0, tester.onEventInChildren);
         Assertions.assertEquals(1, tester.onEventOnNode);

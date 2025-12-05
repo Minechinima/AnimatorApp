@@ -148,7 +148,20 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
          */
         if (!this.children.remove(child)) throw new UnsupportedOperationException("Could not remove the child");
         this.children.add(newIndex, child);
-        this.triggerEvent(new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child)));
+
+        final ListIndexChangeEvent event;
+        try {
+            event = new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child));
+        } catch (Exception e) {
+            try {
+                if (!this.children.remove(child)) throw new Error("Could not recover the failed method");
+                this.children.add(index, child);
+            } catch (Exception ex) {
+                throw new Error("Could not recover the failed method", ex);
+            }
+            throw e;
+        }
+        this.triggerEvent(event);
     }
 
     @Override
@@ -190,16 +203,17 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
             return false;
         }
 
+        final ListAddEvent event;
         /* map the uuid to simulate a full tree state and correctly check whether child can be added */
         this.listUUIDMapping.put(element.uuid(), element.value());
         try {
-            BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index);
+            event = BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index, () -> new ListAddEvent(this, element.value()));
         } catch (Exception e) {
             this.listUUIDMapping.remove(element.uuid());
             throw e;
         }
 
-        this.triggerEvent(new ListAddEvent(this, element.value()));
+        this.triggerEvent(event);
         return true;
     }
 
@@ -232,10 +246,10 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         UUID uuid = this.listUUIDOf(child);
         if (uuid == null) throw new NullPointerException();
 
-        BaseOperationsUtils.removeChildOrThrow(child, this.children);
+        ListRemoveEvent e = BaseOperationsUtils.removeChildOrThrow(child, this.children, () -> new ListRemoveEvent(this, index, new ListElement<>(uuid, child)));
         this.listUUIDMapping.inverse().remove(child);
 
-        this.triggerEvent(new ListRemoveEvent(this, index, new ListElement<>(uuid, child)));
+        this.triggerEvent(e);
         return child;
     }
 

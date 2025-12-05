@@ -136,8 +136,8 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @Override
     @MustBeInvokedByOverriders
     public boolean add(@NotNull T value) {
-        BaseOperationsUtils.addChildOrThrow(value, this, this.children);
-        this.triggerEvent(new ValueAddEvent(this, value));
+        ValueAddEvent event = BaseOperationsUtils.addChildOrThrow(value, this, this.children, () -> new ValueAddEvent(this, value));
+        this.triggerEvent(event);
         return true;
     }
 
@@ -173,8 +173,8 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @MustBeInvokedByOverriders
     public boolean remove(T child) {
         if (!this.children.contains(child)) return false;
-        BaseOperationsUtils.removeChildOrThrow(child, this.children);
-        this.triggerEvent(new ValueRemoveEvent(this, child));
+        ValueRemoveEvent e = BaseOperationsUtils.removeChildOrThrow(child, this.children, () -> new ValueRemoveEvent(this, child));
+        this.triggerEvent(e);
         return true;
     }
 
