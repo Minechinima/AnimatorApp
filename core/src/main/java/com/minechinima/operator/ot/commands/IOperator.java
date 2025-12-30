@@ -5,6 +5,7 @@ import com.minechinima.operator.IContext;
 import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 
@@ -30,5 +31,6 @@ public interface IOperator<C extends IContext> extends Closeable {
 
     }
 
+    @NotNull
     OPReturnValue<OpInvokeFlag> invoke(C context) throws UserException;
 }

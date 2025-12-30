@@ -3,7 +3,7 @@ package com.minechinima.operator.ot.commands;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.ui.elements.UIModal;
@@ -19,7 +19,7 @@ import java.util.Objects;
  * @implNote Important why this is an interface: force subclasses that
  * implement {@link IAdjustableOperator} to also implement this interface.
  */
-public abstract class IPropertyOperator<C extends IContext, P extends OperatorPropertiesGroupStruct> implements IOperator<C> {
+public abstract class IPropertyOperator<C extends IContext, P extends OperatorProperties> implements IOperator<C> {
     @NotNull
     protected final P props;
 
@@ -39,6 +39,7 @@ public abstract class IPropertyOperator<C extends IContext, P extends OperatorPr
      * @return
      * @throws UserException
      */
+    @NotNull
     public abstract OPReturnValue<OpExecuteFlag> onUIPropChange(C context, BaseStructure changedProp) throws UserException;
 
     /**
