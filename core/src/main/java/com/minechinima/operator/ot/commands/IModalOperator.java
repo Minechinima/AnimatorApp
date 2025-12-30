@@ -6,6 +6,7 @@ import com.minechinima.operator.IContext;
 import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
@@ -31,6 +32,7 @@ public interface IModalOperator<C extends IContext> extends IOperator<C> {
      *
      * @throws UserException
      */
+    @NotNull
     OPReturnValue<Modal> modal(C context, KeyMapEvent event) throws UserException;
 
     /**
@@ -40,6 +42,7 @@ public interface IModalOperator<C extends IContext> extends IOperator<C> {
      * @return
      * @throws UserException
      */
+    @NotNull
     default OPReturnValue<OpExecuteFlag> confirmModal(C context, @Nullable KeyMapEvent event) throws UserException {
         return new OPReturnValue<>(OpExecuteFlag.FINISHED);
     }
