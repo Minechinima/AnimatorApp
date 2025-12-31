@@ -25,6 +25,8 @@ import java.util.*;
  * Value hierarchy where the children can be removed and added dynamically.
  * This class exposes common adding and removing operations, so it can make things like generalized undo redo operations easier.
  * <br>The order of the children does not matter.
+ * <br><br>
+ * No null values allowed, as a null value cannot define an identifier.
  * @param <T> the type of the children.
  */
 public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableValueHierarchy<T>

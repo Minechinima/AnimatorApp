@@ -24,7 +24,7 @@ public class ZoomViewportOP extends IPropertyOperator<BBOperatorContext, ZoomVie
         viewVector.mul(this.props.delta.get());
         viewport.getPos().add(viewVector);
 
-        return new OPReturnValue<>(OpInvokeFlag.FINISHED, null);
+        return new OPReturnValue<>(OpInvokeFlag.FINISHED);
     }
 
     @Override

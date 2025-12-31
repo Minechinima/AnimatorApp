@@ -1,12 +1,14 @@
 package com.minechinima.operator;
 
 import com.minechinima.model.exceptions.UserException;
+import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.OperatorTypePropertyProvider;
+import com.minechinima.operator.properties.TranslateProps;
 import org.jetbrains.annotations.NotNull;
 
-public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, TranslateObject, BBOperatorContext> {
+public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, TranslateObject, BBOperatorContext> implements IOTModal<TranslateObject> {
     public OTTranslateObject(String id, String title, String description) {
-        super(id, title, description);
+        super(id, title, description, true);
     }
 
     @Override
@@ -16,12 +18,17 @@ public class OTTranslateObject extends OperatorTypePropertyProvider<TranslatePro
 
     @Override
     public @NotNull TranslateObject getOperator() {
-        return null;
+        return new TranslateObject(new TranslateProps());
+    }
+
+    @Override
+    public boolean confirmOnReleaseDefault() {
+        return false;
     }
 
     @Override
     public TranslateObject getOperator(TranslateProps props) {
-        return null;
+        return new TranslateObject(props);
     }
 
     @Override

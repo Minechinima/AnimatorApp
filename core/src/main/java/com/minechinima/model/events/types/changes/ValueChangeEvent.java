@@ -23,6 +23,16 @@ public class ValueChangeEvent extends ChangeEvent<ValueChange> {
         this.valueBefore = valueBefore;
     }
 
+    //TODO rethink this, this could lead to valueBefore and serialized not matching, not good api, maybe add new event for valuepointer
+    public <T extends BaseStructure & IValue<J>, J> ValueChangeEvent(T trigger, BaseType<?> valueBeforeSerialized, J valueBefore,
+                                                                     BaseType<?> valueAfterSerialized, J valueAfter) {
+        super(trigger, new ValueChange(trigger, valueBeforeSerialized));
+        this.valueBeforeSerialized = valueBeforeSerialized;
+        this.valueAfterSerialized = valueAfterSerialized;
+        this.valueAfter = valueAfter;
+        this.valueBefore = valueBefore;
+    }
+
     public BaseType<?> getValueBefore() {
         return this.valueBeforeSerialized;
     }

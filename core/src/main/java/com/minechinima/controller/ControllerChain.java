@@ -21,6 +21,15 @@ public class ControllerChain extends IControllerCommand {
         this.command = command;
     }
 
+    /**
+     * Add a controller command to the chain.
+     * @param command
+     * @return the next controller chain node to continue chaining.
+     */
+    public ControllerChain next(@NotNull IControllerCommand command) {
+        return this.next = new ControllerChain(command);
+    }
+
     @Override
     public void execute() throws UserException {
         this.command.execute();

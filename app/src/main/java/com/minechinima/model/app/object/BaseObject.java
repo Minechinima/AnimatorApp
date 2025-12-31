@@ -1,6 +1,7 @@
 package com.minechinima.model.app.object;
 
 import com.minechinima.model.app.BBDatabase;
+import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
@@ -11,10 +12,11 @@ import com.minechinima.ui.elements.UIAccordion;
 import com.minechinima.ui.elements.UICheckBox;
 import com.minechinima.ui.elements.UIVectorElement;
 import com.minechinima.ui.elements.properties.UIObjectProperties;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class BaseObject extends ValueGroup {
+public class BaseObject extends ValueGroup implements IDMutable {
     @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
     @InGui(entrypoint = IBimsSubUIHandler.class, translationPrefix = "base_object.transformation.translation", as = UIVectorElement.class)
     public final Vector3fValue translation = new Vector3fValue("translation");
@@ -64,5 +66,16 @@ public class BaseObject extends ValueGroup {
         this.addChild("viewport_visibility", this.viewportVisibility);
         this.addChild("render_visibility", this.renderVisibility);
         this.data.set(new CameraType());
+    }
+
+    @Override
+    public void setID(String identifier) {
+        this._setID(identifier);
+    }
+
+    @NotNull
+    @Override
+    public UUID getUUID() {
+        return this.uuid;
     }
 }

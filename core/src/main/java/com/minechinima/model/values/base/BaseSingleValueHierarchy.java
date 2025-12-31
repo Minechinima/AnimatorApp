@@ -18,6 +18,8 @@ import java.util.*;
 
 /**
  * Class that holds a single value that is part of the hierarchy.
+ * <br><br>
+ * Allows null values.
  * @param <T>
  */
 public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends BaseMutableValueHierarchy<T> implements IValue<T>,
@@ -155,6 +157,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         return new MapType(map);
     }
 
+    @Nullable
     protected abstract T instantiate(String id, @Nullable UUID uuid, BaseType<?> data);
 
     @Override
@@ -162,7 +165,7 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
         try {
             this.set(this.valueFromData(data));
         } catch (BaseTypeCannotBeParsed e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

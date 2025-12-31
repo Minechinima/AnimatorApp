@@ -13,6 +13,7 @@ import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
+import com.minechinima.operator.properties.TranslateProps;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
 
@@ -29,12 +30,12 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
     public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
         if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
         this.startTranslation = context.bbContext().activeObject.get().translation.asVector3f();
-        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING, null);
+        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
     }
 
     @Override
     public OPReturnValue<OpExecuteFlag> execute(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED, null);
+        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED);
         BaseObject object = context.bbContext().activeObject.get();
         Vector3fValue translation = object.translation;
         Vector3f offset = this.props.value.asVector3f();

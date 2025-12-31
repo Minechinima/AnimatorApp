@@ -4,6 +4,7 @@ import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.AxisEnumValueStruct;
 import com.minechinima.operator.config.modal.PropertyModifierConfig;
 import com.minechinima.operator.modal.IPropertyModifierCommand;
+import com.minechinima.operator.properties.TranslateProps;
 
 import java.util.LinkedList;
 import java.util.List;
