@@ -1,10 +1,10 @@
 package com.minechinima.operator.ot;
 
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
 
-public abstract class OperatorTypePropertyProvider<P extends OperatorPropertiesGroupStruct,
+public abstract class OperatorTypePropertyProvider<P extends OperatorProperties,
                                                    O extends IPropertyOperator<C, P>,
                                                    C extends IContext>
         extends OperatorType<C, O> implements IOTPropertyProvider<O, P> {

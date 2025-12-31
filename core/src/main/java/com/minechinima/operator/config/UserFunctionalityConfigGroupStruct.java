@@ -1,17 +1,22 @@
 package com.minechinima.operator.config;
 
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
+import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.events.types.changes.ValueAddEvent;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.OperatorTypeRegistry;
 import com.minechinima.operator.config.modal.ModalFunctionConfigsMapStruct;
 import com.minechinima.operator.config.modal.PropertyModifierConfigsMapStruct;
+import com.minechinima.operator.config.modal.PropertyModifiersListStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoryGroupStruct;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
+import com.minechinima.operator.ot.IOTModalModifierProvider;
 import com.minechinima.ui.elements.window.UIRegion;
 import com.minechinima.ui.elements.window.UISpace;
 import com.minechinima.utils.IGenericRegistry;
@@ -45,6 +50,38 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
         this.addChild("configs", this.operators = new OperatorConfigCategoriesMapStruct<>("key_configurations", this));
         this.addChild("modal_functions", this.modalFunctions = new ModalFunctionConfigsMapStruct<>("modal_functions", this.hotKeyConfigRegistry));
         this.addChild("prop_modifiers", this.propModifiers = new PropertyModifierConfigsMapStruct("prop_modifiers"));
+        this.operatorTypeRegistry.getEventBus().subscribe(this);
+        this.operatorTypeRegistry.getChildren().forEach(ot -> {
+            if (ot instanceof IOTModalModifierProvider<?,?> provider) this.addPropertyModifierConfig(provider);
+        });
+    }
+
+    @Override
+    protected final void onChildEvent(Event event) {
+        if (event instanceof AddToTreeEvent addToTreeEvent) {
+            if (addToTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
+                this.addSpaceRegionMapping(Set.of(opCategory));
+            }
+        } else if (event instanceof RemoveFromTreeEvent removeFromTreeEvent
+                && removeFromTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
+            this.removeSpaceRegionMapping(Set.of(opCategory));
+        }
+    }
+
+    @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
+    private void onAddOT(ValueAddEvent event) {
+        if (event.getAddedElement() instanceof IOTModalModifierProvider<?,?> provider) {
+            this.addPropertyModifierConfig(provider);
+        }
+    }
+
+    private <P extends OperatorProperties> void addPropertyModifierConfig(IOTModalModifierProvider<?, P> provider) {
+        Set<PropertyModifiersListStruct<P>> modifiers = this.propModifiers.getConfigCategoriesForDirect(provider.getPropertyType());
+
+        if (modifiers.isEmpty()) {
+            this.propModifiers.add(new PropertyModifiersListStruct<>(provider.modifierConfigIdentifier(),
+                    provider.getPropertyType(), provider.modifierRegistry(), this.hotKeyConfigRegistry));
+        }
     }
 
     /**
@@ -217,17 +254,6 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
             result.addAll(list.get(i).getB());
         }
         return result;
-    }
-
-    @Override
-    protected final void onChildEvent(Event event) {
-        if (event instanceof AddToTreeEvent addToTreeEvent
-                && addToTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
-            this.addSpaceRegionMapping(Set.of(opCategory));
-        } else if (event instanceof RemoveFromTreeEvent removeFromTreeEvent
-                && removeFromTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
-            this.removeSpaceRegionMapping(Set.of(opCategory));
-        }
     }
 
     private void removeSpaceRegionMapping(Set<OperatorConfigCategoryGroupStruct<C>> categories) {

@@ -1,7 +1,7 @@
 package com.minechinima.operator.config.modal;
 
 import com.minechinima.model.values.base.ValueGroup;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.modal.IPropertyModifierCommand;
 import com.minechinima.ui.utils.ILangKeyProvider;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * Higher flexibility with hotkey configuration.
  * @param <P>
  */
-public abstract class PropertyModifierConfig<P extends OperatorPropertiesGroupStruct> extends ValueGroup implements ILangKeyProvider {
+public abstract class PropertyModifierConfig<P extends OperatorProperties> extends ValueGroup implements ILangKeyProvider {
     private final String title;
     private final String description;
 

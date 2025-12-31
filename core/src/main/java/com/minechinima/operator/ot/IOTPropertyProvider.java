@@ -1,14 +1,13 @@
 package com.minechinima.operator.ot;
 
-import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
 
 /**
  * An OperatorType that provides OperatorProperties and can be configured.
  * @param <P> type of the operator properties
  */
-public interface IOTPropertyProvider<O extends IPropertyOperator<?, P>, P extends OperatorPropertiesGroupStruct> {
+public interface IOTPropertyProvider<O extends IPropertyOperator<?, P>, P extends OperatorProperties> {
     O getOperator();
 
     /**

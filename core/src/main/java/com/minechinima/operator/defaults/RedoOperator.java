@@ -11,6 +11,6 @@ public class RedoOperator implements IOperator<IContext> {
     @Override
     public OPReturnValue<OpInvokeFlag> invoke(IContext context) throws UserException {
         context.getUIContext().manager().getOperatorManager().redo();
-        return new OPReturnValue<>(OpInvokeFlag.FINISHED, null);
+        return new OPReturnValue<>(OpInvokeFlag.FINISHED);
     }
 }

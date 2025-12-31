@@ -1,16 +1,17 @@
 package com.minechinima.ui.elements;
 
-import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.input.hotkey.HotKeyConfigSelectorEnumStruct;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
+import com.minechinima.operator.config.operator.OperatorMacroPropertiesConfig;
+import com.minechinima.operator.config.operator.OperatorPropertiesConfig;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
@@ -35,10 +36,16 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
         this.children.add(this.uiptr);
 
         /* operator properties */
-        if (this.config.props.getProps() != null) {
-            UIHandlerDummy dummy = new UIHandlerDummy(this.config.props.getProps(),
-                    context.getUiHandlerRegistry().getUnnamedHandlersFor(this.config.props.getProps()));
+        if (this.config.props.get() != null) {
+            UIHandlerDummy dummy = new UIHandlerDummy(this.config.props.get(),
+                    context.getUiHandlerRegistry().getUnnamedHandlersFor(this.config.props.get()));
             this.children.add(dummy);
+        }
+
+        if (this.config.macroPropertiesConfig.get() != null) {
+            for (OperatorMacroPropertiesConfig.PropertyConfig propertyConfig : this.config.macroPropertiesConfig.get().getMacroProperties().values()) {
+                this.createMacroPropConfigs(context, propertyConfig);
+            }
         }
 
         /* modal hotkey confirm */
@@ -48,6 +55,24 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
 
             this.children.add(checkBox);
             this.children.add(new UIHotKeyElement<>(this.config.modalConfirmConfig.get().hotKeyConfigSelector));
+        }
+    }
+
+    protected void createMacroPropConfigs(UIContext<C> context, OperatorMacroPropertiesConfig.PropertyConfig propertyConfig) {
+        UIHandlerDummy dummy = new UIHandlerDummy(propertyConfig.props,
+                context.getUiHandlerRegistry().getUnnamedHandlersFor(propertyConfig.props));
+
+        this.children.add(dummy);
+
+        if (propertyConfig instanceof OperatorMacroPropertiesConfig.ModalMacroConfig config) {
+            UICheckBox checkBox = new UICheckBox<>("modal_abort");
+            checkBox.init(config.cancelMacros);
+            this.children.add(checkBox);
+        }
+
+        Collection<OperatorMacroPropertiesConfig.PropertyConfig> propConfigs = propertyConfig.getMacroProperties().values();
+        for (OperatorMacroPropertiesConfig.PropertyConfig macroCfg : propConfigs) {
+            this.createMacroPropConfigs(context, macroCfg);
         }
     }
 

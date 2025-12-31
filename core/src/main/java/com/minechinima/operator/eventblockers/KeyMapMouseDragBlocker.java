@@ -2,7 +2,6 @@ package com.minechinima.operator.eventblockers;
 
 import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.keymap.events.*;
-import com.minechinima.operator.ICachedEventBlocker;
 
 import java.util.Map;
 

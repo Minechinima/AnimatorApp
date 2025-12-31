@@ -11,6 +11,6 @@ public class UndoOperator implements IOperator<IContext> {
     @Override
     public OPReturnValue<OpInvokeFlag> invoke(IContext context) throws UserException {
         context.getUIContext().manager().getOperatorManager().undo();
-        return new OPReturnValue<>(OpInvokeFlag.FINISHED, null);
+        return new OPReturnValue<>(OpInvokeFlag.FINISHED);
     }
 }

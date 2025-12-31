@@ -24,6 +24,9 @@ import java.util.UUID;
  */
 public class ReleaseConfirmHotKey<T extends BaseStructure & IValue> extends BaseSingleValueHierarchy<ReleaseConfirmHotKey.Config> {
     private final HotKeyConfigSelectorEnumStruct parentHotKeySelector;
+    /**
+     * The value holding a {@link IReleasableModule} to check when to add a release hotkey config
+     */
     private final T module;
 
     public ReleaseConfirmHotKey(String id, HotKeyConfigSelectorEnumStruct parentHotKey, T module) {

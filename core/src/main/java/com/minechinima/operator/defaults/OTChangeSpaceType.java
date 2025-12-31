@@ -2,12 +2,7 @@ package com.minechinima.operator.defaults;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
-import com.minechinima.operator.ot.IOTPropertyProvider;
-import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.OperatorTypePropertyProvider;
-import com.minechinima.operator.ot.commands.IOperator;
-import com.minechinima.operator.ot.commands.IPropertyOperator;
 import org.jetbrains.annotations.NotNull;
 
 public class OTChangeSpaceType extends OperatorTypePropertyProvider<ChangeSpaceTypeProp, ChangeSpaceTypeOperator, IContext> {

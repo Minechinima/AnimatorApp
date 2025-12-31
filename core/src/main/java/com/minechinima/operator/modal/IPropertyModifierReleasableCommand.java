@@ -1,12 +1,12 @@
 package com.minechinima.operator.modal;
 
 import com.minechinima.controller.IControllerCommand;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
 
 import java.util.Queue;
 
-public abstract class IPropertyModifierReleasableCommand<P extends OperatorPropertiesGroupStruct, C extends PropertyModifierReleaseableConfig<P>> extends IPropertyModifierCommand<P, C> {
+public abstract class IPropertyModifierReleasableCommand<P extends OperatorProperties, C extends PropertyModifierReleaseableConfig<P>> extends IPropertyModifierCommand<P, C> {
     public IPropertyModifierReleasableCommand(C modifierConfig) {
         super(modifierConfig);
     }

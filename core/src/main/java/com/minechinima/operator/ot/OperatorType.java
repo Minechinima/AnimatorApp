@@ -3,14 +3,14 @@ package com.minechinima.operator.ot;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorProperties;
+import com.minechinima.operator.config.operator.OperatorPropertiesConfig;
 import com.minechinima.operator.ot.commands.IOperator;
-import com.minechinima.utils.BitOperationUtils;
+import com.minechinima.operator.ot.commands.IPropertyOperator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.LinkedHashSet;
 
 /**
  * Seperate the OperatorType from the command Operator logic for cleaner code.
@@ -21,27 +21,34 @@ import java.util.Set;
 public abstract class OperatorType<C extends IContext, O extends IOperator<C>> extends ValueGroup {
     public final String title;
     public final String description;
-
-    /**
-     * A set of other OperatorTypes that can replace this
-     * while this is running in modal mode.
-     */
-    private final Set<OperatorType<C, ?>> switchToTypes = new HashSet<>();
     /**
      * A Queue of OperatorTypes that will be invoked after this is finished.
      * This allows creating a chain and reusing more atomic Operators.
+     * <br><br>
+     * Uses set to impose a limitation that an operator type cannot be used more than once.
+     * This allows to build the config and use the operatortype id as key for better future proofing
+     * for deserializiation if an operator changes macros. {@link OperatorPropertiesConfig.PropertyConfig}
      */
-    private final Queue<OperatorType<C, ?>> macros = new LinkedList<>();
+    private final LinkedHashSet<Macro<C>> macros = new LinkedHashSet<>();
     /**
      * Whether this OperatorType, when successfully finished, should be pushed to history.
      */
     private final boolean pushUndo;
 
-    public OperatorType(String id, String title, String description, boolean pushUndo) {
+    public OperatorType(String id, String title, String description, LinkedHashSet<Macro<C>> macros, boolean pushUndo) {
         super(id);
         this.title = title;
         this.description = description;
         this.pushUndo = pushUndo;
+        if (macros != null) this.macros.addAll(macros);
+    }
+
+    public OperatorType(String id, String title, String description, boolean pushUndo) {
+        this(id, title, description, null, pushUndo);
+    }
+
+    public OperatorType(String id, String title, String description, LinkedHashSet<Macro<C>> macros) {
+        this(id, title, description, macros, false);
     }
 
     public OperatorType(String id, String title, String description) {
@@ -50,6 +57,11 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
 
     public boolean pushUndo() {
         return this.pushUndo;
+    }
+
+    @NotNull
+    public LinkedHashSet<Macro<C>> getMacros() {
+        return new LinkedHashSet<>(this.macros);
     }
 
     /**
@@ -63,4 +75,31 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
 
     @NotNull
     public abstract O getOperator();
+
+    public static class Macro<C extends IContext> {
+        private final OperatorType<C, ?> ot;
+        @Nullable
+        private final OperatorProperties props;
+
+        public <OP extends IPropertyOperator<C, P>,
+                OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>,
+                P extends OperatorProperties>
+        Macro(OT ot, P props) {
+            this.ot = ot;
+            this.props = props;
+        }
+
+        public Macro(OperatorType<C,?> ot) {
+            this.ot = ot;
+            this.props = null;
+        }
+
+        public OperatorType<C, ?> getOperatorType() {
+            return ot;
+        }
+
+        public @Nullable OperatorProperties getProps() {
+            return props;
+        }
+    }
 }

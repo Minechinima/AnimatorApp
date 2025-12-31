@@ -4,7 +4,7 @@ import com.minechinima.data.types.BaseType;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
 import com.minechinima.model.values.base.BaseValueList;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.utils.GenericRegistry;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -22,16 +22,21 @@ import java.util.function.Supplier;
  * This is at the same time the registry for instantiating the ProperyModifier instances for the config enums.
  * @param <P>
  */
-public class PropertyModifiersListStruct<P extends OperatorPropertiesGroupStruct> extends BaseValueList<PropertyModifierHotKeyConfig<P>>
+public class PropertyModifiersListStruct<P extends OperatorProperties> extends BaseValueList<PropertyModifierHotKeyConfig<P>>
         implements IGenericRegistry<PropertyModifierConfig<P>> {
     public final IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
     public final Class<P> clazz;
-    private final GenericRegistry<PropertyModifierConfig<P>> registry = new GenericRegistry<>();
+    private final IGenericRegistry<PropertyModifierConfig<P>> registry;
 
     public PropertyModifiersListStruct(String id, Class<P> propClazz, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry) {
+        this(id, propClazz, new GenericRegistry<>(), hotKeyConfigRegistry);
+    }
+
+    public PropertyModifiersListStruct(String id, Class<P> propClazz, IGenericRegistry<PropertyModifierConfig<P>> registry, IGenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry) {
         super(id);
         this.hotKeyConfigRegistry = hotKeyConfigRegistry;
         this.clazz = propClazz;
+        this.registry = registry;
     }
 
     public PropertyModifierHotKeyConfig<P> newConfig() {
