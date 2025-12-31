@@ -19,7 +19,7 @@ public class DummyBaseSingleValueHierarchy extends BaseSingleValueHierarchy<Base
     }
 
     @Override
-    public BaseType<?> valueToData() {
+    public BaseType<?> valueToData(BaseStructure v) {
         return null;
     }
 

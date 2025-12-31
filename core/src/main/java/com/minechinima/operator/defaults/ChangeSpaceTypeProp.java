@@ -1,10 +1,10 @@
 package com.minechinima.operator.defaults;
 
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.ui.elements.window.UISpace;
 import org.jetbrains.annotations.Nullable;
 
-public class ChangeSpaceTypeProp extends OperatorPropertiesGroupStruct {
+public class ChangeSpaceTypeProp extends OperatorProperties {
     private final UISpace panel;
 
     public ChangeSpaceTypeProp(UISpace panel) {
@@ -21,12 +21,5 @@ public class ChangeSpaceTypeProp extends OperatorPropertiesGroupStruct {
     @Nullable
     public UISpace getPanel() {
         return this.panel;
-    }
-
-    @Override
-    public ChangeSpaceTypeProp copy() {
-        ChangeSpaceTypeProp copy = new ChangeSpaceTypeProp(this.panel);
-        copy.fromData(this.toData());
-        return copy;
     }
 }

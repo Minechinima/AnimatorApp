@@ -10,7 +10,7 @@ import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.ui.elements.window.UIScreen;
 import com.minechinima.ui.elements.window.UISpace;
 
-public class ChangeSpaceTypeOperator extends IPropertyOperator<IContext, ChangeSpaceTypeProp> implements IUndoOperator {
+public class ChangeSpaceTypeOperator extends IPropertyOperator<IContext, ChangeSpaceTypeProp> implements IUndoOperator<IContext> {
     private UIScreen screenChanged;
     private UISpace spaceBefore;
 
@@ -42,17 +42,33 @@ public class ChangeSpaceTypeOperator extends IPropertyOperator<IContext, ChangeS
         return null;
     }
 
-    @Override
-    public void undo() {
-        if (this.screenChanged != null) {
-            this.screenChanged.setPanel(this.spaceBefore);
-        }
+    public IUndoOperatorCommand<IContext> getUndoCommand() {
+        return new UndoCommand(this.screenChanged, this.spaceBefore, this.props.getPanel());
     }
 
-    @Override
-    public void redo() {
-        if (this.screenChanged != null) {
-            this.screenChanged.setPanel(this.props.getPanel());
+    public static class UndoCommand implements IUndoOperatorCommand<IContext> {
+        private final UIScreen screenChanged;
+        private final UISpace spaceBefore;
+        private final UISpace spaceAfter;
+
+        public UndoCommand(UIScreen screenChanged, UISpace spaceBefore, UISpace spaceAfter) {
+            this.screenChanged = screenChanged;
+            this.spaceBefore = spaceBefore;
+            this.spaceAfter = spaceAfter;
+        }
+
+        @Override
+        public void undo(IContext context) {
+            if (this.screenChanged != null) {
+                this.screenChanged.setPanel(this.spaceBefore);
+            }
+        }
+
+        @Override
+        public void redo(IContext context) {
+            if (this.screenChanged != null) {
+                this.screenChanged.setPanel(this.spaceAfter);
+            }
         }
     }
 }

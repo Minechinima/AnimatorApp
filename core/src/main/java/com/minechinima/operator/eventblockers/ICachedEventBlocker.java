@@ -1,14 +1,16 @@
-package com.minechinima.operator;
+package com.minechinima.operator.eventblockers;
 
 import com.minechinima.input.keymap.events.KeyMapEvent;
 
 /**
  * Interface for a strategy whether a given keymap event should be blocked and not trigger an operator.
  * <br><br>
- * This is used to prevent keys that are held down while an operator is executed to immediately trigger a new operator.
+ * This is used to prevent keys that are held down while an operator is executed that would immediately trigger a new operator
+ * when the old one is finished.
  * The user should first release the key.
  * <br><br>
- * The strategies are always called, they can be used as a state machine (to store their own cache variables).
+ * The strategies are always called for every event that they marked with {@link #cacheEvent(KeyMapEvent)}.
+ * Therefore this can be used as a state machine (to store their own cache variables).
  * @param <T> type of the cached event.
  */
 public interface ICachedEventBlocker<T extends KeyMapEvent> {
