@@ -3,6 +3,7 @@ package com.minechinima.model.base;
 import com.minechinima.controller.factories.IControllerFactoryProvider;
 import com.minechinima.controller.factories.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
+import com.minechinima.data.types.NullType;
 import com.minechinima.data.types.StringType;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
@@ -210,15 +211,16 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             final T prev = this.referenced;
             final String prevCachedPath = this.cachedUniquePath;
             this.referenced = null;
+            this.cachedUniquePath = null;
             try {
                 prev.removePointer(this);
             } catch (Exception e) {
                 this.referenced = prev;
+                this.cachedUniquePath = prevCachedPath;
                 throw e;
             }
 
-            this.cachedUniquePath = null;
-            this.triggerEvent(new ValueChangeEvent(this, prev, null));
+            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevCachedPath), prev, NullType.INSTANCE, null));
         } else {
             /* change pointer */
             ValuePath path = value.getRelativePath(this.referenceFrame);
@@ -267,6 +269,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
     public T get() {
         if (this.referenced == null && this.cachedUniquePath != null) {
             T newValue = this.getTargetFromPath(this.cachedUniquePath);
+            //TODO REALLY BAD! GETTER SHOULD NEVER PERFORM SET! DOCUMENT THIS AND REFACTOR!
             if (newValue != null) this.set(newValue);
         }
         return this.referenced;

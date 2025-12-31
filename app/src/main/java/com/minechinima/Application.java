@@ -37,6 +37,7 @@ import com.minechinima.operator.eventblockers.KeyMapKeyBlocker;
 import com.minechinima.operator.eventblockers.KeyMapMouseDragBlocker;
 import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
+import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -103,14 +104,19 @@ public class Application {
 
         OperatorConfigCategoryGroupStruct object = opConfig.operators.addConfigCategory("Outliner", UIOutlinerPanel.class);
         OperatorConfigCategoryGroupStruct ui = opConfig.operators.addConfigCategory("ui");
-        OperatorConfigCategoryGroupStruct viewport = ui.newCategory("viewport");
+        OperatorConfigCategoryGroupStruct viewport = opConfig.operators.addConfigCategory("viewport", UIViewport.class);
         OperatorConfigCategoryGroupStruct general = opConfig.operators.addConfigCategory("general");
 
-        OperatorConfigGroupStruct config = object.newConfig();
+        OperatorConfigGroupStruct config = viewport.newConfig();
         config.operatorType.set(bb.ops.move);
         config.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) config.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_G);
 
+        OperatorConfigGroupStruct duplicateCOnfig = viewport.newConfig();
+        duplicateCOnfig.operatorType.set(bb.ops.duplicateMoveObject);
+        duplicateCOnfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) duplicateCOnfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_D);
+        ((HotKeyKeyboardConfigGroupStruct) duplicateCOnfig.hotKeyConfigSelector.get()).mod.shift.set(true);
 
         OperatorConfigGroupStruct deleteConfig = object.newConfig();
         deleteConfig.operatorType.set(bb.ops.delete);
@@ -152,13 +158,13 @@ public class Application {
         zoomInCfg.operatorType.set(bb.ops.zoomViewport);
         zoomInCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
         ((HotKeyMouseConfigGroupStruct) zoomInCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_WHEEL_UP);
-        ((ZoomViewportProps)zoomInCfg.props.getProps()).delta.set(1F);
+        ((ZoomViewportProps)zoomInCfg.props.get()).delta.set(1F);
 
         OperatorConfigGroupStruct zoomOutCfg = viewport.newConfig();
         zoomOutCfg.operatorType.set(bb.ops.zoomViewport);
         zoomOutCfg.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(2));
         ((HotKeyMouseConfigGroupStruct) zoomOutCfg.hotKeyConfigSelector.get()).key.set(MouseKeyEnum.MOUSE_WHEEL_DOWN);
-        ((ZoomViewportProps)zoomOutCfg.props.getProps()).delta.set(-1F);
+        ((ZoomViewportProps)zoomOutCfg.props.get()).delta.set(-1F);
 
         this.setupModal();
 
@@ -174,15 +180,15 @@ public class Application {
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropertyModifierConfigsMapStruct propertyModifiers = config.propModifiers;
         PropertyModifiersListStruct<TranslateProps> translate_modal = new PropertyModifiersListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
-        PropertyModifiersListStruct<DragValueSliderProp> slider_modal = new PropertyModifiersListStruct<>("slider_modal", DragValueSliderProp.class, config.hotKeyConfigRegistry);
         propertyModifiers.add(translate_modal);
-        propertyModifiers.add(slider_modal);
 
         translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
         translate_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
 
-        slider_modal.register(0, DragIncrementModal.class, DragIncrementModal::new);
-        slider_modal.register(1, RoundModal.class, RoundModal::new);
+        OTDragValueSlider dragValueSlider = this.dataTree.getRoot().ops.dragUISlider;
+        dragValueSlider.modifierRegistry().register(0, DragIncrementModal.class, DragIncrementModal::new);
+        dragValueSlider.modifierRegistry().register(1, RoundModal.class, RoundModal::new);
+        PropertyModifiersListStruct<DragValueSliderProp> dragConfig = (PropertyModifiersListStruct<DragValueSliderProp>) propertyModifiers.get(dragValueSlider.modifierConfigIdentifier());
 
         PropertyModifierHotKeyConfig<TranslateProps> xCfg = translate_modal.newConfig();
         xCfg.modifier.set(new TranslateModalAxisX());
@@ -196,19 +202,19 @@ public class Application {
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropertyModifierHotKeyConfig<DragValueSliderProp> slider1Cfg = slider_modal.newConfig();
+        PropertyModifierHotKeyConfig<DragValueSliderProp> slider1Cfg = dragConfig.newConfig();
         slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
         slider1Cfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_CONTROL);
         ((HotKeyKeyboardConfigGroupStruct) slider1Cfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropertyModifierHotKeyConfig<DragValueSliderProp> sliderCfg = slider_modal.newConfig();
+        PropertyModifierHotKeyConfig<DragValueSliderProp> sliderCfg = dragConfig.newConfig();
         sliderCfg.modifier.set(new DragIncrementModal(0.001F));
         sliderCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_SHIFT);
         ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropertyModifierHotKeyConfig<DragValueSliderProp> sliderRoundCfg = slider_modal.newConfig();
+        PropertyModifierHotKeyConfig<DragValueSliderProp> sliderRoundCfg = dragConfig.newConfig();
         sliderRoundCfg.modifier.set(new RoundModal());
         sliderRoundCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) sliderRoundCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_ALT);

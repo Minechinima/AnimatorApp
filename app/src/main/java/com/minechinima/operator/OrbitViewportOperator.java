@@ -14,7 +14,7 @@ public class OrbitViewportOperator extends AbstractViewportControlOP {
         Vector3d relativePosition = new Vector3d(this.viewport.getPos()).sub(this.viewport.getOrbitPos());
 
         if (event instanceof KeyMapMouseMoveEvent moveEvent) {
-            this.viewport.setYaw((float) (this.viewport.getYaw() + moveEvent.dragX() * 0.25F));
+            this.viewport.setYaw((float) (this.viewport.getYaw() - moveEvent.dragX() * 0.25F));
             this.viewport.setPitch((float) (this.viewport.getPitch() - moveEvent.dragY() * 0.25F));
 
             Vector3d basis = new Vector3d(0, 0, relativePosition.length());

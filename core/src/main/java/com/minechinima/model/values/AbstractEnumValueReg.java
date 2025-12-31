@@ -40,7 +40,7 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
 
     @Override
     public BaseType<?> toData() {
-        return this.valueToData();
+        return this.valueToData(this.get());
     }
 
     @Override
@@ -54,8 +54,8 @@ public class AbstractEnumValueReg<T extends ILangKeyProvider> extends AbstractEn
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        return this.get() == null ? NullType.INSTANCE : RegistryUtils.serialize(this.registry, this.get());
+    public BaseType<?> valueToData(T obj) {
+        return obj == null ? NullType.INSTANCE : RegistryUtils.serialize(this.registry, obj);
     }
 
     @Override

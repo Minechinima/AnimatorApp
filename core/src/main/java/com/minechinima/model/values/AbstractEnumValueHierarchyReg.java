@@ -50,9 +50,9 @@ public abstract class AbstractEnumValueHierarchyReg<T extends BaseStructure & IL
     }
 
     @Override
-    public BaseType<?> valueToData() {
-        if (this.get() == null) return NullType.INSTANCE;
-        return RegistryUtils.serializeObjectData(this.registry, this.get());
+    public BaseType<?> valueToData(T obj) {
+        if (obj == null) return NullType.INSTANCE;
+        return RegistryUtils.serializeObjectData(this.registry, obj);
     }
 
     @Override

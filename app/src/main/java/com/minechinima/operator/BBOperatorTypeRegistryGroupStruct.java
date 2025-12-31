@@ -6,6 +6,8 @@ public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOp
     public final OTOrbitViewport orbitViewport = new OTOrbitViewport("orbit", "Orbit Viewport", "Move viewport.");
     public final OTPanViewport panViewport = new OTPanViewport("pan", "Pan Viewport", "Move viewport.");
     public final OTZoomViewport zoomViewport = new OTZoomViewport("zoom", "Zoom Viewport", "Move viewport.");
+    public final OTDuplicateObject duplicateObject = new OTDuplicateObject("duplicate", "Duplicate", "Ducpliate");
+    public final OTDuplicateMoveObject duplicateMoveObject;
 
     public BBOperatorTypeRegistryGroupStruct(String id) {
         super(id);
@@ -14,5 +16,8 @@ public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOp
         this.addChild(this.orbitViewport);
         this.addChild(this.panViewport);
         this.addChild(this.zoomViewport);
+        this.addChild(this.duplicateObject);
+        this.addChild(this.duplicateMoveObject = new OTDuplicateMoveObject("duplicate_move", "Duplicate", "Ducpliate",
+                this.duplicateObject, this.move));
     }
 }

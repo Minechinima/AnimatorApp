@@ -6,6 +6,7 @@ import com.minechinima.operator.ot.commands.*;
 import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
+import com.minechinima.operator.properties.TranslateProps;
 
 public class RotateObject extends IAdjustableOperator<BBOperatorContext, TranslateProps> {
     public RotateObject(TranslateProps props) {

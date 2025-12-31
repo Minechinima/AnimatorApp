@@ -15,7 +15,7 @@ import org.joml.Vector3d;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 
-public class UIViewport extends UISpace {
+public class UIViewport extends UISpace<BBOperatorContext> {
     private int fbo;
     private int texture;
     private int depthBuffer;

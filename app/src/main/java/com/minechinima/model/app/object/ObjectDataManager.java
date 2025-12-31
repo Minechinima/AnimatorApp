@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 public class ObjectDataManager extends BaseValueMap<BaseObject> implements IControllerFactoryProvider<ObjectDataManagerController> {
-    private final BBDatabase database;
+    public final BBDatabase database;
     private final ObjectDataManagerController controller = new ObjectDataManagerController(this);
 
     public ObjectDataManager(String id, BBDatabase database) {

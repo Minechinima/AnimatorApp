@@ -1,15 +1,15 @@
-package com.minechinima.operator;
+package com.minechinima.operator.properties;
 
 import com.minechinima.model.AxisEnumValueStruct;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
-import com.minechinima.operator.defaults.DragValueSliderProp;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.ui.annotation.InGui;
 import com.minechinima.ui.elements.UICheckBox;
 import com.minechinima.ui.elements.UIEnum;
 import com.minechinima.ui.elements.UIVectorElement;
 
-public class TranslateProps extends OperatorPropertiesGroupStruct {
+public class TranslateProps extends OperatorProperties {
     @InGui(translationPrefix = "value", as= UIVectorElement.class)
     public final Vector3fValue value = new Vector3fValue("value");
     @InGui(translationPrefix = "local", as= UICheckBox.class)
@@ -24,12 +24,5 @@ public class TranslateProps extends OperatorPropertiesGroupStruct {
         this.addChild("local", this.local);
         this.addChild("transformOnAxis", this.transformOnAxis);
         this.addChild("axis", this.axis);
-    }
-
-    @Override
-    public OperatorPropertiesGroupStruct copy() {
-        OperatorPropertiesGroupStruct copy = new TranslateProps();
-        copy.fromData(this.toData());
-        return copy;
     }
 }
