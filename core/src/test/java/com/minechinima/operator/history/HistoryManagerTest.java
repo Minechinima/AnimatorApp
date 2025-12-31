@@ -1,6 +1,8 @@
 package com.minechinima.operator.history;
 
+import com.minechinima.controller.Transaction;
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.base.dummies.DummyDoubleValueMap;
 import com.minechinima.model.logging.DataOperationLog;
@@ -9,8 +11,11 @@ import com.minechinima.model.logging.operations.MapValueAdd;
 import com.minechinima.model.logging.operations.ValueChange;
 import com.minechinima.model.values.DoubleValue;
 import com.minechinima.model.values.FloatValue;
+import com.minechinima.operator.UIOperatorContext;
 import com.minechinima.operator.history.strategies.ValueChangeMerge;
 import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
+import com.minechinima.utils.BooleanOperand;
+import com.minechinima.utils.ReflectionUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,13 +23,16 @@ import java.lang.reflect.Field;
 import java.util.Stack;
 
 public class HistoryManagerTest {
-    @Test
-    public void testCompressLogOneOperationMerging() {
+    public static CompressionStrategyRegistry getCompressionStrategyRegistry() {
         CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
         compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
         compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
+        return compressionStrategyRegistry;
+    }
 
-        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
+    @Test
+    public void testCompressLogOneOperationMerging() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
         FloatValue slider = new FloatValue("a");
         DataOperationLog log = new DataOperationLog();
         slider.getDataOperationBus().registerLog(log);
@@ -39,11 +47,7 @@ public class HistoryManagerTest {
 
     @Test
     public void testCompressLogMergingTwo() {
-        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
-        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
-        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
-
-        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -71,11 +75,7 @@ public class HistoryManagerTest {
 
     @Test
     public void testCompressLogParallelity() {
-        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
-        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
-        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
-
-        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -116,11 +116,7 @@ public class HistoryManagerTest {
 
     @Test
     public void testCompressLogParallelityWithInterrupt() {
-        CompressionStrategyRegistry compressionStrategyRegistry = new CompressionStrategyRegistry();
-        compressionStrategyRegistry.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
-        compressionStrategyRegistry.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
-
-        HistoryManager historyManager = new HistoryManager(compressionStrategyRegistry);
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
         DummyBaseHierarchyRoot root = new DummyBaseHierarchyRoot("root");
         FloatValue slider = new FloatValue("a");
         FloatValue slider2 = new FloatValue("b");
@@ -179,6 +175,301 @@ public class HistoryManagerTest {
         Assertions.assertEquals(9, oldValue4.asFloatType().getValue());
         Assertions.assertEquals(11, newValue4.asFloatType().getValue());
     }
+
+    @Test
+    public void testMergeConsecutiveNoOverlapSimple() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(3);
+
+        historyManager.pushUndo(tests[0], marker1);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1);
+        historyManager.mergeUndoSteps("test", marker1);
+        Assertions.assertEquals(1, historyManager.undos.size());
+        Assertions.assertEquals("test", historyManager.undos.peek().getStepTitle());
+    }
+
+    public static Transaction[] getCommittedTransactionsForUndo(int num) {
+        Transaction[] transactions = new Transaction[num];
+        for (int i = 0; i < num; i++) {
+            transactions[i] = new Transaction(String.valueOf(i));
+            ReflectionUtils.invokePrivateMethod(transactions[i], "committedState");
+        }
+        return transactions;
+    }
+
+    @Test
+    public void testMergeConsecutiveNoOverlapSimple2() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(4);
+
+        historyManager.pushUndo(tests[0]);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1);
+        historyManager.pushUndo(tests[3]);
+
+        historyManager.mergeUndoSteps("test", marker1);
+        Assertions.assertEquals(3, historyManager.undos.size());
+        Assertions.assertEquals("test", historyManager.undos.get(1).getStepTitle());
+    }
+
+    @Test
+    public void testMergeNotConsecutiveNoOverlapSimple() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(5);
+
+        historyManager.pushUndo(tests[0], marker1); //these should be merged too
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2]);
+        historyManager.pushUndo(tests[3], marker1);
+        historyManager.pushUndo(tests[4], marker1);
+
+        historyManager.mergeUndoSteps("test", marker1);
+        Assertions.assertEquals(3, historyManager.undos.size());
+        Assertions.assertEquals("test", historyManager.undos.get(0).getStepTitle());
+        Assertions.assertEquals("test", historyManager.undos.get(2).getStepTitle());
+    }
+
+    @Test
+    public void testMergeOverlapping() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(5);
+
+        historyManager.pushUndo(tests[0], marker1); //these shouldn't be merged
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1, marker2);
+        historyManager.pushUndo(tests[3], marker1, marker2);
+        historyManager.pushUndo(tests[4], marker1, marker2);
+
+        historyManager.mergeUndoSteps("test1", marker2);
+        historyManager.mergeUndoSteps("test", marker1);
+        Assertions.assertEquals(1, historyManager.undos.size());
+        Assertions.assertEquals("test", historyManager.undos.get(0).getStepTitle());
+    }
+
+    @Test
+    public void testMergeOverlapping2() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(5);
+
+        historyManager.pushUndo(tests[0], marker1); //these shouldn't be merged
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1, marker2);
+        historyManager.pushUndo(tests[3], marker1, marker2);
+        historyManager.pushUndo(tests[4], marker1, marker2);
+
+        /* test different order of merging - first merge the overlapping root thing */
+        historyManager.mergeUndoSteps("test", marker1);
+        historyManager.mergeUndoSteps("test1", marker2);
+
+        Assertions.assertEquals(1, historyManager.undos.size());
+        Assertions.assertEquals("test1", historyManager.undos.get(0).getStepTitle());
+    }
+
+    @Test
+    public void testMergeOverlappingDifferentMarkers() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(5);
+
+        historyManager.pushUndo(tests[0], marker1); //these shouldn't be merged
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1, marker2);
+        historyManager.pushUndo(tests[3], marker2); //TODO is it a goood idea that this is still merged?
+        historyManager.pushUndo(tests[4], marker1);
+
+        /* test different order of merging - first merge the overlapping root thing */
+        historyManager.mergeUndoSteps("test1", marker2);
+        historyManager.mergeUndoSteps("test", marker1);
+
+        Assertions.assertEquals(1, historyManager.undos.size());
+        Assertions.assertEquals("test", historyManager.undos.get(0).getStepTitle());
+    }
+
+
+
+    @Test
+    public void testPopConsecutiveUndo() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        BaseHierarchyRoot relative = new DummyBaseHierarchyRoot("root");
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(6);
+
+        historyManager.pushUndo(tests[0]);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1);
+        historyManager.pushUndo(tests[3], marker1);
+        historyManager.pushUndo(tests[4], marker1);
+        historyManager.pushUndo(tests[5], marker2);
+
+        HistoryManager.UndoRedoStep popped = historyManager.popConsecutiveUndoByMarker(relative, null, null, BooleanOperand.AND, marker1);
+        Assertions.assertEquals(4, popped.historyStep.getSteps().size());
+        Assertions.assertEquals("1", popped.historyStep.getSteps().get(0).stepTitle());
+        Assertions.assertEquals("2", popped.historyStep.getSteps().get(1).stepTitle());
+        Assertions.assertEquals("3", popped.historyStep.getSteps().get(2).stepTitle());
+        Assertions.assertEquals("4", popped.historyStep.getSteps().get(3).stepTitle());
+    }
+
+    @Test
+    public void testPopAllUndo() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        BaseHierarchyRoot relative = new DummyBaseHierarchyRoot("root");
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(6);
+
+        historyManager.pushUndo(tests[0]);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1);
+        historyManager.pushUndo(tests[3]);
+        historyManager.pushUndo(tests[4], marker1);
+        historyManager.pushUndo(tests[5], marker1);
+
+        HistoryManager.UndoRedoStep popped = historyManager.popAllUndoByMarker(relative, null, null, BooleanOperand.AND, marker1);
+        Assertions.assertEquals(4, popped.historyStep.getSteps().size());
+        Assertions.assertEquals("1", popped.historyStep.getSteps().get(0).stepTitle());
+        Assertions.assertEquals("2", popped.historyStep.getSteps().get(1).stepTitle());
+        Assertions.assertEquals("4", popped.historyStep.getSteps().get(2).stepTitle());
+        Assertions.assertEquals("5", popped.historyStep.getSteps().get(3).stepTitle());
+    }
+
+    @Test
+    public void testMatchesMarkerXOR() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        BaseHierarchyRoot relative = new DummyBaseHierarchyRoot("root");
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(6);
+
+        historyManager.pushUndo(tests[0]);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker1);
+        historyManager.pushUndo(tests[3]);
+        historyManager.pushUndo(tests[4], marker1);
+        historyManager.pushUndo(tests[5], marker1, marker2);
+
+        HistoryManager.UndoRedoStep popped = historyManager.popAllUndoByMarker(relative, null, null, BooleanOperand.XOR, marker1, marker2);
+        Assertions.assertEquals(3, popped.historyStep.getSteps().size());
+        Assertions.assertEquals("1", popped.historyStep.getSteps().get(0).stepTitle());
+        Assertions.assertEquals("2", popped.historyStep.getSteps().get(1).stepTitle());
+        Assertions.assertEquals("4", popped.historyStep.getSteps().get(2).stepTitle());
+    }
+
+    @Test
+    public void testMatchesMarkerOR() {
+        HistoryManager historyManager = new HistoryManager(getCompressionStrategyRegistry());
+        BaseHierarchyRoot relative = new DummyBaseHierarchyRoot("root");
+        HistoryManager.HistoryMarker marker1 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 1;
+            }
+        };
+        HistoryManager.HistoryMarker marker2 = new HistoryManager.HistoryMarker() {
+            @Override
+            public int hashCode() {
+                return 2;
+            }
+        };
+        Transaction[] tests = getCommittedTransactionsForUndo(6);
+
+        historyManager.pushUndo(tests[0]);
+        historyManager.pushUndo(tests[1], marker1);
+        historyManager.pushUndo(tests[2], marker2);
+        historyManager.pushUndo(tests[3]);
+        historyManager.pushUndo(tests[4], marker1);
+        historyManager.pushUndo(tests[5], marker1, marker2);
+
+        HistoryManager.UndoRedoStep popped = historyManager.popAllUndoByMarker(relative, null, null, BooleanOperand.OR, marker2);
+        Assertions.assertEquals(2, popped.historyStep.getSteps().size());
+        Assertions.assertEquals("2", popped.historyStep.getSteps().get(0).stepTitle());
+        Assertions.assertEquals("5", popped.historyStep.getSteps().get(1).stepTitle());
+    }
+
 
     public static <V> V getPrivateFieldValue(Object target, String fieldName, Class<V> fieldType) {
         if (target == null || fieldName == null) {

@@ -8,13 +8,16 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.logging.DataOperationLog;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.utils.ValuePath;
-import com.minechinima.operator.OperatorPropertiesGroupStruct;
+import com.minechinima.operator.IContext;
+import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.commands.IUndoOperator;
+import com.minechinima.utils.BooleanOperand;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
 
 public class HistoryManager {
     protected Stack<HistoryStep> undos = new Stack<>();
@@ -25,10 +28,29 @@ public class HistoryManager {
         this.compressionStrategyRegistry = compressionStrategyRegistry;
     }
 
+    public void pushUndo(OperatorType type,
+                         IUndoOperator.IUndoOperatorCommand op,
+                         @Nullable OperatorProperties props,
+                         HistoryMarker... markers) {
+        this.pushUndo(null, type, op, props, markers);
+    }
+
+    public void pushUndo(Transaction transaction,
+                         OperatorType type, @Nullable
+                         OperatorProperties props,
+                         HistoryMarker... markers) {
+        this.pushUndo(transaction, type, null, props, markers);
+    }
+
+    public void pushUndo(Transaction transaction,
+                         HistoryMarker... markers) {
+        this.pushUndo(transaction, null, null, markers);
+    }
+
     public void pushUndo(@Nullable Transaction transaction,
                          OperatorType type,
-                         IUndoOperator op,
-                         @Nullable OperatorPropertiesGroupStruct props,
+                         IUndoOperator.IUndoOperatorCommand op,
+                         @Nullable OperatorProperties props,
                          HistoryMarker... markers) {
         if (transaction == null && op == null) {
             throw new IllegalArgumentException("Transaction and undoOperator cannot be null at the same time.");
@@ -45,34 +67,18 @@ public class HistoryManager {
         StepData data;
         String title;
         if (transaction != null) {
-            data = new StepData(type, op, props, this.compressLog(transaction.getDataOperationStack()));
+            data = new StepData(type, op, props, transaction.getLocalizedTitle(), this.compressLog(transaction.getDataOperationStack()));
             title = transaction.getLocalizedTitle();
         } else {
-            data = new StepData(type, op, props);
+            data = new StepData(type, op, props, type.getIdentifier());
             title = type.title;
         }
 
         this.undos.push(new HistoryStep(title, data, markers));
     }
 
-    public void pushUndo(OperatorType type,
-                         IUndoOperator op,
-                         @Nullable OperatorPropertiesGroupStruct props,
-                         HistoryMarker... markers) {
-        this.pushUndo(null, type, op, props);
-    }
 
-    public void pushUndo(Transaction transaction,
-                         OperatorType type, @Nullable
-                         OperatorPropertiesGroupStruct props,
-                         HistoryMarker... markers) {
-        this.pushUndo(transaction, type, null, props);
-    }
 
-    public void pushUndo(Transaction transaction,
-                         HistoryMarker... markers) {
-        this.pushUndo(transaction, null, null, null);
-    }
 
     public void pushUndo(Transaction transaction, UndoRedoStep redoStep) {
         this.pushRedoUndo(transaction, redoStep, true);
@@ -107,42 +113,54 @@ public class HistoryManager {
              */
             for (StepData undoStepData : redoUndoStep.historyStep.steps) {
                 if (undoStepData.ot == null) continue;
-                steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props));
+                steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props, undoStepData.stepTitle));
             }
             /*
              * push the dummy redo/undo step at the top so it gets executed first
              * Important because we want the Operator.redo() method to work on the redone database
              */
-            steps.push(new StepData(compressedStepOperations));
+            steps.push(new StepData(transaction.getLocalizedTitle(), compressedStepOperations));
         } else if (redoUndoStep.historyStep.steps.size() == 1) {
             StepData undoStepData = redoUndoStep.historyStep.steps.get(0);
-            steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props, compressedStepOperations));
+            steps.push(new StepData(undoStepData.ot, undoStepData.op, undoStepData.props, undoStepData.stepTitle, compressedStepOperations));
         }
 
         if (pushToUndo) this.undos.push(new HistoryStep(redoUndoStep.historyStep.stepTitle, redoUndoStep.historyStep.markers, steps));
         else this.redos.push(new HistoryStep(redoUndoStep.historyStep.stepTitle, redoUndoStep.historyStep.markers, steps));
     }
 
+
+
+
     public void mergeUndoSteps(String stepTitle, HistoryMarker marker) {
         HistoryStep mergedStep = null;
         for (int i = this.undos.size() - 1; i >= 0; i--) {
             HistoryStep current = this.undos.get(i);
             if (current.markers.contains(marker)) {
+                /* create a new history step with the current history step */
                 if (mergedStep == null) {
                     mergedStep = new HistoryStep(stepTitle, current.markers, current.steps);
                     this.undos.remove(i);
                 } else {
+                    /* add all current history step to the bottom of the merged stack */
                     mergedStep.steps.addAll(0, current.steps);
                     mergedStep.markers.addAll(current.markers);
                     this.undos.remove(i);
                 }
             } else if (mergedStep != null) {
+                /* first step without the marker -> insert the merged step back into the history */
                 this.undos.add(i + 1, mergedStep);
-                /* TODO only merge the first continuous match?????*/
-                break;
+                mergedStep = null;
             }
         }
+        /* means loop did not break -> it merged all to the start */
+        if (mergedStep != null) {
+            this.undos.add(0, mergedStep);
+        }
     }
+
+
+
 
     /**
      * Pops the last undo step and creates a controller command for undoing every in the provided data node and its children.
@@ -150,22 +168,166 @@ public class HistoryManager {
      * @return
      */
     @Nullable
-    public HistoryManager.UndoRedoStep popUndo(BaseValueHierarchy relative) {
+    public HistoryManager.UndoRedoStep popUndo(BaseValueHierarchy relative, IContext context, BiFunction<OperatorType, IContext, IContext> getContextForOT) {
         if (this.undos.isEmpty()) return null;
         HistoryStep step = this.undos.pop();
 
-        return new UndoRedoStep(step, this.stepCommand(relative, step, true), true);
+        return new UndoRedoStep(step, this.stepCommand(relative, step, context, getContextForOT, true), true);
     }
 
+    /**
+     * Create and pop a redo step to execute in the controller manager.
+     * @param relative
+     * @param context the current app context. Needed for undo operator commands
+     * //TODO this probably needs to be the context the operator was executed in?
+     *                do we even need to care, undo operator command should cache important variables, but how much should they cache - memory leak?
+     * @param getContextForOT a function that gets the correct context type based on the operator type
+     * @return
+     */
     @Nullable
-    public HistoryManager.UndoRedoStep popRedo(BaseValueHierarchy relative) {
+    public HistoryManager.UndoRedoStep popRedo(BaseValueHierarchy relative, IContext context,
+                                               BiFunction<OperatorType, IContext, IContext> getContextForOT) {
         if (this.redos.isEmpty()) return null;
         HistoryStep step = this.redos.pop();
 
-        return new UndoRedoStep(step, this.stepCommand(relative, step, false), false);
+        return new UndoRedoStep(step, this.stepCommand(relative, step, context, getContextForOT, false), false);
     }
 
-    protected IControllerCommand stepCommand(BaseValueHierarchy relative, HistoryStep step, boolean isUndo) {
+
+
+    /**
+     * Pops only the first one consecutive array of undo steps that match the given history markers with the boolean operand.
+     * It can pop anywhere in the history stack.
+     * <br><br>
+     * <b>This could fragment the history.</b>
+     * @param relative
+     * @param context
+     * @param getContextForOT
+     * @return
+     */
+    @Nullable
+    public UndoRedoStep popConsecutiveUndoByMarker(BaseValueHierarchy relative,
+                                                   IContext context,
+                                                   BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                                   HistoryMarker marker) {
+        return this.popUndoByMarkerInternal(relative, context, getContextForOT, BooleanOperand.OR, false, marker);
+    }
+
+    /**
+     * Pops only the first one consecutive array of undo steps that match the given history markers with the boolean operand.
+     * It can pop anywhere in the history stack.
+     * <br><br>
+     * <b>This could fragment the history.</b>
+     * @param relative
+     * @param context
+     * @param getContextForOT
+     * @param mode
+     * @param markers
+     * @return
+     */
+    @Nullable
+    public UndoRedoStep popConsecutiveUndoByMarker(BaseValueHierarchy relative,
+                                           IContext context,
+                                           BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                           BooleanOperand mode,
+                                           HistoryMarker... markers) {
+        return this.popUndoByMarkerInternal(relative, context, getContextForOT, mode, false, markers);
+    }
+
+    /**
+     * Pops all undo steps that match the given history markers with the boolean operand.
+     * The popped undo steps can be non-consecutive and anywhere in the history stack.
+     * <br><br>
+     * <b>This could fragment the history.</b>
+     * @return
+     */
+    @Nullable
+    public UndoRedoStep popAllUndoByMarker(BaseValueHierarchy relative,
+                                        IContext context,
+                                        BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                        BooleanOperand mode,
+                                        HistoryMarker... markers) {
+        return this.popUndoByMarkerInternal(relative, context, getContextForOT, mode, true, markers);
+    }
+
+    /**
+     * Pops all undo steps that match the given history markers with the boolean operand.
+     * The popped undo steps can be non-consecutive and anywhere in the history stack.
+     * <br><br>
+     * <b>This could fragment the history.</b>
+     * @return
+     */
+    @Nullable
+    public UndoRedoStep popAllUndoByMarker(BaseValueHierarchy relative,
+                                           IContext context,
+                                           BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                           HistoryMarker marker) {
+        return this.popUndoByMarkerInternal(relative, context, getContextForOT, BooleanOperand.OR, true, marker);
+    }
+
+    @Nullable
+    private UndoRedoStep popUndoByMarkerInternal(BaseValueHierarchy relative, IContext context,
+                                                 BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                                 BooleanOperand mode, boolean popAll, HistoryMarker... markers) {
+        if (this.undos.isEmpty() || markers == null || markers.length == 0) return null;
+
+        HistoryStep mergedStep = null;
+
+        /* iterate top -> bottom */
+        for (int i = this.undos.size() - 1; i >= 0; i--) {
+            HistoryStep current = this.undos.get(i);
+
+            if (matchesMarkers(current.markers, mode, markers)) {
+
+                if (mergedStep == null) {
+                    /* first matching step (top-most) */
+                    mergedStep = new HistoryStep(
+                            current.stepTitle,
+                            current.markers,
+                            current.steps
+                    );
+                } else {
+                    /* Add current steps to the bottom of stack, so undo order is preserved */
+                    mergedStep.steps.addAll(0, current.steps);
+                    mergedStep.markers.addAll(current.markers);
+                }
+
+                this.undos.remove(i);
+
+            } else if (!popAll && mergedStep != null) {
+                /*
+                 * consecutive-only: break only when the method started matching (mergedStep != null)
+                 * search until we find the first matching end until it does not match anymore
+                 */
+                break;
+            }
+        }
+
+        if (mergedStep == null) return null;
+
+        return new UndoRedoStep(mergedStep, this.stepCommand(relative, mergedStep, context, getContextForOT, true), true);
+    }
+
+    protected boolean matchesMarkers(Set<HistoryMarker> toCompareTo,
+                                   BooleanOperand mode,
+                                   HistoryMarker... filter) {
+        if (filter == null || filter.length == 0) return false;
+
+        long matches = Arrays.stream(filter)
+                             .filter(toCompareTo::contains)
+                             .count();
+
+        return switch (mode) {
+            case OR  -> matches >= 1;
+            case AND -> matches == filter.length;
+            case XOR -> matches == 1;
+        };
+    }
+
+
+    protected IControllerCommand stepCommand(BaseValueHierarchy relative, HistoryStep step,
+                                             IContext context, BiFunction<OperatorType, IContext, IContext> getContextForOT,
+                                             boolean isUndo) {
         return new IControllerCommand() {
             @Override
             public void execute() throws UserException {
@@ -198,8 +360,8 @@ public class HistoryManager {
                     }
 
                     if (step.op != null) {
-                        if (isUndo) step.op.undo();
-                        else step.op.redo();
+                        if (isUndo) step.op.undo(getContextForOT.apply(step.ot, context));
+                        else step.op.redo(getContextForOT.apply(step.ot, context));
                     }
                 }
             }
@@ -233,6 +395,18 @@ public class HistoryManager {
         };
     }
 
+
+
+
+    /**
+     * Compress the given data operation log by using a registry of strategies
+     * to check for mergeability and parallelity and other facrtors.
+     * <br><br>
+     * Important to note that this method changes recorded data operation commands, so it is not guaranteed / bug free
+     * that this might always be 100% accurate.
+     * @param log
+     * @return a new compressed stack.
+     */
     protected Stack<DataOperationLog.Entry> compressLog(Stack<DataOperationLog.Entry> log) {
         Stack<DataOperationLog.Entry> newLog = new Stack<>();
         /*
@@ -286,6 +460,9 @@ public class HistoryManager {
         return newLog;
     }
 
+
+
+
     /**
      * One History step. One step can have multiple operator/log steps, if they were merged because of equal markers.
      */
@@ -297,7 +474,7 @@ public class HistoryManager {
         protected HistoryStep(String stepTitle, StepData data, HistoryMarker... marker) {
             this.stepTitle = stepTitle;
             this.steps.push(data);
-            this.markers.addAll(Set.of(marker));
+            if (marker.length > 0) this.markers.addAll(Set.of(marker));
         }
 
         protected HistoryStep(String stepTitle, StepData data, Set<HistoryMarker> marker) {
@@ -316,36 +493,74 @@ public class HistoryManager {
             this.stepTitle = stepTitle;
             this.steps.addAll(List.of(step));
         }
+
+        public String getStepTitle() {
+            return stepTitle;
+        }
+
+        public Set<HistoryMarker> getMarkers() {
+            return new HashSet<>(this.markers);
+        }
+
+        public Stack<StepData> getSteps() {
+            Stack<StepData> copy = new Stack<>();
+            copy.addAll(this.steps);
+            return copy;
+        }
     }
 
+    /**
+     * The atomic history step with execution logic to undo data operations.
+     * StepData 0..1-->OperatorType/UndoCommand
+     * @param ot
+     * @param op
+     * @param props
+     * @param stepTitle
+     * @param log
+     */
+    protected record StepData(@Nullable OperatorType ot,
+                              @Nullable IUndoOperator.IUndoOperatorCommand op,
+                              @Nullable OperatorProperties props,
+                              String stepTitle,
+                              Stack<DataOperationLog.Entry> log) {
+        public StepData(OperatorType ot, IUndoOperator.IUndoOperatorCommand op, OperatorProperties props, String stepTitle) {
+            this(ot, op, props, stepTitle, new Stack<>());
+        }
+
+        public StepData(String stepTitle, Stack<DataOperationLog.Entry> log) {
+            this(null, null, null, stepTitle, new Stack<>());
+        }
+    }
+
+    /* subclass to access timestamp parameter of constructor */
+    protected static class HistoryLogEntry extends DataOperationLog.Entry {
+        protected HistoryLogEntry(long timestamp, IDataOperation op, ValuePath path) {
+            super(timestamp, path, op);
+        }
+    }
+
+    /**
+     * Interface for marker objects to merge mulitple history steps.
+     * <br><br>
+     * Is an interface for better organisation, readability and future use cases where a marker
+     * might provide more information.
+     * Currently only has default hash and equals method.
+     */
     public interface HistoryMarker {
         boolean equals(Object marker);
         int hashCode();
-    }
-
-    protected record StepData(@Nullable OperatorType ot,
-                              @Nullable IUndoOperator op,
-                              @Nullable OperatorPropertiesGroupStruct props,
-                              Stack<DataOperationLog.Entry> log) {
-        public StepData(OperatorType ot, IUndoOperator op, OperatorPropertiesGroupStruct props) {
-            this(ot, op, props, new Stack<>());
-        }
-
-        public StepData(Stack<DataOperationLog.Entry> log) {
-            this(null, null, null, new Stack<>());
-        }
     }
 
     /**
      * For performing an undo/redo step and inserting it back into the HistoryManager as redo/undo.
      */
     public final static class UndoRedoStep {
-        private final IControllerCommand command;
-        private final HistoryStep historyStep;
+        protected final IControllerCommand command;
+        protected final HistoryStep historyStep;
         /**
          * For the HistoryManager to verify that when pushing into redo stack the step is from undo stack.
          */
-        private final boolean isUndo;
+        protected final boolean isUndo;
 
         /**
          * Private so only history manager can instantiate. This ensures that only an undo step created by this history can be inserted
@@ -363,12 +578,6 @@ public class HistoryManager {
 
         public String getTitle() {
             return this.historyStep.stepTitle;
-        }
-    }
-
-    protected static class HistoryLogEntry extends DataOperationLog.Entry {
-        protected HistoryLogEntry(long timestamp, IDataOperation op, ValuePath path) {
-            super(timestamp, path, op);
         }
     }
 }
