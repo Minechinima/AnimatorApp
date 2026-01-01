@@ -22,16 +22,13 @@ public abstract class TranslateModalAxis extends PropertyModifierConfig<Translat
     public IPropertyModifierCommand<TranslateProps, ?> factory() {
         return new IPropertyModifierCommand<>(this) {
             @Override
-            public Queue<IControllerCommand> modify(TranslateProps props) {
+            public IControllerCommand modify(TranslateProps props) {
                 if (props.axis.get() == this.modifierConfig.axisToSet) {
-                    return new LinkedList<>(List.of(props.transformOnAxis.controller().set(false)));
+                    return props.transformOnAxis.controller().set(false);
                 }
 
-                Queue<IControllerCommand> cmds = new LinkedList<>();
-                cmds.add(props.transformOnAxis.controller().set(true));
-                cmds.add(props.axis.controller().set(this.modifierConfig.axisToSet));
-
-                return cmds;
+                return props.transformOnAxis.controller().set(true)
+                        .next(props.axis.controller().set(this.modifierConfig.axisToSet));
             }
         };
     }

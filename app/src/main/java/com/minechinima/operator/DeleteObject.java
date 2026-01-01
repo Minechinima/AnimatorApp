@@ -16,7 +16,7 @@ public class DeleteObject implements IOperator<BBOperatorContext> {
         if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED, null);
         BaseObject selection = context.bbContext().activeObject.get();
         IControllerCommand delete = context.bbContext().database.objects.controller().deleteObject(selection);
-        return new OPReturnValue<>(OpExecuteFlag.FINISHED, new LinkedList<>(List.of(delete)));
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED, delete);
     }
 
     @Override

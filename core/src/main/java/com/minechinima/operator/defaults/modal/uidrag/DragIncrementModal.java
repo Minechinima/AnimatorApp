@@ -23,19 +23,19 @@ public class DragIncrementModal extends PropertyModifierReleaseableConfig<DragVa
     }
 
     @Override
-    public IPropertyModifierReleasableCommand factory() {
+    public IPropertyModifierReleasableCommand<DragValueSliderProp, DragIncrementModal> factory() {
         return new IPropertyModifierReleasableCommand<>(this) {
             private float originalIncrement;
 
             @Override
-            public Queue<IControllerCommand> modify(DragValueSliderProp props) {
+            public IControllerCommand modify(DragValueSliderProp props) {
                 this.originalIncrement = props.increment.get();
-                return new LinkedList<>(List.of(props.increment.controller().set(DragIncrementModal.this.incrementMultiplier.get())));
+                return props.increment.controller().set(DragIncrementModal.this.incrementMultiplier.get());
             }
 
             @Override
-            public Queue<IControllerCommand> onReleaseEvent(DragValueSliderProp props) {
-                return new LinkedList<>(List.of(props.increment.controller().set(this.originalIncrement)));
+            public IControllerCommand onReleaseEvent(DragValueSliderProp props) {
+                return props.increment.controller().set(this.originalIncrement);
             }
         };
     }

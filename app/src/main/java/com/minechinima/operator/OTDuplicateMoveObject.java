@@ -7,6 +7,6 @@ public class OTDuplicateMoveObject extends MacroOperatorType<BBOperatorContext> 
                                  OTDuplicateObject otDuplicateObject, OTTranslateObject translateObject) {
         super(id, title, description, true,
                 new Macro<>(otDuplicateObject),
-                new Macro<>(translateObject));
+                new Macro<>(translateObject, true));
     }
 }

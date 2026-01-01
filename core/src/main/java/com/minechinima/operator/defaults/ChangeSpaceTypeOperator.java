@@ -42,7 +42,8 @@ public class ChangeSpaceTypeOperator extends IPropertyOperator<IContext, ChangeS
         return null;
     }
 
-    public IUndoOperatorCommand<IContext> getUndoCommand() {
+    @Override
+    public IUndoOperatorCommand<IContext> getUndoCommand(IContext context) {
         return new UndoCommand(this.screenChanged, this.spaceBefore, this.props.getPanel());
     }
 

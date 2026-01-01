@@ -5,6 +5,7 @@ import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.config.operator.OperatorPropertiesConfig;
+import com.minechinima.operator.ot.commands.IModalOperator;
 import com.minechinima.operator.ot.commands.IOperator;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
 import org.jetbrains.annotations.NotNull;
@@ -80,6 +81,7 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
         private final OperatorType<C, ?> ot;
         @Nullable
         private final OperatorProperties props;
+        private final boolean cancelMacroOnModalCancel;
 
         public <OP extends IPropertyOperator<C, P>,
                 OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>,
@@ -87,11 +89,30 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
         Macro(OT ot, P props) {
             this.ot = ot;
             this.props = props;
+            this.cancelMacroOnModalCancel = false;
         }
 
-        public Macro(OperatorType<C,?> ot) {
+        public <OP extends IPropertyOperator<C, P> & IModalOperator<C>,
+                OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<OP>,
+                P extends OperatorProperties>
+        Macro(OT ot, P props, boolean cancelMacroOnModalCancel) {
+            this.ot = ot;
+            this.props = props;
+            this.cancelMacroOnModalCancel = cancelMacroOnModalCancel;
+        }
+
+
+        public <OT extends OperatorType<C, ?>> Macro(OT ot) {
             this.ot = ot;
             this.props = null;
+            this.cancelMacroOnModalCancel = false;
+        }
+
+        public <OP extends IOperator<C> & IModalOperator<C>,
+                OT extends OperatorType<C, OP> & IOTModal<OP>> Macro(OT ot, boolean cancelMacroOnModalCancel) {
+            this.ot = ot;
+            this.props = null;
+            this.cancelMacroOnModalCancel = cancelMacroOnModalCancel;
         }
 
         public OperatorType<C, ?> getOperatorType() {
@@ -100,6 +121,10 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
 
         public @Nullable OperatorProperties getProps() {
             return props;
+        }
+
+        public boolean isCancelMacroOnModalCancel() {
+            return cancelMacroOnModalCancel;
         }
     }
 }

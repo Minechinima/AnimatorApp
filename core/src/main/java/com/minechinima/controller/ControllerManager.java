@@ -33,6 +33,7 @@ public class ControllerManager {
      */
     @Nullable
     private Exception e;
+    private boolean abort;
 
     public ControllerManager(DataTreeManager<?> app, Logger logger) {
         this.dataTree = app;
@@ -50,7 +51,7 @@ public class ControllerManager {
     /**
      * @throws UnsupportedOperationException when there is a transaction currently running
      */
-    public ControllerResult executeTransaction(String name, Queue<IControllerCommand> commands) {
+    public ControllerResult executeTransaction(String name, Iterable<IControllerCommand> commands) {
         this.startTransaction();
         ControllerResult r0 = this.writeToTransaction(commands);
 
@@ -78,7 +79,7 @@ public class ControllerManager {
      * @return
      * @throws UnsupportedOperationException when no transaction was started.
      */
-    public ControllerResult writeToTransaction(@NotNull Queue<IControllerCommand> commands) {
+    public ControllerResult writeToTransaction(@NotNull Iterable<IControllerCommand> commands) {
         if (this.currentTransaction == null) {
             throw new UnsupportedOperationException("Cannot write to transaction when none is started.");
         }
@@ -91,19 +92,28 @@ public class ControllerManager {
         this.currentTransaction.getLog().resume();
         this.nestedLevel++;
 
+        //TODO we need to enforce that setters can only be called from controller layer - architectural enforcement
+        // and only called while controller is active - authority enforcement
+        // important later for sync
         try {
             /* ATTENTION: while this is running, writeToTransaction could be called again,
              * abortTransaction could set current to null */
-            Iterator<IControllerCommand> it = commands.iterator();
-            while (it.hasNext()
-                    && this.e == null
-                    && this.currentTransaction != null) {
-                it.next().execute();
+            if (!this.abort) {
+                for (IControllerCommand cmd : commands) {
+                    cmd.execute();
+                    if (this.abort) break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            if (this.nestedLevel > 1) this.e = e;
-            this.abortTransaction();
+            this.abort = true;
+
+            if (this.nestedLevel == 1) {
+                this._abortTransaction();
+            } else {
+                if (this.e == null) this.e = e;
+            }
+
             this.dataTree.getReferenceManager().reapplyCachedClearedReferences();
 
             if (e instanceof UserException userException) {
@@ -113,15 +123,25 @@ public class ControllerManager {
             return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "An unexpected error happened.", e);
         } finally {
             this.nestedLevel--;
+            /* only pause the log in the root of the controller call stack */
+            if (this.nestedLevel == 0) {
+                this.currentTransaction.getLog().pause();
+                this.dataTree.getReferenceManager().stopCachingClearedReferences();
+            }
         }
 
-        if (this.currentTransaction == null) {
+        if (this.abort) {
+            if (this.nestedLevel == 0 && this.currentTransaction != null) {
+                this._abortTransaction();
+            }
+            Exception error = this.e;
+            if (this.nestedLevel == 0) {
+                this.e = null;
+            }
+
             this.dataTree.getReferenceManager().stopCachingClearedReferences();
-            return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "", new Exception(this.e));
+            return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "", error);
         }
-
-        this.currentTransaction.getLog().pause();
-        this.dataTree.getReferenceManager().stopCachingClearedReferences();
 
         return new ControllerResult(this.currentTransaction, ControllerResult.State.SUCCESS, this.currentTransaction.getLocalizedTitle());
     }
@@ -140,6 +160,10 @@ public class ControllerManager {
             throw new UnsupportedOperationException("Cannot commit a transaction from within the controller commands execution loop.");
         }
 
+        if (this.abort) {
+            return new ControllerResult(this.currentTransaction, ControllerResult.State.ERROR, "Transaction is aborted.");
+        }
+
         this.currentTransaction.setTitle(name);
         this.dataTree.getReferenceManager().finalizeCachedClearedReferences();
         this.currentTransaction.committedState();
@@ -155,6 +179,14 @@ public class ControllerManager {
      * This is important to catch critical bugs and let the app terminate to prevent incorrect data.
      */
     public void abortTransaction() {
+        this.abort = true;
+
+        if (this.nestedLevel == 0) {
+            this._abortTransaction();
+        }
+    }
+
+    protected void _abortTransaction() {
         if (this.currentTransaction == null) {
             throw new UnsupportedOperationException("Cannot abort transaction when none is started.");
         }
@@ -191,6 +223,7 @@ public class ControllerManager {
             }
 
             this.currentTransaction = null;
+            this.abort = false;
         } catch (Exception e) {
             throw new Error(e);
         }

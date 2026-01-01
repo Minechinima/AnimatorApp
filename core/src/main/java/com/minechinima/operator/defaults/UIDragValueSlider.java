@@ -1,5 +1,6 @@
 package com.minechinima.operator.defaults;
 
+import com.minechinima.controller.ControllerChain;
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseDragEvent;
@@ -75,13 +76,13 @@ public class UIDragValueSlider extends IPropertyOperator<UIOperatorContext, Drag
             }
         }
 
-        Queue<IControllerCommand> commands = new LinkedList<>();
+        IControllerCommand commands = new ControllerChain();
         if (!this.selectingElements) {
             for (Pair<Float, UIDragFloat<?>> entry : this.floatElements) {
                 FloatValue v = entry.getB().getValue();
                 double value = entry.getA() + (event.mouseX() - this.startPos.x()) * this.props.increment.get();
                 if (this.props.round.get()) value = Math.round(value);
-                commands.add(v.controller().set((float) value));
+                commands.next(v.controller().set((float) value));
             }
         }
 

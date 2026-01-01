@@ -9,8 +9,7 @@ import com.minechinima.operator.IContext;
  * @implNote this undo function is called after the database changes have been undone.
  */
 public interface IUndoOperator<C extends IContext> extends IOperator<C> {
-    //TODO review if this needs context object and if so if it needs triggered and current context.
-    IUndoOperatorCommand<C> getUndoCommand();
+    IUndoOperatorCommand<C> getUndoCommand(C context);
 
     /**
      * Separate command interface. Implement this in a separate class or static inner class. It is important

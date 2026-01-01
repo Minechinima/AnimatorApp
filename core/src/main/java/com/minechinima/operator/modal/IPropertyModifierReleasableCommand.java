@@ -15,5 +15,5 @@ public abstract class IPropertyModifierReleasableCommand<P extends OperatorPrope
      * @param props
      * @implNote Is executed on the same instance -> cached attributes can be used for persistent storage till this event is fired.
      */
-    public abstract Queue<IControllerCommand> onReleaseEvent(P props);
+    public abstract IControllerCommand onReleaseEvent(P props);
 }
