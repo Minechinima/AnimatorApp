@@ -7,14 +7,13 @@ import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.values.base.ValueGroup;
+import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.operator.ot.commands.IModalOperator;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
-import com.minechinima.ui.annotation.InGui;
-import com.minechinima.ui.elements.UICheckBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,13 +80,13 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
     }
 
     /**
-     * Wrapper for an immutable list of property configs of macro operators.
+     * Wrapper for an immutable list of property configs of the macro operators.
      */
     public class Macros extends ValueGroup {
         /**
          * Mapping of property config to their operator type for easier access.
          */
-        private Map<OperatorType, PropertyConfig> macroPropertiesCache = new LinkedHashMap<>();
+        private Map<OperatorType, MacroConfig> macroPropertiesCache = new LinkedHashMap<>();
 
         public Macros(@NotNull final OperatorType<?, ?> operatorType) {
             super("");
@@ -99,11 +98,11 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
                 OperatorType macroOT = macro.getOperatorType();
                 if (macro.getProps() != null) macroProps.copyFrom(macro.getProps());
 
-                PropertyConfig macroConfig;
+                MacroConfig macroConfig;
                 if (macroOT instanceof IOTModal<?>) {
-                    macroConfig = new ModalMacroConfig(macroOT.getIdentifier(), macroOT, macroProps);
+                    macroConfig = new ModalMacroConfig(macroOT.getIdentifier(), macro, macroOT, macroProps);
                 } else {
-                    macroConfig = new PropertyConfig(macroOT.getIdentifier(), macroOT, macroProps);
+                    macroConfig = new MacroConfig(macroOT.getIdentifier(), macroOT, macroProps);
                 }
 
                 this.macroPropertiesCache.put(macroOT, macroConfig);
@@ -111,7 +110,7 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
             }
         }
 
-        public Map<OperatorType, PropertyConfig> getMacroProperties() {
+        public Map<OperatorType, MacroConfig> getMacroProperties() {
             return new HashMap<>(this.macroPropertiesCache);
         }
     }
@@ -120,27 +119,28 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
      * @param <P>
      * @param <OT>
      */
-    public class PropertyConfig<OP extends IPropertyOperator<?, P>,
+    public class MacroConfig<C extends IContext,
+            OP extends IPropertyOperator<C, P>,
             P extends OperatorProperties,
-            OT extends OperatorType<?, OP> & IOTPropertyProvider<OP, P>>
+            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>>
             extends ValueGroup {
         public final P props;
 
-        private Map<OperatorType, PropertyConfig> macroPropertiesCache = new LinkedHashMap<>();
+        private Map<OperatorType, MacroConfig> macroPropertiesCache = new LinkedHashMap<>();
 
-        public PropertyConfig(String id, @NotNull final OT operatorType, final P props) {
+        public MacroConfig(String id, @NotNull final OT operatorType, final P props) {
             super(id);
             this.addChild("props", this.props = props);
 
             /* go through macros recursively creating a tree */
-            for (OperatorType.Macro macro : operatorType.getMacros()) {
+            for (OperatorType.Macro<C> macro : operatorType.getMacros()) {
                 if (!(macro.getOperatorType() instanceof IOTPropertyProvider<?,?> macroOTPropPrvder)) continue;
 
                 OperatorProperties macroProps = macroOTPropPrvder.createProps();
                 OperatorType macroOT = macro.getOperatorType();
                 if (macro.getProps() != null) macroProps.copyFrom(macro.getProps());
 
-                PropertyConfig macroConfig = new PropertyConfig(macroOT.getIdentifier(), macroOT, macroProps);
+                MacroConfig macroConfig = new MacroConfig(macroOT.getIdentifier(), macroOT, macroProps);
 
                 this.macroPropertiesCache.put(macroOT, macroConfig);
                 this.addChild(macroOT.getIdentifier(), macroConfig);
@@ -148,25 +148,33 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
 
         }
 
-        public PropertyConfig(String id, @NotNull final OT operatorType) {
+        public MacroConfig(String id, @NotNull final OT operatorType) {
             this(id, operatorType, operatorType.createProps());
         }
 
-        public Map<OperatorType, PropertyConfig> getMacroProperties() {
+        public Map<OperatorType, MacroConfig> getMacroProperties() {
             return new HashMap<>(this.macroPropertiesCache);
         }
     }
 
-    public class ModalMacroConfig<OP extends IPropertyOperator<?, P> & IModalOperator<?>,
+    /**
+     * Config for a modal operatortype that is used as a macro.
+     * @param <OP>
+     * @param <P>
+     * @param <OT>
+     */
+    public class ModalMacroConfig<C extends IContext,
+            OP extends IPropertyOperator<C, P> & IModalOperator<C>,
             P extends OperatorProperties,
-            OT extends OperatorType<?, OP> & IOTPropertyProvider<OP, P> & IOTModal<OP>>
-            extends PropertyConfig {
+            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<OP>>
+            extends MacroConfig<C, OP, P, OT> {
         //TODO this cant work because generics are not handled / ignored in generator frame work @InGui(as = UICheckBox.class, translationPrefix = "cancel_macros")
-        public final BooleanValue cancelMacros = new BooleanValue("cancel_macros", false);
+        public final BooleanValue cancelMacros;
 
-        public ModalMacroConfig(String id, @NotNull OperatorType operatorType, OperatorProperties props) {
+        public ModalMacroConfig(String id, final OperatorType.Macro<C> macro,
+                                @NotNull final OT operatorType, final P props) {
             super(id, operatorType, props);
-            this.addChild("cancel_macros", this.cancelMacros);
+            this.addChild("cancel_macros", this.cancelMacros = new BooleanValue("cancel_macros", macro.isCancelMacroOnModalCancel()));
         }
     }
 }

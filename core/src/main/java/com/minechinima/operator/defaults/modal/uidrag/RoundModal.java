@@ -18,13 +18,13 @@ public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSlide
     public IPropertyModifierReleasableCommand<DragValueSliderProp, ?> factory() {
         return new IPropertyModifierReleasableCommand<>(this) {
             @Override
-            public Queue<IControllerCommand> modify(DragValueSliderProp props) {
-                return new LinkedList<>(List.of(props.round.controller().set(!props.round.get())));
+            public IControllerCommand modify(DragValueSliderProp props) {
+                return props.round.controller().set(!props.round.get());
             }
 
             @Override
-            public Queue<IControllerCommand> onReleaseEvent(DragValueSliderProp props) {
-                return new LinkedList<>(List.of(props.round.controller().set(false)));
+            public IControllerCommand onReleaseEvent(DragValueSliderProp props) {
+                return props.round.controller().set(false);
             }
         };
     }

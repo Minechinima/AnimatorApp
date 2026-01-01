@@ -1,6 +1,5 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.ControllerUtils;
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
@@ -48,8 +47,7 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
             rotM.transform(offset);
         }
 
-        Queue<IControllerCommand> cmds = ControllerUtils.asQueue(translation.controller().set(offset.add(this.startTranslation)));
-        return new OPReturnValue<>(OpExecuteFlag.FINISHED, cmds);
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED, translation.controller().set(offset.add(this.startTranslation)));
     }
 
     @Override
@@ -98,7 +96,8 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
             }
         }
 
-        Queue<IControllerCommand> cmds = ControllerUtils.asQueue(translation.controller().set(offset.add(this.startTranslation)));
-        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), cmds);
+
+        IControllerCommand cmd = translation.controller().set(offset.add(this.startTranslation));
+        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), cmd);
     }
 }

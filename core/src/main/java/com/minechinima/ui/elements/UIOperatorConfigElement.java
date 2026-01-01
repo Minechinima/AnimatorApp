@@ -6,7 +6,6 @@ import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorMacroPropertiesConfig;
-import com.minechinima.operator.config.operator.OperatorPropertiesConfig;
 import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.UIContext;
 import imgui.ImGui;
@@ -29,11 +28,11 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
     private void createUI(UIContext<C> context) {
         this.children.clear();
 
-        this.children.add(this.hotKeyElement);
-
         this.uiptr.setSourceList((BaseValueHierarchy<OperatorType>) this.config.operatorType.getReferenceFrame());
         this.uiptr.init(this.config.operatorType);
+
         this.children.add(this.uiptr);
+        this.children.add(this.hotKeyElement);
 
         /* operator properties */
         if (this.config.props.get() != null) {
@@ -43,7 +42,7 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
         }
 
         if (this.config.macroPropertiesConfig.get() != null) {
-            for (OperatorMacroPropertiesConfig.PropertyConfig propertyConfig : this.config.macroPropertiesConfig.get().getMacroProperties().values()) {
+            for (OperatorMacroPropertiesConfig.MacroConfig propertyConfig : this.config.macroPropertiesConfig.get().getMacroProperties().values()) {
                 this.createMacroPropConfigs(context, propertyConfig);
             }
         }
@@ -58,7 +57,7 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
         }
     }
 
-    protected void createMacroPropConfigs(UIContext<C> context, OperatorMacroPropertiesConfig.PropertyConfig propertyConfig) {
+    protected void createMacroPropConfigs(UIContext<C> context, OperatorMacroPropertiesConfig.MacroConfig propertyConfig) {
         UIHandlerDummy dummy = new UIHandlerDummy(propertyConfig.props,
                 context.getUiHandlerRegistry().getUnnamedHandlersFor(propertyConfig.props));
 
@@ -70,8 +69,8 @@ public class UIOperatorConfigElement<C extends IContext> extends UIElement<C> {
             this.children.add(checkBox);
         }
 
-        Collection<OperatorMacroPropertiesConfig.PropertyConfig> propConfigs = propertyConfig.getMacroProperties().values();
-        for (OperatorMacroPropertiesConfig.PropertyConfig macroCfg : propConfigs) {
+        Collection<OperatorMacroPropertiesConfig.MacroConfig> propConfigs = propertyConfig.getMacroProperties().values();
+        for (OperatorMacroPropertiesConfig.MacroConfig macroCfg : propConfigs) {
             this.createMacroPropConfigs(context, macroCfg);
         }
     }

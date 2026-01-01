@@ -211,7 +211,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * @param pushUndo
      * @return
      */
-    public boolean executeTransaction(String title, Queue<IControllerCommand> commands, boolean pushUndo) {
+    public boolean executeTransaction(String title, IControllerCommand commands, boolean pushUndo) {
         if (this.modal != null || this.controller.isActive()) return false;
         this.controller.startTransaction();
 
@@ -223,10 +223,6 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         if (result.state() != ControllerResult.State.SUCCESS) return false;
         if (pushUndo) this.historyManager.pushUndo(result.transaction());
         return true;
-    }
-
-    public boolean executeTransaction(String title, IControllerCommand command, boolean pushUndo) {
-        return this.executeTransaction(title, ControllerUtils.asQueue(command), pushUndo);
     }
 
     /**
@@ -246,7 +242,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         HistoryManager.UndoRedoStep undoStep = this.historyManager.popUndo(this.controller.getDataTree().getRoot(), this.currentContext, this::getContextForType);
         if (undoStep == null) return;
-        ControllerResult result = this.controller.executeTransaction("Undo: ", ControllerUtils.asQueue(undoStep.getCommand()));
+        ControllerResult result = this.controller.executeTransaction("Undo: ", undoStep.getCommand());
 
         if (result.state() == ControllerResult.State.ERROR) {
             System.out.println("Error " + result.userMessage());
@@ -277,7 +273,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         HistoryManager.UndoRedoStep redoStep = this.historyManager.popRedo(this.controller.getDataTree().getRoot(), this.currentContext, this::getContextForType);
         if (redoStep == null) return;
-        ControllerResult result = this.controller.executeTransaction("Redo: ", ControllerUtils.asQueue(redoStep.getCommand()));
+        ControllerResult result = this.controller.executeTransaction("Redo: ", redoStep.getCommand());
 
         if (result.state() == ControllerResult.State.ERROR) {
             return;
@@ -505,7 +501,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         try {
             result = op.invoke(currentCTX);
             finalFlag = result.flag();
-            final Queue<IControllerCommand> commands = result.commands();
+            final IControllerCommand commands = result.commands();
 
             switch (result.flag()) {
                 case CANCELLED -> {
@@ -656,7 +652,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             }
 
             final OpExecuteFlag flag = retval.flag();
-            final Queue<IControllerCommand> commands = retval.commands();
+            final IControllerCommand commands = retval.commands();
 
             switch (flag) {
                 case CANCELLED -> {
@@ -698,7 +694,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
             final OPReturnValue<IModalOperator.Modal> retval = op.modal(context, event);
             flag = retval.flag().flag();
-            final Queue<IControllerCommand> commands = retval.commands();
+            final IControllerCommand commands = retval.commands();
 
             switch (flag) {
                 case CANCELLED -> {
@@ -845,7 +841,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                         this.currentContext, this::getContextForType,
                         this.runningOperatorType.processorMarker);
                 if (step != null) {
-                    this.controller.executeTransaction(step.getTitle(), new LinkedList<>(List.of(step.getCommand())));
+                    this.controller.executeTransaction(step.getTitle(), step.getCommand());
                 }
             }
         }
@@ -861,21 +857,23 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      */
     private <CTX extends IContext, OP extends IOperator<CTX>>
     void handleWritingTransaction(OperatorType<CTX, OP> type, OP op, CTX current,
-                                  Queue<IControllerCommand> commands, boolean commit,
+                                  @Nullable IControllerCommand commands, boolean commit,
                                   @Nullable HistoryManager.HistoryMarker... historyMarkers) throws UserException {
-        if (commands.isEmpty() && commit) {
+        if (commands == null && commit) {
             this.handleCommitTransaction(type, op, current, historyMarkers);
             return;
         }
-        if (!this.controller.isActive()) this.controller.startTransaction();
 
-        ControllerResult result = this.controller.writeToTransaction(commands);
+        if (commands != null) {
+            if (!this.controller.isActive()) this.controller.startTransaction();
+            ControllerResult result = this.controller.writeToTransaction(commands);
 
-        if (result.state() == ControllerResult.State.ERROR) {
-            if (result.exception() != null) {
-                throw new UserException(result.userMessage(), result.exception());
-            } else {
-                throw new UserException(result.userMessage());
+            if (result.state() == ControllerResult.State.ERROR) {
+                if (result.exception() != null) {
+                    throw new UserException(result.userMessage(), result.exception());
+                } else {
+                    throw new UserException(result.userMessage());
+                }
             }
         }
 
@@ -908,7 +906,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         OperatorProperties props = op instanceof IPropertyOperator<?,?> propOp ? propOp.props() : null;
         if (type.pushUndo() && (transaction != null || op instanceof IUndoOperator<?>)) {
             if (op instanceof IUndoOperator undoOperator) {
-                this.historyManager.pushUndo(transaction, type, undoOperator.getUndoCommand(), props, historyMarkers);
+                this.historyManager.pushUndo(transaction, type, undoOperator.getUndoCommand(current), props, historyMarkers);
             } else {
                 this.historyManager.pushUndo(transaction, type, props, historyMarkers);
             }
@@ -1371,13 +1369,13 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         private void pushOTMacroFrame(OperatorTypeProcessFrame parent, OperatorType.Macro otMacro) {
             final OperatorType ot = otMacro.getOperatorType();
             final OperatorProperties macroProperties;
-            final OperatorMacroPropertiesConfig.PropertyConfig macroConfig;
+            final OperatorMacroPropertiesConfig.MacroConfig macroConfig;
             /*
              * the config map for macros is taken from the operatortype config where the macros are defined
              * i.e. the parent frame
              */
             @Nullable
-            final Map<OperatorType, OperatorMacroPropertiesConfig.PropertyConfig> macroConfigs;
+            final Map<OperatorType, OperatorMacroPropertiesConfig.MacroConfig> macroConfigs;
 
             if (parent.macroConfig == null && this.invokedConfig != null) {
                 OperatorMacroPropertiesConfig.Macros cfg = this.invokedConfig.macroPropertiesConfig.get();
@@ -1412,7 +1410,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         @Nullable
         protected final OperatorProperties props;
         @Nullable
-        protected final OperatorMacroPropertiesConfig.PropertyConfig macroConfig;
+        protected final OperatorMacroPropertiesConfig.MacroConfig macroConfig;
         @Nullable
         protected final HistoryManager.HistoryMarker historyMarker;
 
@@ -1420,7 +1418,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         protected boolean invoked;
 
         protected OperatorTypeProcessFrame(OperatorType type, OperatorProperties props,
-                                           OperatorMacroPropertiesConfig.PropertyConfig macroConfig,
+                                           OperatorMacroPropertiesConfig.MacroConfig macroConfig,
                                            HistoryManager.HistoryMarker historyMarker) {
             this.type = type;
             this.props = props;
@@ -1438,7 +1436,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         }
 
         public boolean cancelEntireOperatorOnModal() {
-            return macroConfig instanceof OperatorMacroPropertiesConfig.ModalMacroConfig<?,?,?> modalMacroConfig ?
+            return macroConfig instanceof OperatorMacroPropertiesConfig.ModalMacroConfig modalMacroConfig ?
                     modalMacroConfig.cancelMacros.get() : false;
         }
     }

@@ -23,7 +23,7 @@ public class OPDuplicateObject extends IPropertyOperator<BBOperatorContext, Dupl
     @Override
     public OPReturnValue<OpExecuteFlag> execute(BBOperatorContext context) throws UserException {
         IControllerCommand duplicate = context.bbContext().database.objects.controller().duplicateActiveObject(context.bbContext());
-        return new OPReturnValue<>(OpExecuteFlag.FINISHED, new LinkedList<>(List.of(duplicate)));
+        return new OPReturnValue<>(OpExecuteFlag.FINISHED, duplicate);
     }
 
     @Override
