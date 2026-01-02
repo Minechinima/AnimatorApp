@@ -37,17 +37,21 @@ public class ControllerChain extends IControllerCommand implements Iterable<ICon
     }
 
     /**
-     * Add a controller command to the chain.
+     * Add a controller command to the chain. Always adds to the end of the chain.
      * @param command
      * @return the next controller chain node to continue chaining.
      */
     public ControllerChain next(@NotNull IControllerCommand command) {
+        /* add at the end of the chain */
         if (this.next != null) return this.next.next(command);
         return this.next = new ControllerChain(command, this.head);
     }
 
     @Override
     public void execute() throws UserException {
+        /* start from the head */
+        if (this.head != this) this.head.execute();
+
         if (this.command != null) this.command.execute();
         if (this.next != null) this.next.execute();
     }
