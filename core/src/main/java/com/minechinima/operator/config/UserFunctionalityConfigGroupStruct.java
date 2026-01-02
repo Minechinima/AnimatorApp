@@ -52,7 +52,7 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
         this.addChild("prop_modifiers", this.propModifiers = new PropertyModifierConfigsMapStruct("prop_modifiers"));
         this.operatorTypeRegistry.getEventBus().subscribe(this);
         this.operatorTypeRegistry.getChildren().forEach(ot -> {
-            if (ot instanceof IOTModalModifierProvider<?,?> provider) this.addPropertyModifierConfig(provider);
+            if (ot instanceof IOTModalModifierProvider provider) this.addPropertyModifierConfig(provider);
         });
     }
 
@@ -70,12 +70,12 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
 
     @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
     private void onAddOT(ValueAddEvent event) {
-        if (event.getAddedElement() instanceof IOTModalModifierProvider<?,?> provider) {
+        if (event.getAddedElement() instanceof IOTModalModifierProvider provider) {
             this.addPropertyModifierConfig(provider);
         }
     }
 
-    private <P extends OperatorProperties> void addPropertyModifierConfig(IOTModalModifierProvider<?, P> provider) {
+    private <P extends OperatorProperties> void addPropertyModifierConfig(IOTModalModifierProvider<C, ?, P> provider) {
         Set<PropertyModifiersListStruct<P>> modifiers = this.propModifiers.getConfigCategoriesForDirect(provider.getPropertyType());
 
         if (modifiers.isEmpty()) {

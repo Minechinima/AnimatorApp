@@ -6,7 +6,7 @@ import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.panels.UIViewport;
 import org.jetbrains.annotations.NotNull;
 
-public class OTPanViewport extends OperatorType<BBOperatorContext, PanViewportOP> implements IOTModal<PanViewportOP> {
+public class OTPanViewport extends OperatorType<BBOperatorContext, PanViewportOP> implements IOTModal<BBOperatorContext, PanViewportOP> {
     public OTPanViewport(String id, String title, String description) {
         super(id, title, description);
     }

@@ -99,7 +99,7 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
                 if (macro.getProps() != null) macroProps.copyFrom(macro.getProps());
 
                 MacroConfig macroConfig;
-                if (macroOT instanceof IOTModal<?>) {
+                if (macroOT instanceof IOTModal<?, ?>) {
                     macroConfig = new ModalMacroConfig(macroOT.getIdentifier(), macro, macroOT, macroProps);
                 } else {
                     macroConfig = new MacroConfig(macroOT.getIdentifier(), macroOT, macroProps);
@@ -166,7 +166,7 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
     public class ModalMacroConfig<C extends IContext,
             OP extends IPropertyOperator<C, P> & IModalOperator<C>,
             P extends OperatorProperties,
-            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<OP>>
+            OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<C, OP>>
             extends MacroConfig<C, OP, P, OT> {
         //TODO this cant work because generics are not handled / ignored in generator frame work @InGui(as = UICheckBox.class, translationPrefix = "cancel_macros")
         public final BooleanValue cancelMacros;
