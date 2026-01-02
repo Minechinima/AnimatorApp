@@ -14,8 +14,8 @@ import com.minechinima.utils.GenericRegistry;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 
-public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValueSlider, DragValueSliderProp> implements IOTModal<UIDragValueSlider>,
-        IOTModalModifierProvider<UIDragValueSlider, DragValueSliderProp> {
+public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValueSlider, DragValueSliderProp>
+        implements IOTModalModifierProvider<UIOperatorContext, UIDragValueSlider, DragValueSliderProp> {
     public OTDragValueSlider(String id, String title, String description) {
         super(id, title, description, true);
     }

@@ -6,7 +6,7 @@ import com.minechinima.operator.ot.OperatorType;
 import com.minechinima.ui.panels.UIViewport;
 import org.jetbrains.annotations.NotNull;
 
-public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewportOperator> implements IOTModal<OrbitViewportOperator> {
+public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewportOperator> implements IOTModal<BBOperatorContext, OrbitViewportOperator> {
     public OTOrbitViewport(String id, String title, String description) {
         super(id, title, description);
     }

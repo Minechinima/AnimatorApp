@@ -28,7 +28,7 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
      * <br><br>
      * Uses set to impose a limitation that an operator type cannot be used more than once.
      * This allows to build the config and use the operatortype id as key for better future proofing
-     * for deserializiation if an operator changes macros. {@link OperatorPropertiesConfig.PropertyConfig}
+     * for deserializiation if an operator changes macros.
      */
     private final LinkedHashSet<Macro<C>> macros = new LinkedHashSet<>();
     /**
@@ -93,7 +93,7 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
         }
 
         public <OP extends IPropertyOperator<C, P> & IModalOperator<C>,
-                OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<OP>,
+                OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<C, OP>,
                 P extends OperatorProperties>
         Macro(OT ot, P props, boolean cancelMacroOnModalCancel) {
             this.ot = ot;
@@ -109,7 +109,7 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
         }
 
         public <OP extends IOperator<C> & IModalOperator<C>,
-                OT extends OperatorType<C, OP> & IOTModal<OP>> Macro(OT ot, boolean cancelMacroOnModalCancel) {
+                OT extends OperatorType<C, OP> & IOTModal<C, OP>> Macro(OT ot, boolean cancelMacroOnModalCancel) {
             this.ot = ot;
             this.props = null;
             this.cancelMacroOnModalCancel = cancelMacroOnModalCancel;

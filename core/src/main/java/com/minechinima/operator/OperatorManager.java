@@ -511,7 +511,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                 case FINISHED, MODAL_RUNNING -> {
                     this.handleWritingTransaction(type, op, currentCTX, commands, result.flag() == OpInvokeFlag.FINISHED, historyMarkers);
                     if (result.flag() == OpInvokeFlag.MODAL_RUNNING
-                            && op instanceof IModalOperator modalOp && type instanceof IOTModal<?>) {
+                            && op instanceof IModalOperator modalOp && type instanceof IOTModal<?, ?>) {
                         if (!this.controller.isActive()) this.controller.startTransaction();
                         modal = true;
                         this.modal = new ModalFrame(type, modalOp, invokedConfig, historyMarkers);

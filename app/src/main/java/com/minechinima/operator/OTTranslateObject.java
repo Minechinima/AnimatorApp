@@ -6,7 +6,7 @@ import com.minechinima.operator.ot.OperatorTypePropertyProvider;
 import com.minechinima.operator.properties.TranslateProps;
 import org.jetbrains.annotations.NotNull;
 
-public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, TranslateObject, BBOperatorContext> implements IOTModal<TranslateObject> {
+public class OTTranslateObject extends OperatorTypePropertyProvider<TranslateProps, TranslateObject, BBOperatorContext> implements IOTModal<BBOperatorContext, TranslateObject> {
     public OTTranslateObject(String id, String title, String description) {
         super(id, title, description, true);
     }
