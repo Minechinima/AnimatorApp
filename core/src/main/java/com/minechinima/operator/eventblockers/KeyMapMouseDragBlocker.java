@@ -5,6 +5,10 @@ import com.minechinima.input.keymap.events.*;
 
 import java.util.Map;
 
+/**
+ * Blocking strategy for mouse drag events.
+ * Uses own cache variables to block the keys that are pressed in a drag event.
+ */
 public class KeyMapMouseDragBlocker implements ICachedEventBlocker<KeyMapMouseDragEvent> {
     private final PressedKeySet pressedKeys = new PressedKeySet();
     @Override
