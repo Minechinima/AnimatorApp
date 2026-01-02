@@ -30,7 +30,8 @@ Operators should not be able to access `IContext` objects through the UI, as thi
 Operators only access the context by the method parameter in the interfaces.
 The `IContext` will be dynamically passed through the UI and Operator Manager and should not be accessible via a getter / attribute in some object / class.
 <br><br>
-Operators should also not be able to access the database through the UI or any other indirect way so UIOperators are seperated from Operators. UIOperators should not be abused to perform complex operations on the database as they should only interact with the UI.
+Operators should also not be able to access the database through the UI or any other indirect way so UIOperators are seperated from Operators. 
+UIOperators should not be abused to perform complex operations on the database as they should only interact with the UI and the data the respective UI element provides/handles.
 
 # OperatorManager
 Operators are handled in `OperatorManager` and need to be executed through it. OperatorManager is the API for the Controller Layer and sits on top of it. For simple tasks you can use the `OperatorManager` API to execute controllers. Therefore, the only way to execute database changes is via `OperatorManager`.
@@ -49,6 +50,7 @@ While an Operator is running in modal mode, the user might hold down keys. When 
 Example: the user presses G (holds down) to move the object, presses right click to abort but because G is still held down it will move the object again.
 <br><br>
 Implement `ICachedEventBlocker` to create a strategy how to block events and when to unblock and register it to the OperatorManager.
+`ICachedEventBlocker` is called for every cached event which allows to build a state machine and use custom cache variables, see `KeyMapMouseDragBlocker`.
 
 ## History
 The OperatorManager manages the user history and encapsulates it. It has API functions for undo and redo.
@@ -81,6 +83,9 @@ The poll function in the OperatorType is for checking if the Operator can be exe
 Every `OperatorType` can define a list of other operator types that should be executed after the current one finishes successfully.
 This allows to create a chain of operators and reuse other operators.
 <br><br>
+Macro Operators can be other macro operators which can lead to a tree of macro operators that will be executed recursively.
+When a macro operator enters into UI or Modal mode, the invocation of the other macro operators will be paused until the operator finishes.
+<br><br>
 Example use case: duplicate_move operator will first duplicate the object and then directly invoke the translate modal operator.
 
 # Operators with input parameters
@@ -110,6 +115,9 @@ To let the engine automatically create the configuration category, implement `IO
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
 changes the attributes of the operator properties which then influences the modal logic. The modal method of the Operator is called after the property modifier commands.
+<br><br>
+The property modifier commands and their configurations are mapped to the `OperatorProperties` class, which makes them reusable for all
+operators that use that `OperatorProperties` class.
 
 ## Modal OperatorType switching
 A modal OperatorType `IOTModal` can provide a set of other operatortypes that the user can switch to while the operator is running in modal mode.
@@ -133,13 +141,13 @@ OperatorType needs to implement `IOTRepeatable`.
 Operators that are repeatable can be executed multiple times.
 
 # Custom Undo/Redo Operators
-OperatorType needs to implement `IOTCustomUndo`
+Operator needs to implement `IUndoOperator` and create a `IUndoOperatorCommand`. It is very important that `IUndoOperatorCommand` is
+implemented as a separate class or static inner class and does not contain any references to the original Operator that spawned it, so it can be
+garbage collected.
 <br><br>
-<b>TODO maybe not good idea - forces operatorproperties only for helper variables - which would lead to cluttered properties. Maybe
-factory for undo commands to seperate operator and undo states... this would require generics for properties again...</b>
 Operators can have custom undo redo logic that is executed besides the history of data operations. This allows to undo things in the UI.
-The instance of `IUndoOperator` is also not cached in the history to avoid memory leaks. Objects should not be cached directly in the OperatorProperties to help the undo logic
-should also
+<br><br>
+The instance of `IUndoOperator` is also not cached in the history to avoid memory leaks.
 
 # Custo dynamic Undo title
 Operator needs to implement `ITitleProvider`.
