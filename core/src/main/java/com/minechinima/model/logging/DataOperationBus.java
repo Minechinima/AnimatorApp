@@ -48,7 +48,7 @@ public class DataOperationBus {
      * Subclasses need to override this and open it for their context. Ideally, they use package-private to restrict logging
      * to the appropriate classes.
      */
-    protected void logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
+    protected final void logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
         for (DataOperationLog logger : this.loggers) {
             logger.pushDataOperation(context.getFullPath(), dataOperation);
         }
