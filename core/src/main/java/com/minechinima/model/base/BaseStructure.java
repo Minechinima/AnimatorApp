@@ -697,7 +697,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * @param event
      */
     private void bubbleDataOperation(ChangeEvent<?> event) {
-        this.logger.logDataOperation(event.getTrigger(), event.getDataOperation());
+        this.logger._logDataOperation(event.getTrigger(), event.getDataOperation());
 
         if (this.parent != null) {
             ((BaseStructure) this.parent).bubbleDataOperation(event);
@@ -869,8 +869,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * Hide this class here to ensure that only the node where the change was triggered can log the operation.
      */
     private class DataOperationBusImpl extends DataOperationBus {
-        @Override
-        protected void logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
+        protected void _logDataOperation(BaseStructure context, IDataOperation<?> dataOperation) {
             super.logDataOperation(context, dataOperation);
         }
     }
