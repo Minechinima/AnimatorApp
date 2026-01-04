@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 //TODO this shouldn't be a map, as a map deserializes and instantiates
-
+//TODO C generic weird in the registries and configs what about UIOperatorTypes and UIOperatorContext?
 /**
  * Registry of all OperatorTypes
  * <br><br>

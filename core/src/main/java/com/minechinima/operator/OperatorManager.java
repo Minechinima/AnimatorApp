@@ -34,6 +34,7 @@ import com.minechinima.ui.elements.window.UIRegion;
 import com.minechinima.ui.elements.window.UISpace;
 import com.minechinima.utils.Pair;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,7 +71,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     @Nullable
     private OperatorManager.OperatorTypeProcessor runningOperatorType;
     @Nullable
-    private OperatorManager.ModalFrame<?, ?> modal;
+    private OperatorManager.ModalFrame<?, ?, ?> modal;
     /**
      * Cache of keys that are pressed during modal and should now be blocked until they are released.
      */
@@ -608,6 +609,11 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     private void cancelUIMode() {
+        this._cancelUIModeInternal();
+    }
+
+    protected void _cancelUIModeInternal() {
+        if (this.runningInUIMode == null) return;
         this.runningInUIMode.op.cancel();
         this.setUIModalNull();
     }
@@ -829,10 +835,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     }
 
     public void cancelModal() {
-        if (this.modal == null) return;
-        if (this.controller.isActive()) this.controller.abortTransaction();
-        this.modal.op.cancel();
-        this.setModalNull();
+        this._cancelModalInternal();
 
         /* undo the operator type macro */
         if (this.runningOperatorType.getCurrentExecutedFrame().cancelEntireOperatorOnModal()) {
@@ -847,6 +850,13 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         }
 
         this.runningOperatorType = null;
+    }
+
+    protected void _cancelModalInternal() {
+        if (this.modal == null) return;
+        if (this.controller.isActive()) this.controller.abortTransaction();
+        this.modal.op.cancel();
+        this.setModalNull();
     }
 
     /**
@@ -1033,6 +1043,39 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
     private boolean runModalEventLogic(KeyMapEvent event) {
         if (this.modal == null) return false;
 
+        /* check for switching type */
+        Set<? extends IOTModal.SwitchType<?>> switchTypes;
+        if (!(switchTypes = this.modal.type.switchToTypes()).isEmpty()) {
+            //TODO in Blender switch operatortypes are configured for each modal map / ot
+            // this is not possible currently as the modal modifiers are configured for properties for reusability across multiple operators
+
+            /* try and fetch an operatortype from current config */
+            Triple<OperatorType, @Nullable OperatorProperties, OperatorConfigGroupStruct> result = this.getOperatorType(event);
+            if (result != null) {
+                /* go through the switch operator types and search if the triggered operator type is present */
+                for (IOTModal.SwitchType switchType : switchTypes) {
+                    if (result.a() == switchType.getType()) {
+                        OperatorProperties props = result.b();
+                        /* if previous operator had properties and the switch type is for switchTypeProps
+                         * try and create the new properties from the switchtype */
+                        if (this.modal.op instanceof IPropertyOperator propOP
+                                && switchType instanceof IOTModal.SwitchTypeProperties<?,?> switchTypeProps) {
+                            OperatorProperties switchProps = switchTypeProps.createProps(propOP.props());
+                            /* if switch props should be used and previous property class matches (type safety) */
+                            if (switchProps != null && (props == null || switchProps.getClass().equals(props.getClass()))) {
+                                props = switchProps;
+                            }
+                        }
+                        try {
+                            return this.runningOperatorType.replaceCurrentOperatorType(result.a(), props, result.c()) != OperatorTypeProcessor.Signal.CANCELLED;
+                        } catch (UserException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+
         /* check if the given event should confirm the operator */
         final ReleaseConfirmHotKey.Config modalConfirmConfig;
         final HotKeyConfigGroupStruct modalConfirmHotKey;
@@ -1125,50 +1168,81 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         /*
          * No Modal operator running, try and trigger?
          */
-        UISpace spaceType = this.currentContext.getUIContext().currentHoveredUISpace();
-        UIRegion regionType = this.currentContext.getUIContext().currentHoveredUIRegion();
-        if (this.modal == null && spaceType != null) {
-            if (regionType == null) {
-                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
-                    if (this.triggerOperatorConfig(config, event)) return true;
-                }
 
-                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
-                    if (this.triggerOperatorConfig(config, event)) return true;
-                }
-            } else {
-                for (OperatorConfigGroupStruct<C> config : this.config.getConfigsForUISpaceRegion(spaceType.getClass(), regionType.getClass())) {
-                    if (this.triggerOperatorConfig(config, event)) return true;
-                }
-
-                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
-                    if (this.triggerOperatorConfig(config, event)) return true;
-                }
-
-                for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
-                    if (this.triggerOperatorConfig(config, event)) return true;
-                }
+        if (this.modal == null) {
+            Triple<OperatorType, OperatorProperties, OperatorConfigGroupStruct> result = getOperatorType(event);
+            if (result != null) {
+                this._invokeOT(result.a(), result.b(), result.c());
             }
         }
 
         return false;
     }
 
-    private boolean triggerOperatorConfig(OperatorConfigGroupStruct<C> config, KeyMapEvent event) {
+    private Pair<OperatorType, OperatorProperties> testOperatorConfig(OperatorConfigGroupStruct<C> config, KeyMapEvent event) {
         HotKeyConfigGroupStruct hotkeyConfig = config.hotKeyConfigSelector.get();
-        if (hotkeyConfig == null || !hotkeyConfig.onEvent(event)) return false;
+        if (hotkeyConfig == null || !hotkeyConfig.onEvent(event)) return null;
         OperatorType<C, ?> ot;
-        if ((ot = config.operatorType.get()) == null) return false;
+        if ((ot = config.operatorType.get()) == null) return null;
         if (ot instanceof IOTPropertyProvider<?, ?> provider) {
             OperatorProperties newProps = provider.createProps();
             if (config.props.get() != null) newProps.copyFrom(config.props.get());
-            return this._invokeOT(ot, newProps, config);
+            return new Pair<>(ot, newProps);
         } else {
-            return this._invokeOT(ot, null, config);
+            return new Pair<>(ot, null);
         }
     }
 
+    public record Triple<A, B, C>(A a, B b, C c) {}
 
+    /**
+     * Fetch the operatortype that responds to the event with the correct configuration in the correct
+     * UI space/region and other important app contexts.
+     * @param event
+     * @return
+     */
+    @Nullable
+    private Triple<OperatorType, @Nullable OperatorProperties, OperatorConfigGroupStruct> getOperatorType(KeyMapEvent event) {
+        UISpace spaceType = this.currentContext.getUIContext().currentHoveredUISpace();
+        UIRegion regionType = this.currentContext.getUIContext().currentHoveredUIRegion();
+
+        if (spaceType == null) return null;
+
+        Pair<OperatorType, OperatorProperties> result = null;
+        if (regionType == null) {
+            for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
+                if ((result = this.testOperatorConfig(config, event)) != null) {
+                    return new Triple<>(result.getA(), result.getB(), config);
+                }
+            }
+
+            for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
+                if ((result = this.testOperatorConfig(config, event)) != null) {
+                    return new Triple<>(result.getA(), result.getB(), config);
+                }
+            }
+        } else {
+            for (OperatorConfigGroupStruct<C> config : this.config.getConfigsForUISpaceRegion(spaceType.getClass(), regionType.getClass())) {
+                if ((result = this.testOperatorConfig(config, event)) != null) {
+                    return new Triple<>(result.getA(), result.getB(), config);
+                }
+            }
+
+            for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigsForUISpace(spaceType.getClass())) {
+                if ((result = this.testOperatorConfig(config, event)) != null) {
+                    return new Triple<>(result.getA(), result.getB(), config);
+                }
+            }
+
+            for (OperatorConfigGroupStruct<C> config : this.config.getGlobalConfigs()) {
+                if ((result = this.testOperatorConfig(config, event)) != null) {
+                    return new Triple<>(result.getA(), result.getB(), config);
+                }
+            }
+        }
+
+        return null;
+    }
 
 
 
@@ -1186,18 +1260,18 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
      * @param modifiersWaitingRelease set of modifiers that await a release event.
      * @param <CTX>
      */
-    protected record ModalFrame<CTX extends IContext, OP extends IModalOperator<CTX>>
-            (OperatorType<CTX, OP> type, OP op,
+    protected record ModalFrame<CTX extends IContext, OP extends IModalOperator<CTX>, OT extends OperatorType<CTX, OP> & IOTModal<CTX, OP>>
+            (OT type, OP op,
              @Nullable OperatorConfigGroupStruct<CTX> config,
              Set<ModifierRelease<?>> modifiersWaitingRelease,
              Set<FunctionsRelease<?>> functionsWaitingRelease,
              @Nullable HistoryManager.HistoryMarker... markers)
     {
-        public ModalFrame(OperatorType<CTX, OP> type, OP op, @Nullable OperatorConfigGroupStruct<CTX> config) {
+        public ModalFrame(OT type, OP op, @Nullable OperatorConfigGroupStruct<CTX> config) {
             this(type, op, config, new HashSet<>(), new HashSet<>());
         }
 
-        public ModalFrame(OperatorType<CTX, OP> type, OP op, @Nullable OperatorConfigGroupStruct<CTX> config, @Nullable HistoryManager.HistoryMarker... markers) {
+        public ModalFrame(OT type, OP op, @Nullable OperatorConfigGroupStruct<CTX> config, @Nullable HistoryManager.HistoryMarker... markers) {
             this(type, op, config, new HashSet<>(), new HashSet<>(), markers);
         }
 
@@ -1258,8 +1332,6 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
          * Stack represents recursive PRE-ORDER traversal of the macro tree.
          */
         protected final Deque<OperatorTypeProcessFrame> stack = new ArrayDeque<>();
-        @Nullable
-        protected final OperatorConfigGroupStruct invokedConfig;
         protected final OperatorTypeProcessFrame firstFrame;
         /**
          * Is only null if this processor will only execute on operator type.
@@ -1288,8 +1360,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             } else {
                 this.processorMarker = null;
             }
-            this.invokedConfig = invokedConfig;
-            this.stack.push(this.firstFrame = new OperatorTypeProcessFrame(ot, props));
+            this.stack.push(this.firstFrame = new OperatorTypeProcessFrame(ot, props, null, invokedConfig));
         }
 
         protected <CTX extends IContext,
@@ -1305,6 +1376,39 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
         public OperatorTypeProcessFrame getCurrentExecutedFrame() {
             return this.stack.peek();
+        }
+
+        /**
+         * Replaces current running operator and tries to invoke it.
+         * This will cancel previous running modal / ui and undo them.
+         * @param ot
+         * @param props
+         * @param config
+         * @param markers
+         * @return
+         * @throws UserException
+         */
+        public Signal replaceCurrentOperatorType(OperatorType ot, @Nullable OperatorProperties props,
+                                                  @Nullable OperatorConfigGroupStruct config, HistoryManager.HistoryMarker... markers) throws UserException {
+            OperatorManager.this._cancelModalInternal();
+            OperatorManager.this._cancelUIModeInternal();
+
+            OperatorTypeProcessFrame current = this.stack.peek();
+
+            Set<HistoryManager.HistoryMarker> markerSet = new HashSet<>();
+            if (current != null) markerSet.addAll(List.of(current.historyMarker));
+            markerSet.addAll(List.of(markers));
+            HistoryManager.HistoryMarker[] markerVarArgs = markerSet.toArray(new HistoryManager.HistoryMarker[0]);
+
+            OperatorTypeProcessFrame child = new OperatorTypeProcessFrame(ot, props, null, config, markerVarArgs);
+            if (this.stack.isEmpty()) {
+                this.stack.push(child);
+            } else {
+                this.stack.pop();
+                this.stack.push(child);
+            }
+
+            return this.invokeStep();
         }
 
         protected Signal invokeStep() throws UserException {
@@ -1324,13 +1428,13 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                     OpInvokeFlag result;
                     Set<HistoryManager.HistoryMarker> markers = new HashSet<>();
                     if (this.processorMarker != null) markers.add(this.processorMarker);
-                    if (frame.historyMarker != null) markers.add(frame.historyMarker);
-                    HistoryManager.HistoryMarker[] markerVarArgs = markers.toArray(new HistoryManager.HistoryMarker[markers.size()]);
+                    if (frame.historyMarker != null) markers.addAll(List.of(frame.historyMarker));
+                    HistoryManager.HistoryMarker[] markerVarArgs = markers.toArray(new HistoryManager.HistoryMarker[0]);
 
                     if (frame.props == null) {
-                        result = _invokeOP(frame.type, frame.type.getOperator(), this.invokedConfig, markerVarArgs);
+                        result = _invokeOP(frame.type, frame.type.getOperator(), frame.config, markerVarArgs);
                     } else {
-                        result = _invokeOP(frame.type, ((IOTPropertyProvider) frame.type).getOperator(frame.props), this.invokedConfig, markerVarArgs);
+                        result = _invokeOP(frame.type, ((IOTPropertyProvider) frame.type).getOperator(frame.props), frame.config, markerVarArgs);
                     }
 
                     switch (result) {
@@ -1377,8 +1481,8 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             @Nullable
             final Map<OperatorType, OperatorMacroPropertiesConfig.MacroConfig> macroConfigs;
 
-            if (parent.macroConfig == null && this.invokedConfig != null) {
-                OperatorMacroPropertiesConfig.Macros cfg = this.invokedConfig.macroPropertiesConfig.get();
+            if (parent.macroConfig == null && parent.config != null) {
+                OperatorMacroPropertiesConfig.Macros cfg = parent.config.macroPropertiesConfig.get();
                 macroConfigs = cfg != null ? cfg.getMacroProperties() : null;
             } else {
                 macroConfigs = parent.macroConfig != null ? parent.macroConfig.getMacroProperties() : null;
@@ -1394,7 +1498,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                 macroProperties = null;
             }
 
-            OperatorTypeProcessFrame child = new OperatorTypeProcessFrame(ot, macroProperties, macroConfig, parent.historyMarker);
+            OperatorTypeProcessFrame child = new OperatorTypeProcessFrame(ot, macroProperties, macroConfig, parent.config, parent.historyMarker);
             this.stack.push(child);
         }
 
@@ -1409,30 +1513,36 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
         protected final OperatorType type;
         @Nullable
         protected final OperatorProperties props;
+        /**
+         * macro config of this operator type
+         */
         @Nullable
         protected final OperatorMacroPropertiesConfig.MacroConfig macroConfig;
         @Nullable
-        protected final HistoryManager.HistoryMarker historyMarker;
+        protected final OperatorConfigGroupStruct config;
+        protected final HistoryManager.HistoryMarker[] historyMarker;
 
         protected Iterator<OperatorType.Macro> macroIterator;
         protected boolean invoked;
 
         protected OperatorTypeProcessFrame(OperatorType type, OperatorProperties props,
                                            OperatorMacroPropertiesConfig.MacroConfig macroConfig,
-                                           HistoryManager.HistoryMarker historyMarker) {
+                                           OperatorConfigGroupStruct config,
+                                           HistoryManager.HistoryMarker... historyMarker) {
             this.type = type;
             this.props = props;
             this.macroConfig = macroConfig;
+            this.config = config;
             this.historyMarker = historyMarker;
         }
 
         protected OperatorTypeProcessFrame(OperatorType type, OperatorProperties props,
-                                           HistoryManager.HistoryMarker historyMarker) {
-            this(type, props, null, historyMarker);
+                                           HistoryManager.HistoryMarker... historyMarker) {
+            this(type, props, null, null, historyMarker);
         }
 
         protected OperatorTypeProcessFrame(OperatorType type, OperatorProperties props) {
-            this(type, props, null, null);
+            this(type, props, null, null, null);
         }
 
         public boolean cancelEntireOperatorOnModal() {
