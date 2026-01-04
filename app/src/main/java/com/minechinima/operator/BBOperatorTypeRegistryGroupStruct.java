@@ -1,6 +1,7 @@
 package com.minechinima.operator;
 
 public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOperatorContext> {
+    public final OTRotateObject rotate = new OTRotateObject("rotate", "rotate", "Rotate given object");
     public final OTTranslateObject move = new OTTranslateObject("translate", "translate", "Move given object");
     public final OTDeleteObject delete = new OTDeleteObject("delete", "delete object", "Delete");
     public final OTOrbitViewport orbitViewport = new OTOrbitViewport("orbit", "Orbit Viewport", "Move viewport.");
@@ -19,5 +20,9 @@ public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOp
         this.addChild(this.duplicateObject);
         this.addChild(this.duplicateMoveObject = new OTDuplicateMoveObject("duplicate_move", "Duplicate", "Ducpliate",
                 this.duplicateObject, this.move));
+        this.addChild(this.rotate);
+
+        this.rotate.addSwitchType(this.move);
+        this.move.addSwitchType(this.rotate);
     }
 }

@@ -112,6 +112,11 @@ public class Application {
         config.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) config.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_G);
 
+        OperatorConfigGroupStruct rotateConfig = viewport.newConfig();
+        rotateConfig.operatorType.set(bb.ops.rotate);
+        rotateConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) rotateConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_R);
+
         OperatorConfigGroupStruct duplicateCOnfig = viewport.newConfig();
         duplicateCOnfig.operatorType.set(bb.ops.duplicateMoveObject);
         duplicateCOnfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
