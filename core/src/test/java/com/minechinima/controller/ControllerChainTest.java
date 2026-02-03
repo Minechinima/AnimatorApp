@@ -30,6 +30,20 @@ public class ControllerChainTest {
     }
 
     @Test
+    public void reinsertinngNodeIntoItselfException() {
+        ControllerChain chain = new ControllerChain(new DummyCommand());
+        ControllerChain next = chain.next(new DummyCommand());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> next.next(next));
+    }
+
+    @Test
+    public void reinsertingSameChainException() {
+        ControllerChain chain = new ControllerChain(new DummyCommand());
+        ControllerChain next = chain.next(new DummyCommand()).next(new DummyCommand());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> chain.next(next));
+    }
+
+    @Test
     public void testIteratorWithNulls() {
 
         IControllerCommand[] cmds = {new DummyCommand(), new DummyCommand(),

@@ -19,32 +19,46 @@ public class ControllerChain extends IControllerCommand implements Iterable<ICon
      * Keep track of the head for the {@link ControllerManager} to execute the chain
      * from the start in case the middle/end of the chain is accidentally given as input.
      */
+    @NotNull
     protected final ControllerChain head;
+    /**
+     * only not null for the {@link #head}.
+     */
+    @Nullable
+    protected ControllerChain tail;
 
     public ControllerChain() {
-        this.command = null;
-        this.head = this;
+        this(null);
     }
 
     public ControllerChain(@NotNull IControllerCommand command) {
         this.command = command;
         this.head = this;
+        this.head.tail = this;
     }
 
-    private ControllerChain(@NotNull IControllerCommand command, ControllerChain head) {
+    private ControllerChain(@NotNull IControllerCommand command, @NotNull ControllerChain head) {
         this.command = command;
         this.head = head;
     }
 
     /**
      * Add a controller command to the chain. Always adds to the end of the chain.
+     * If another chain is passed here, the head of that chain will be appended, effectively flattening the chains
+     * and always ensuring a consecutive order.
      * @param command
      * @return the next controller chain node to continue chaining.
      */
     public ControllerChain next(@NotNull IControllerCommand command) {
+        if (command instanceof ControllerChain chain) {
+            if (chain.head == this.head) throw new IllegalArgumentException("Cannot reinsert a chain node into the same chain.");
+            else command = chain.head;
+        }
         /* add at the end of the chain */
-        if (this.next != null) return this.next.next(command);
-        return this.next = new ControllerChain(command, this.head);
+        if (this.next != null) return this.head.tail.next(command);
+        this.next = new ControllerChain(command, this.head);
+        this.head.tail = this.next;
+        return this.next;
     }
 
     @Override
