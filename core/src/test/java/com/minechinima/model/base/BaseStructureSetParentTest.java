@@ -1,6 +1,5 @@
 package com.minechinima.model.base;
 
-import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.dummies.*;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.events.bus.EventBusManager;

@@ -1,6 +1,6 @@
 package com.minechinima.model.events.bus;
 
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeNode;

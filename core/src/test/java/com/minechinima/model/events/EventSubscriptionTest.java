@@ -1,6 +1,6 @@
 package com.minechinima.model.events;
 
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AbstractEvent;
@@ -8,6 +8,7 @@ import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.values.FloatValue;
+import com.minechinima.utils.ReflectionUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +89,7 @@ public class EventSubscriptionTest {
         }
 
         public void _triggerEvent(AbstractEvent event) {
-            super.triggerEvent(event);
+            ReflectionUtils.invokePrivateMethod(this, "_triggerEvent", new Class[]{AbstractEvent.class}, new AbstractEvent[]{event});
         }
     }
 }

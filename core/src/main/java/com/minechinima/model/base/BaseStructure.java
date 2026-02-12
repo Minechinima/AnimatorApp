@@ -74,6 +74,11 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     private final EventBusImpl bus = new EventBusImpl(this);
 
     /**
+     * @implNote give only access to subclasses and package so {@link DataTreeManager} can access it.
+     */
+    protected DataTreeManager dataTreeManager;
+
+    /**
      * @param id
      * @throws ContractViolatedException if {@link IDMutable} contract is violated
      *                                   and {@link IDMutable#getUUID()} returns a different uuid than this {@link #uuid}
@@ -635,7 +640,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             this.throwExceptionForInvalidIDChange(this.id, identifier);
             this.id = identifier;
             IdentifierChangeEvent event = new IdentifierChangeEvent(this, originalID, this.id);
-            this.triggerEvent(event);
+            this._triggerEvent(event);
             return;
         }
 
@@ -649,7 +654,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         this.id = identifier;
 
         IdentifierChangeEvent event = new IdentifierChangeEvent(this, originalID, this.id);
-        this.triggerEvent(event);
+        this._triggerEvent(event);
     }
 
     private final void throwExceptionForInvalidIDState(String id) {
@@ -725,6 +730,27 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         //TODO buffer events (cant buffer alone on this node
         // e.g. node removed from map will cause child to trigger removeFromTreeEvent, potentially triggering listeners on that
         // node alone
+
+        if (this.dataTreeManager != null && !this.dataTreeManager.canMutate()) {
+            throw new UnsupportedOperationException("Cannot mutate data when mutation gate is closed. Likely no transaction is running.");
+        }
+
+        final T event;
+        try {
+            setter.run();
+            event = createChangeEvent.get();
+            /* stop buffering events */
+            /* trigger/flush buffered events */
+        } catch (Exception e) {
+            try {
+                undo.run();
+            } catch (Exception undoE) {
+                throw new Error("Could not recover from failed data operation", undoE);
+            }
+            /* clear/stop event buffer */
+            return;
+        }
+        this._triggerEvent(event);
     }
 
     /**
@@ -745,7 +771,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      */
     @NoExceptions
     protected final <T extends Event> void triggerEvent(T event) {
-
+        this._triggerEvent(event);
     }
 
     /**

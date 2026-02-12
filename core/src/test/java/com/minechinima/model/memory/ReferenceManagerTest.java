@@ -1,7 +1,7 @@
 package com.minechinima.model.memory;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
