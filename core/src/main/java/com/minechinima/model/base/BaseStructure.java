@@ -3,10 +3,7 @@ package com.minechinima.model.base;
 import com.minechinima.data.IDataSerializable;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.events.bus.EventBus;
-import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.events.types.*;
 import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.ContractViolatedException;
@@ -14,7 +11,6 @@ import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.*;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
-import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import org.jetbrains.annotations.Contract;
@@ -23,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * The base for all nodes in the data tree.
@@ -704,7 +701,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         }
     }
 
-    private final <T extends Event> void bubbleChildEvent(T event) {
+    private final <T extends AbstractEvent> void bubbleChildEvent(T event) {
         this.onChildEvent(event);
         this.bus._dispatchEventFromChildNode(event);
         if (this.parent != null) {
@@ -713,8 +710,28 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Mutate data and trigger a change event. THe lambdas represent template method pattern.
+     * <br><br>
+     * <b>Important:</b> all the logic should be split and encapsulated into the lambdas,
+     * to allow mutability control.
+     * @param setter
+     * @param undo
+     * @param createChangeEvent
+     * @param <T>
+     */
+    protected final <T extends ChangeEvent<?>> void mutate(Runnable setter,
+                                                           Runnable undo,
+                                                           Supplier<T> createChangeEvent) {
+        //TODO buffer events (cant buffer alone on this node
+        // e.g. node removed from map will cause child to trigger removeFromTreeEvent, potentially triggering listeners on that
+        // node alone
+    }
+
+    /**
      * Triggers an event on this element and passes and event to the parents.
      * <br><br>
+     *
+     *
      * <h2>Important:</h2><br>
      * The logging happens first. If any exception happens during logging, the app is terminated with an Error.
      * Therefore, you can assume that this method will not cause an exception that prevents logging a change, as a failed logging
@@ -728,6 +745,18 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      */
     @NoExceptions
     protected final <T extends Event> void triggerEvent(T event) {
+
+    }
+
+    /**
+     * Internal trigger Event method only for this class. Subclasses should either use {@link #triggerEvent(Event)} or
+     * for {@link ChangeEvent} the mutate method. This is to enforce on compiler level that changes / mutation and data operations
+     * can only happen there to control mutability.
+     * @param event
+     * @param <T>
+     */
+    @NoExceptions
+    private final <T extends AbstractEvent> void _triggerEvent(T event) {
         if (event.getTrigger() != this) {
             /* for change events terminate, as logging needs to always be successful. */
             if (event instanceof ChangeEvent<?>) throw new Error("Cannot trigger event where the trigger is not this.");
@@ -768,13 +797,13 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * For internal event handling code without the event bus overhead.
      * @param event
      */
-    protected void onEvent(Event event) { }
+    protected void onEvent(AbstractEvent event) { }
 
     /**
      * For internal event handling code without the event bus overhead.
      * @param event
      */
-    protected void onChildEvent(Event event) { }
+    protected void onChildEvent(AbstractEvent event) { }
 
     /**
      * Template method pattern, also enforce important things that should always happen when removing from the tree.
@@ -856,11 +885,11 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             super(owner);
         }
 
-        final void _dispatchEventOnThis(Event event) {
+        final void _dispatchEventOnThis(AbstractEvent event) {
             super.dispatchEventOnThis(event);
         }
 
-        final void _dispatchEventFromChildNode(Event event) {
+        final void _dispatchEventFromChildNode(AbstractEvent event) {
             super.dispatchEventFromChildNode(event);
         }
     }

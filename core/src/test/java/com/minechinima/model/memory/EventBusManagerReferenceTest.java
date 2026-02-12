@@ -1,12 +1,9 @@
 package com.minechinima.model.memory;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.events.EventSubscriptionTest;
 import com.minechinima.model.events.bus.EventBusManager;
 import com.minechinima.model.events.bus.SubscribeEvent;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.changes.ChangeEvent;
-import com.minechinima.model.events.types.changes.ValueChangeEvent;
+import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.values.DoubleValue;
 
 import java.util.HashMap;
@@ -55,7 +52,7 @@ public class EventBusManagerReferenceTest extends ReferencesImplTest<EventBusMan
         }
 
         @SubscribeEvent(type = SubscribeEvent.Type.ALL)
-        public void onEventAll(Event event) {
+        public void onEventAll(AbstractEvent event) {
         }
     }
 }

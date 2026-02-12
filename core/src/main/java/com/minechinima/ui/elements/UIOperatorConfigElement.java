@@ -2,7 +2,7 @@ package com.minechinima.ui.elements;
 
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.bus.SubscribeEvent;
-import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorMacroPropertiesConfig;

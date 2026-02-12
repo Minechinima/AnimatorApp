@@ -3,8 +3,8 @@ package com.minechinima.model.events;
 import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
 import com.minechinima.model.events.bus.SubscribeEvent;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.AbstractEvent;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.values.FloatValue;
@@ -56,17 +56,17 @@ public class EventSubscriptionTest {
         }
 
         @SubscribeEvent(type = SubscribeEvent.Type.ALL)
-        public void onEventAll(Event event) {
+        public void onEventAll(AbstractEvent event) {
             onEventAll++;
         }
 
         @SubscribeEvent(type = SubscribeEvent.Type.IN_CHILDREN)
-        public void onEventInChildren(Event event) {
+        public void onEventInChildren(AbstractEvent event) {
             onEventInChildren++;
         }
 
         @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
-        public void onEventOnNode(Event event) {
+        public void onEventOnNode(AbstractEvent event) {
             onEventOnNode++;
         }
 
@@ -87,7 +87,7 @@ public class EventSubscriptionTest {
             super(id, 0);
         }
 
-        public void _triggerEvent(Event event) {
+        public void _triggerEvent(AbstractEvent event) {
             super.triggerEvent(event);
         }
     }

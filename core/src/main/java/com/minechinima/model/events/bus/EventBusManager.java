@@ -5,9 +5,8 @@ import com.minechinima.model.base.BaseHierarchyRoot;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeNode;
 import com.minechinima.model.events.EventTypeRegistry;
-import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.memory.BaseStructureReferences;
-import com.minechinima.model.memory.ReferenceManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,8 +27,8 @@ public class EventBusManager extends BaseStructureReferences {
      */
     private final Map<EventBus, Map<Object, Set<EventMethodHandler>>> cachedRemoval = new IdentityHashMap<>();
 
-    private final EventTypeNode<Event> rootType;
-    private final Set<Class<? extends Event>> availableEventTypes;
+    private final EventTypeNode<AbstractEvent> rootType;
+    private final Set<Class<? extends AbstractEvent>> availableEventTypes;
     /**
      * EventBusManager is part of ReferenceManagement, which can only manage references to one data tree.
      * Therefore, we should also check here if eventbus is correct.
@@ -94,15 +93,15 @@ public class EventBusManager extends BaseStructureReferences {
                                         parameterTypes.length + " arguments.  Event handler methods must require a single argument.");
                     }
 
-                    if (!Event.class.isAssignableFrom(parameterTypes[0])) {
+                    if (!AbstractEvent.class.isAssignableFrom(parameterTypes[0])) {
                         throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, " +
                                 "but the method argument is not a subclass or the same as Event.class");
                     }
 
-                    Class<Event> eventType = (Class<Event>) parameterTypes[0];
+                    Class<AbstractEvent> eventType = (Class<AbstractEvent>) parameterTypes[0];
                     SubscribeEvent.Type listenType = annotation.type();
 
-                    Set<Class<? extends Event>> eventsListened = this.rootType.collectSubEventTypesOf(eventType);
+                    Set<Class<? extends AbstractEvent>> eventsListened = this.rootType.collectSubEventTypesOf(eventType);
 
                     if (eventsListened.isEmpty() || !this.availableEventTypes.containsAll(eventsListened)) {
                         throw new IllegalStateException("Method " + method + " tries to listen to an event type that was not registered.");
@@ -150,7 +149,7 @@ public class EventBusManager extends BaseStructureReferences {
      * @param event
      * @implNote Package-private so only {@link EventBus} can call.
      */
-    final void dispatchEvent(EventBus bus, EventOrigin origin, Event event) {
+    final void dispatchEvent(EventBus bus, EventOrigin origin, AbstractEvent event) {
         if (!this.availableEventTypes.contains(event.getClass())) {
             throw new IllegalArgumentException("The dispatched Event class is not registered.");
         }
@@ -253,16 +252,16 @@ public class EventBusManager extends BaseStructureReferences {
     private class EventMethodHandler {
         private final Method method;
         private final SubscribeEvent.Type listenType;
-        private final Set<Class<? extends Event>> eventTypes = new HashSet<>();
+        private final Set<Class<? extends AbstractEvent>> eventTypes = new HashSet<>();
 
-        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Set<Class<? extends Event>> events) {
+        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Set<Class<? extends AbstractEvent>> events) {
             this.listenType = listenType;
             this.method = method;
             this.eventTypes.addAll(events);
             method.setAccessible(true);
         }
 
-        public void handleEvent(Object subscriber, EventOrigin origin, Event event) {
+        public void handleEvent(Object subscriber, EventOrigin origin, AbstractEvent event) {
             switch (this.listenType) {
                 case ALL:
                     break;
