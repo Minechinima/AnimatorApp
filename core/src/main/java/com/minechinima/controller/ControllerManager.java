@@ -1,6 +1,6 @@
 package com.minechinima.controller;
 
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.UserException;
@@ -10,8 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
-import java.util.Queue;
 import java.util.Stack;
 
 public class ControllerManager {
@@ -40,8 +38,20 @@ public class ControllerManager {
         this.logger = logger;
     }
 
+    /**
+     * @return true when a transaction is in the cache. This does not mean that currently write operations
+     * are happening. See {@link #isWriting()}
+     */
     public boolean isActive() {
         return this.currentTransaction != null;
+    }
+
+    /**
+     *
+     * @return true when currently data operations are performed and written to a transaction.
+     */
+    public boolean isWriting() {
+        return this.nestedLevel > 0 && this.isActive();
     }
 
     public DataTreeManager<?> getDataTree() {
