@@ -29,7 +29,7 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         this.root = root;
         this.root.dataTreeManager = this;
         this.referenceManager = new ReferenceManager(root);
-        this.eventBusManager = null;
+        this.eventBusManager = new EventBusManager();
         //this.referenceManager.initEventSubscription(this.eventBusManager);
         //this.getEventBusManager().subscribe(this.root.getEventBus(), this);
 
@@ -42,12 +42,17 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     }
 
     public boolean canMutate() {
-        return this.controllerFacade.canMutate();
+        return this.controllerFacade == null ? true : this.controllerFacade.canMutate();
     }
 
     @SubscribeEvent(type = SubscribeEvent.Type.IN_CHILDREN)
     private void onRemove(RemoveFromTreeEvent event) {
         this.removeDataTreeManagerToSubTree(event.getTrigger());
+    }
+
+    @SubscribeEvent(type = SubscribeEvent.Type.IN_CHILDREN)
+    private void onAdd(AddToTreeEvent event) {
+        this.addDataTreeManagerToSubTree(event.getTrigger());
     }
 
     private void removeDataTreeManagerToSubTree(BaseStructure node) {
@@ -56,11 +61,6 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
         if (node instanceof BaseValueHierarchy<?> baseValueHierarchy) {
             baseValueHierarchy.getChildren().forEach(this::removeDataTreeManagerToSubTree);
         }
-    }
-
-    @SubscribeEvent(type = SubscribeEvent.Type.IN_CHILDREN)
-    private void onAdd(AddToTreeEvent event) {
-        this.addDataTreeManagerToSubTree(event.getTrigger());
     }
 
     private void addDataTreeManagerToSubTree(BaseStructure node) {
