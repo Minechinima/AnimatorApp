@@ -135,7 +135,7 @@ public class ControllerManager {
             this.nestedLevel--;
             /* only pause the log in the root of the controller call stack */
             if (this.nestedLevel == 0) {
-                this.currentTransaction.getLog().pause();
+                if (this.currentTransaction != null) this.currentTransaction.getLog().pause();
                 this.dataTree.getReferenceManager().stopCachingClearedReferences();
             }
         }
