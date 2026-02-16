@@ -32,9 +32,11 @@ public class ControllerManager {
     @Nullable
     private Exception e;
     private boolean abort;
+    private final ControllerFacade api = new ControllerFacade(this);
 
     public ControllerManager(DataTreeManager<?> app, Logger logger) {
         this.dataTree = app;
+        app.setControllerFacade(this.api);
         this.logger = logger;
     }
 
