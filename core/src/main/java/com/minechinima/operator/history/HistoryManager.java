@@ -75,6 +75,7 @@ public class HistoryManager {
         }
 
         this.undos.push(new HistoryStep(title, data, markers));
+        this.redos.clear();
     }
 
 
