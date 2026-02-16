@@ -1,5 +1,6 @@
 package com.minechinima;
 
+import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.hotkey.*;
 import com.minechinima.input.hotkey.configs.HotKeyKeyboardConfigGroupStruct;
 import com.minechinima.input.hotkey.configs.HotKeyMouseConfigGroupStruct;
@@ -21,7 +22,9 @@ import com.minechinima.model.BBDataTreeManager;
 import com.minechinima.model.BBNameSpace;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeRegistry;
+import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.scene.Scene;
 import com.minechinima.operator.*;
 import com.minechinima.operator.config.modal.*;
@@ -57,6 +60,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.nio.*;
+import java.util.List;
 import java.util.Locale;
 
 import static org.lwjgl.glfw.Callbacks.*;
@@ -99,6 +103,8 @@ public class Application {
         this.handlerRegistry = new UIHandlerRegistry();
         this.translationBackpack = new TranslationBackpack();
 
+        BBContext test = new BBContext("", this.dataTree.getRoot().data);
+        this.dataTree.getRoot().contexts.add(test);
 
         UserFunctionalityConfigGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
@@ -281,12 +287,9 @@ public class Application {
         glfwSetScrollCallback(this.window[0], this.inputEventManager::onScroll);
         glfwSetCharCallback(this.window[0], this.inputEventManager::onChar);
 
-        BBContext test = new BBContext("", this.dataTree.getRoot().data);
-        this.dataTree.getRoot().contexts.add(test);
-
         this.inputEventManager.addListener(this::debugInputEvent, KeyEvent.class);
         this.uiManager = new UIManager<>(this.windowProvider, new ImguiLoader(this.inputEventManager), this.operatorManager, this.handlerRegistry,
-                new BBOperatorContext(test, null));
+                new BBOperatorContext(this.dataTree.getRoot().contexts.get(0), null));
         this.inputEventManager.addListener(this.uiManager, InputEvent.class);
         KeyMapEventManager eventManager = this.initKeyMapEventManager(this.uiManager);
         this.inputEventManager.addListener(eventManager, InputEvent.class);
@@ -316,15 +319,22 @@ public class Application {
         this.uiManager.windows.add(new UIWindow());
 
         BBDatabase db = this.dataTree.getRoot().data;
-        db.objects.add(new BaseObject("test", db));
-        db.objects.add(new BaseObject("test1", db));
-        db.objects.add(new BaseObject("test2", db));
-        db.objects.add(new BaseObject("test3", db));
-        Scene scene = new Scene("test", db);
-        db.scenes.add(scene);
-        for (BaseObject child : db.objects.getChildren()) {
-            //scene.rootCollection.addPointer(child);
-        }
+        this.operatorManager.executeTransaction("init", new IControllerCommand() {
+            @Override
+            protected void execute() throws UserException {
+                db.objects.add(new BaseObject("test", db));
+                db.objects.add(new BaseObject("test1", db));
+                db.objects.add(new BaseObject("test2", db));
+                db.objects.add(new BaseObject("test3", db));
+                Scene scene = new Scene("test", db);
+                db.scenes.add(scene);
+            }
+
+            @Override
+            public List<BaseStructure> getAffectedNodes() {
+                return List.of();
+            }
+        }, false);
     }
 
     private KeyMapEventManager initKeyMapEventManager(UIManager uiManager) {
