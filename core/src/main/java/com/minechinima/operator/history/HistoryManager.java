@@ -528,7 +528,7 @@ public class HistoryManager {
         }
 
         public StepData(String stepTitle, Stack<DataOperationLog.Entry> log) {
-            this(null, null, null, stepTitle, new Stack<>());
+            this(null, null, null, stepTitle, log);
         }
     }
 
