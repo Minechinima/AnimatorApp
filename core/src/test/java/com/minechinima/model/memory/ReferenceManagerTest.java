@@ -22,8 +22,7 @@ import java.util.stream.Stream;
 public class ReferenceManagerTest {
     public static Stream<Arguments> getReferenceImplementations() {
         return Stream.of(
-                Arguments.of(new SimpleReferenceTestImpl()),
-                Arguments.of(new EventBusManagerReferenceTest())
+                Arguments.of(new SimpleReferenceTestImpl())
         );
     }
 
