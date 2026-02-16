@@ -23,6 +23,9 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     private final EventBusManager eventBusManager;
     private final T root;
     //TODO spreading this object isnt nice rn, what if we later want to replaced controllermanager at runtime, how to handle this
+    /**
+     * @implNote do not expose, use the treemanager as wrapper so BaseStructure only depends on model API.
+     */
     private ControllerFacade controllerFacade;
 
     public DataTreeManager(@NotNull T root, EventTypeRegistry eventRegistry) {
