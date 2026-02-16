@@ -257,7 +257,6 @@ public class BaseStructureSetParentTest {
         registry.addEventClass(AddToTreeEvent.class);
         registry.addEventClass(ParentChangeEvent.class);
         DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
-        EventBusManager busManager = new EventBusManager(manager, registry);
 
         int[] called = new int[3];
         root.getEventBus().subscribe(new Object() {
@@ -320,9 +319,6 @@ public class BaseStructureSetParentTest {
 
         DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
         DataTreeManager<?> manager2 = new DataTreeManager<BaseHierarchyRoot>(root2, registry);
-
-        EventBusManager busManager = new EventBusManager(manager, registry);
-        EventBusManager busManager2 = new EventBusManager(manager2, registry);
 
         int[] called = new int[3];
         root.getEventBus().subscribe(new Object() {

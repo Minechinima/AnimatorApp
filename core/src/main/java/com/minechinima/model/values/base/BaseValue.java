@@ -36,17 +36,9 @@ public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, I
     public void set(T value) {
         if (this.value == value) return;
         final T prevValue = this.value;
-        this.value = value;
-        /* safety first, if something terminates here, we cannot log the change. */
-        final ValueChangeEvent changeEvent;
-        try {
-            changeEvent = new ValueChangeEvent(this, prevValue, value);
-        } catch (Exception e) {
-            this.value = prevValue;
-            throw new RuntimeException(e);
-        }
-
-        this.triggerEvent(changeEvent);
+        this.mutate(() -> (this.value = value) == value,
+                () -> (this.value = prevValue) == prevValue,
+                () -> new ValueChangeEvent(this, prevValue, value));
     }
 
     /**
