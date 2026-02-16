@@ -32,6 +32,7 @@ public class ControllerManager {
     @Nullable
     private Exception e;
     private boolean abort;
+    private boolean isAborting;
     private final ControllerFacade api = new ControllerFacade(this);
 
     public ControllerManager(DataTreeManager<?> app, Logger logger) {
@@ -53,7 +54,7 @@ public class ControllerManager {
      * @return true when currently data operations are performed and written to a transaction.
      */
     public boolean isWriting() {
-        return this.nestedLevel > 0 && this.isActive();
+        return this.isAborting || (this.nestedLevel > 0 && this.isActive());
     }
 
     public DataTreeManager<?> getDataTree() {
@@ -204,6 +205,7 @@ public class ControllerManager {
         }
 
         try {
+            this.isAborting = true;
             this.currentTransaction.getLog().close();
             this.currentTransaction.abortedState();
 
@@ -238,6 +240,8 @@ public class ControllerManager {
             this.abort = false;
         } catch (Exception e) {
             throw new Error(e);
+        } finally {
+            this.isAborting = false;
         }
     }
 }
