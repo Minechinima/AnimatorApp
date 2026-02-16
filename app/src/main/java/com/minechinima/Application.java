@@ -98,7 +98,7 @@ public class Application {
         BBNameSpace bb = this.dataTree.getRoot();
         this.handlerRegistry = new UIHandlerRegistry();
         this.translationBackpack = new TranslationBackpack();
-        this.controller = new ControllerManager(this.dataTree, this.logger);
+
 
         UserFunctionalityConfigGroupStruct<BBOperatorContext> opConfig = bb.opConfig;
 
@@ -175,6 +175,7 @@ public class Application {
 
         CompressionStrategyRegistry logCompReg = new CompressionStrategyRegistry();
 
+        this.controller = new ControllerManager(this.dataTree, this.logger);
         this.operatorManager = new OperatorManager<>(opConfig, new HistoryManager(logCompReg),
                 this.controller, this.logger);
         this.operatorManager.registerEventBlockStrategy(KeyMapKeyEvent.class, new KeyMapKeyBlocker());
