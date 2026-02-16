@@ -109,9 +109,10 @@ Example use cases: Moving/rotating/scaling a model, dragging a UI slider.
 ## Modal Keymap
 To create a command that modifies the operator properties, implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.
 <br><br>
-Extend `PropertyModifierConfig` to implement the factory for the commands and provide configuration of the command.
+Extend `PropertyModifierConfig` to implement the factory for the specific command and provide configuration for one command.
 <br><br>
-To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`.
+To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`. As soon as an OperatorType is registered, the engine will fetch the registry from that interface
+and create a configuration with it.
 <br><br>
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
