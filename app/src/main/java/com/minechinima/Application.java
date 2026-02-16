@@ -22,6 +22,8 @@ import com.minechinima.model.BBNameSpace;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.events.EventTypeRegistry;
+import com.minechinima.model.logging.operations.IDataOperation;
+import com.minechinima.model.logging.operations.ValueChange;
 import com.minechinima.model.scene.Scene;
 import com.minechinima.operator.*;
 import com.minechinima.operator.config.modal.*;
@@ -37,6 +39,8 @@ import com.minechinima.operator.eventblockers.KeyMapKeyBlocker;
 import com.minechinima.operator.eventblockers.KeyMapMouseDragBlocker;
 import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
+import com.minechinima.operator.history.strategies.ValueChangeMerge;
+import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
 import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
@@ -174,6 +178,8 @@ public class Application {
         this.setupModal();
 
         CompressionStrategyRegistry logCompReg = new CompressionStrategyRegistry();
+        logCompReg.registerMerge(ValueChange.class, ValueChange.class, new ValueChangeMerge());
+        logCompReg.registerParallelCheck(ValueChange.class, IDataOperation.class, new ValueChangeParallelCheck());
 
         this.operatorManager = new OperatorManager<>(opConfig, new HistoryManager(logCompReg),
                 this.controller, this.logger);
