@@ -759,23 +759,6 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             if (event.getTrigger() != this) {
                 throw new Error("ChangeEvent has incorrect triggering node set.");
             }
-
-            /*
-             * Log changes before triggering events.
-             * Events might result in new changes, so first record the source change for correct chronological order.
-             */
-            try {
-                this.bubbleDataOperation(event);
-            } catch (Exception e) {
-                /*
-                 * If there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
-                 * The App needs to crash, so we can quickly fix the underlying issue!
-                 */
-                throw new Error("An exception happened during logging the change. This is a critical bug!", e);
-            }
-
-            /* trigger the event */
-            this._triggerEvent(event);
         } catch (Exception e) {
             try {
                 if (!undo.call()) throw new Error("Could not recover from failed data operation, undo method returned false.");
@@ -790,6 +773,26 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
 
             throw new RuntimeException(e);
         }
+
+        /*
+         * perform logging outside try-catch, as internal undo will be unecessary: either operation logged (becomes undo-able),
+         * or logging failed and app crashes.
+         * Log changes before triggering events.
+         * Events might result in new changes, so first record the source change for correct chronological order.
+         */
+        try {
+            this.bubbleDataOperation(event);
+        } catch (Exception e) {
+            /*
+             * If there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
+             * The App needs to crash, so we can quickly fix the underlying issue!
+             */
+            throw new Error("An exception happened during logging the change. This is a critical bug!", e);
+        }
+
+        /* trigger the event after logging and internal data change -> any exception here does not harm the data, as
+         * the operation was logged. */
+        this._triggerEvent(event);
     }
 
     /**
