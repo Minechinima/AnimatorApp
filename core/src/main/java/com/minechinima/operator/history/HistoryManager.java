@@ -75,6 +75,7 @@ public class HistoryManager {
         }
 
         this.undos.push(new HistoryStep(title, data, markers));
+        this.redos.clear();
     }
 
 
@@ -528,7 +529,7 @@ public class HistoryManager {
         }
 
         public StepData(String stepTitle, Stack<DataOperationLog.Entry> log) {
-            this(null, null, null, stepTitle, new Stack<>());
+            this(null, null, null, stepTitle, log);
         }
     }
 

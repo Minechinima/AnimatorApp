@@ -42,12 +42,13 @@ To execute an Operator you pass the `OperatorType` to `invoke(...)` or `execute(
 When executing an Operator the `execute(...)` function is called and the Operator is only called once and finishes.
 
 ## Invoking Operators
-Invoking an Operator is used in most places of the UI and by the hotkey engine when a user triggers an action. Invoking allows the operator to decide whether to open a UI popup or transition into modal mode.
+Invoking an Operator is used in most places of the UI and by the hotkey engine when a user triggers an action. Invoking allows the operator to decide whether to open a UI popup, transition into modal mode or just finish after executing its logic.
+Modal mode is defined as a continuous running user action, for example when the user moves an object around the move operator will run and capture the mouse movement to translate the object. See more information in the modal section.
 
 ## Event blockers
-While an Operator is running in modal mode, the user might hold down keys. When the Operator finishes modal mode, these keys that are still held down should not trigger a new Operator until they are released. This is needed to prevent Operators from beeing executed immediately again after finishing which is bad UX.
+While an Operator is running in modal mode, the user might hold down keys. When the Operator finishes modal mode, these keys that are still held down should not trigger a new Operator until they are released. This is needed to prevent Operators from beeing executed immediately again after finishing, which would be bad UX.
 <br><br>
-Example: the user presses G (holds down) to move the object, presses right click to abort but because G is still held down it will move the object again.
+Example: the user presses G (holds down) to move the object, presses right click to abort but G is still held down which would trigger the Operator again and would start moving the object again.
 <br><br>
 Implement `ICachedEventBlocker` to create a strategy how to block events and when to unblock and register it to the OperatorManager.
 `ICachedEventBlocker` is called for every cached event which allows to build a state machine and use custom cache variables, see `KeyMapMouseDragBlocker`.
@@ -94,7 +95,7 @@ Alternatively you can implement `IOTPropertyProvider` yourself and write your ow
 <br><br>
 `Operator` needs to extend `PropertyOperator`.
 <br><br>
-Operators can use `OperatorProperties` for input parameters and modal keymapping. These need to be instantiated in the OperatorType (factory pattern).
+Operators can use `OperatorProperties` for input parameters and modal keymapping. The property object needs to be instantiated in the OperatorType (factory pattern).
 
 # Modal Operators
 OperatorType needs to impelement `IOTModal`. This provides flags for the OperatorManager and for the HotKey configuration engine.
@@ -108,9 +109,10 @@ Example use cases: Moving/rotating/scaling a model, dragging a UI slider.
 ## Modal Keymap
 To create a command that modifies the operator properties, implement `IPropertyModifierCommand` for the logic, `IPropertyModifierReleasableCommand` if the command should act on a key release.
 <br><br>
-Extend `PropertyModifierConfig` to implement the factory for the commands and provide configuration of the command.
+Extend `PropertyModifierConfig` to implement the factory for the specific command and provide configuration for one command.
 <br><br>
-To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`.
+To let the engine automatically create the configuration category, implement `IOTModalConfigProvider`. As soon as an OperatorType is registered, the engine will fetch the registry from that interface
+and create a configuration with it.
 <br><br>
 Since modal Operators run continously the user can press other keys to influence the Operator. 
 This is done indirectly through `OperatorProperties` and `IPropertyModifierCommand`. The hotkey triggers a property modifier command which
@@ -123,7 +125,11 @@ operators that use that `OperatorProperties` class.
 A modal OperatorType `IOTModal` can provide a set of other operatortypes that the user can switch to while the operator is running in modal mode.
 The engine will automatically display the available operatortypes and hotkeys for switching.
 <br><br>
+The switching to another type is declared with a `SwitchType` object. To handle switching with `OperatorProperties` the class `SwitchTypeProperties` can be used. The `SwitchTypeProperties` allows
+to write a custom method to create the `OperatorProperties` for the next OperatorType, which allows to either take all the input parameters or just a part of it.
+<br><br>
 Example use case: The transform operators (translate, rotate, scale) can be switched between each other.
+The transform operators also use the `OperatorProperties` of the previous instance but without the actual xyz value, so parameters like local and axis transformation are persistent.
 
 ## Important notes about design
 - Modal Operators should have no way to access hotkey configurations to avoid hotkey checks inside the modal logic. This should decouple hotkeys from the actual user logic.
@@ -142,12 +148,12 @@ Operators that are repeatable can be executed multiple times.
 
 # Custom Undo/Redo Operators
 Operator needs to implement `IUndoOperator` and create a `IUndoOperatorCommand`. It is very important that `IUndoOperatorCommand` is
-implemented as a separate class or static inner class and does not contain any references to the original Operator that spawned it, so it can be
+implemented as a separate class or <b>static</b> inner class and does not contain any references to the original Operator that spawned it, so it can be
 garbage collected.
 <br><br>
 Operators can have custom undo redo logic that is executed besides the history of data operations. This allows to undo things in the UI.
 <br><br>
-The instance of `IUndoOperator` is also not cached in the history to avoid memory leaks.
+The instance of `IUndoOperator` is also not cached in the history to avoid memory leaks, only the `IUndoOperatorCommand` is cached.
 
 # Custo dynamic Undo title
 Operator needs to implement `ITitleProvider`.
