@@ -1,6 +1,6 @@
 package com.minechinima.model.events;
 
-import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.AbstractEvent;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,7 +10,7 @@ import java.util.Set;
  * @param <T>
  */
 @Deprecated(forRemoval = true)
-public class EventTypeNode<T extends Event> {
+public class EventTypeNode<T extends AbstractEvent> {
     /**
      * Subclasses of this event type.
      */
@@ -31,7 +31,7 @@ public class EventTypeNode<T extends Event> {
      * @param type
      * @return a set of all event classes that are subclasses of the specified event class, including the type itself.
      */
-    public <J extends Event> Set<Class<? extends J>> collectSubEventTypesOf(Class<J> type) {
+    public <J extends AbstractEvent> Set<Class<? extends J>> collectSubEventTypesOf(Class<J> type) {
         Set<Class<? extends J>> collectedSubTypes = new HashSet<>();
 
         //TODO optimize

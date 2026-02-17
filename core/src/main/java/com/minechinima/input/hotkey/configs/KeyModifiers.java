@@ -1,12 +1,10 @@
 package com.minechinima.input.hotkey.configs;
 
 import com.minechinima.input.hotkey.configs.values.KeyModEnum;
-import com.minechinima.input.hotkey.configs.values.KeyType;
 import com.minechinima.input.keymap.PressedKeySet;
 import com.minechinima.input.raw.IKey;
-import com.minechinima.input.raw.Key;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.AbstractEvent;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.values.AbstractEnumValue;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.base.ValueGroup;
@@ -49,7 +47,7 @@ public class KeyModifiers extends ValueGroup {
     }
 
     @Override
-    protected void onChildEvent(Event event) {
+    protected void onChildEvent(AbstractEvent event) {
         if (!(event instanceof ChangeEvent<?> changeEvent)) return;
 
         if (changeEvent.getTrigger() == this.any) {

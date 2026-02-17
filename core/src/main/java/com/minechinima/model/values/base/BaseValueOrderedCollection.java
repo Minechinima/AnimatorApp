@@ -8,6 +8,7 @@ import com.minechinima.data.types.MapType;
 import com.minechinima.data.types.StringType;
 import com.minechinima.model.base.BaseMutableValueHierarchy;
 import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.base.utils.BaseOperationsUtils;
 import com.minechinima.model.base.utils.IBaseValueCollection;
 import com.minechinima.model.logging.datainterfaces.ListElement;
@@ -141,27 +142,20 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         T child = this.children.get(index);
         if (child == null) throw new IllegalStateException("A child is null.");
 
-        /*
-         * Just move around the child in the internal list.
-         * Path collisions should be impossible, as no new path is created. We can only move the child to an index
-         * that existed previously e.g. move index 1 to 2 [0,1,2] -> [0,2] -> [0,2,1]
-         */
-        if (!this.children.remove(child)) throw new UnsupportedOperationException("Could not remove the child");
-        this.children.add(newIndex, child);
-
-        final ListIndexChangeEvent event;
-        try {
-            event = new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child));
-        } catch (Exception e) {
-            try {
-                if (!this.children.remove(child)) throw new Error("Could not recover the failed method");
-                this.children.add(index, child);
-            } catch (Exception ex) {
-                throw new Error("Could not recover the failed method", ex);
-            }
-            throw e;
-        }
-        this.triggerEvent(event);
+        this.mutate(() -> {
+            /*
+             * Just move around the child in the internal list.
+             * Path collisions should be impossible, as no new path is created. We can only move the child to an index
+             * that existed previously e.g. move index 1 to 2 [0,1,2] -> [0,2] -> [0,2,1]
+             */
+            if (!this.children.remove(child)) return false;
+            this.children.add(newIndex, child);
+            return true;
+        }, () -> {
+            if (this.children.contains(child) && !this.children.remove(child)) return false;
+            this.children.add(index, child);
+            return true;
+        }, () -> new ListIndexChangeEvent(this, index, newIndex, new ListElement<>(uuid, child)));
     }
 
     @Override
@@ -199,21 +193,26 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
             throw new IndexOutOfBoundsException();
         }
 
-        if (this.containsListUUID(element.uuid())) {
+        if (this.children.contains(element.value()) || this.containsListUUID(element.uuid())) {
             return false;
         }
 
-        final ListAddEvent event;
-        /* map the uuid to simulate a full tree state and correctly check whether child can be added */
-        this.listUUIDMapping.put(element.uuid(), element.value());
-        try {
-            event = BaseOperationsUtils.addChildOrThrow(element.value(), this, this.children, index, () -> new ListAddEvent(this, element.value()));
-        } catch (Exception e) {
-            this.listUUIDMapping.remove(element.uuid());
-            throw e;
-        }
+        final BaseValueHierarchy prevParent = element.value().getParent();
 
-        this.triggerEvent(event);
+        this.mutate(() -> {
+                    /* map the uuid to simulate a full tree state and correctly check whether child can be added */
+                    this.listUUIDMapping.put(element.uuid(), element.value());
+                    this.children.add(index, element.value());
+                    element.value().setParent(this);
+                    return true;
+                },
+                () -> {
+                    this.listUUIDMapping.remove(element.uuid());
+                    if (this.children.contains(element.value()) && !this.children.remove(element.value())) return false;
+                    element.value().setParent(prevParent);
+                    return true;
+                },
+                () -> new ListAddEvent(this, element.value()));
         return true;
     }
 
@@ -247,9 +246,22 @@ public abstract class BaseValueOrderedCollection<T extends BaseStructure> extend
         if (uuid == null) throw new NullPointerException();
 
         ListRemoveEvent e = BaseOperationsUtils.removeChildOrThrow(child, this.children, () -> new ListRemoveEvent(this, index, new ListElement<>(uuid, child)));
-        this.listUUIDMapping.inverse().remove(child);
 
-        this.triggerEvent(e);
+
+        this.mutate(() -> {
+                if (!this.children.remove(child)) return false;
+                child.setParent(null);
+                this.listUUIDMapping.inverse().remove(child);
+                return true;
+            }, () -> {
+                if (!this.children.contains(child)) {
+                    this.children.add(index, child);
+                }
+                this.listUUIDMapping.put(uuid, child);
+                child.setParent(this);
+                return true;
+            }, () -> new ListRemoveEvent(this, index, new ListElement<>(uuid, child)));
+
         return child;
     }
 

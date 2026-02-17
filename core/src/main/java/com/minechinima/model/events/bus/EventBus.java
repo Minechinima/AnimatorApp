@@ -2,7 +2,7 @@ package com.minechinima.model.events.bus;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
-import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.AbstractEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,7 +17,7 @@ import java.util.*;
  * and the implementations that want to dispatch events.
  * <br><br>
  * You need to extend this class
- * and open the {@link #dispatchEventFromChildNode(Event)} and {@link #dispatchEventOnThis(Event)}
+ * and open the {@link #dispatchEventFromChildNode(AbstractEvent)} and {@link #dispatchEventOnThis(AbstractEvent)}
  * methods.
  * Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
  */
@@ -73,12 +73,12 @@ public abstract class EventBus {
                                 parameterTypes.length + " arguments.  Event handler methods must require a single argument.");
                     }
 
-                    if (!Event.class.isAssignableFrom(parameterTypes[0])) {
+                    if (!AbstractEvent.class.isAssignableFrom(parameterTypes[0])) {
                         throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, " +
                                 "but the method argument is not a subclass or the same as Event.class");
                     }
 
-                    Class<Event> eventType = (Class<Event>) parameterTypes[0];
+                    Class<AbstractEvent> eventType = (Class<AbstractEvent>) parameterTypes[0];
                     SubscribeEvent.Type listenType = annotation.type();
 
                     methodHandlers.add(new EventMethodHandler(method, listenType, eventType));
@@ -103,7 +103,7 @@ public abstract class EventBus {
      * @implNote protected so only subclasses can call it and control the access modifier further, to secure what can
      * dispatch events through it.
      */
-    protected final void dispatchEventOnThis(Event event) {
+    protected final void dispatchEventOnThis(AbstractEvent event) {
         if (event.getTrigger() != this.owner) {
             throw new IllegalArgumentException("Cannot dispatch an event with a different trigger node than the bus owner.");
         }
@@ -120,7 +120,7 @@ public abstract class EventBus {
      * @implNote protected so only subclasses can call it and control the access modifier further, to secure what can
      * dispatch events through it.
      */
-    protected final void dispatchEventFromChildNode(Event event) {
+    protected final void dispatchEventFromChildNode(AbstractEvent event) {
         //TODO possible performance issue: for every parent we traverse the tree to test isChildOf
         if (!(this.owner instanceof BaseValueHierarchy<?> hierarchy) || !event.getTrigger().isChildOf(hierarchy)) {
             throw new IllegalArgumentException("Cannot dispatch a child event from a node that is not child of the bus owner.");
@@ -134,16 +134,16 @@ public abstract class EventBus {
     private static class EventMethodHandler {
         private final Method method;
         private final SubscribeEvent.Type listenType;
-        private final Class<? extends Event> eventType;
+        private final Class<? extends AbstractEvent> eventType;
 
-        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Class<? extends Event> eventtype) {
+        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Class<? extends AbstractEvent> eventtype) {
             this.listenType = listenType;
             this.method = method;
             this.eventType = eventtype;
             method.setAccessible(true);
         }
 
-        public void handleEvent(Object subscriber, EventOrigin origin, Event event) {
+        public void handleEvent(Object subscriber, EventOrigin origin, AbstractEvent event) {
             switch (this.listenType) {
                 case ALL:
                     break;

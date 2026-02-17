@@ -60,58 +60,23 @@ public abstract class BaseSingleValueHierarchy<T extends BaseStructure> extends 
     public void set(@Nullable T value) {
         if (this.get() == value) return;
         final T prevValue = this.get();
-
-        this.value = value;
-        /* try to remove prevValue from tree */
-        if (prevValue != null) {
-            try {
-                prevValue.setParent(null);
-            } catch (SetParentNotAllowed e) {
-                this.value = prevValue;
-                throw new UnsupportedOperationException(e);
-            }
-        }
-
-        /* try to set the parent of the new value to this */
-        final ValueChangeEvent event;
         final BaseValueHierarchy valuePrevParent = value != null ? value.getParent() : null;
-        if (value != null) {
-            try {
-                value.setParent(this);
-            } catch (Exception e) {
-                this.value = prevValue;
-                /* try to set the parent back of the old value */
-                try {
-                    if (prevValue != null) {
-                        prevValue.setParent(this);
-                    }
-                } catch (SetParentNotAllowed e1) {
-                    throw new Error("Could not recover from failed tree method.", e1);
-                }
-                throw new UnsupportedOperationException(e);
-            }
-        }
 
-        /* try to create change event */
-        try {
-            event = new ValueChangeEvent(this, prevValue, value);
-        } catch (Exception e) {
+        this.mutate(() -> {
+            this.value = value;
+            /* try to remove prevValue from tree */
+            if (prevValue != null) {
+                prevValue.setParent(null);
+            }
+            if (value != null) value.setParent(this);
+
+            return true;
+        }, () -> {
             this.value = prevValue;
-            /* try to set the parents back of new and previous value */
-            try {
-                if (value != null) {
-                    value.setParent(valuePrevParent);
-                }
-                if (prevValue != null) {
-                    prevValue.setParent(this);
-                }
-            } catch (SetParentNotAllowed ex) {
-                throw new Error("Could not recover from failed tree method.", ex);
-            }
-            throw e;
-        }
-
-        this.triggerEvent(event);
+            if (prevValue != null) prevValue.setParent(this);
+            if (value != null) value.setParent(valuePrevParent);
+            return true;
+        }, () -> new ValueChangeEvent(this, prevValue, value));
     }
 
     @Override

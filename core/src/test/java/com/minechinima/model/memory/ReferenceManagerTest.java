@@ -1,7 +1,7 @@
 package com.minechinima.model.memory;
 
 import com.minechinima.data.types.BaseType;
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.model.base.dummies.DummyBaseHierarchyRoot;
@@ -22,8 +22,7 @@ import java.util.stream.Stream;
 public class ReferenceManagerTest {
     public static Stream<Arguments> getReferenceImplementations() {
         return Stream.of(
-                Arguments.of(new SimpleReferenceTestImpl()),
-                Arguments.of(new EventBusManagerReferenceTest())
+                Arguments.of(new SimpleReferenceTestImpl())
         );
     }
 

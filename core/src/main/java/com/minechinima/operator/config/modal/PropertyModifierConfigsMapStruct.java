@@ -2,7 +2,7 @@ package com.minechinima.operator.config.modal;
 
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.values.base.BaseValueMap;
 import com.minechinima.operator.OperatorProperties;
@@ -22,7 +22,7 @@ public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModif
     }
 
     @Override
-    protected void onChildEvent(Event event) {
+    protected void onChildEvent(AbstractEvent event) {
         if (event instanceof AddToTreeEvent addToTreeEvent
                 && addToTreeEvent.getTrigger() instanceof PropertyModifiersListStruct modifier) {
             this.cache.put(modifier.clazz, modifier);

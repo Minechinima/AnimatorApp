@@ -1,17 +1,13 @@
 package com.minechinima.model.base;
 
-import com.minechinima.model.DataTreeManager;
 import com.minechinima.model.base.dummies.*;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.model.events.bus.EventBusManager;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
 import com.minechinima.model.events.types.ParentChangeEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
-import com.minechinima.model.logging.DataOperationLog;
-import com.minechinima.model.memory.ReferenceManager;
 import com.minechinima.model.utils.ID;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.Nullable;
@@ -261,7 +257,6 @@ public class BaseStructureSetParentTest {
         registry.addEventClass(AddToTreeEvent.class);
         registry.addEventClass(ParentChangeEvent.class);
         DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
-        EventBusManager busManager = new EventBusManager(manager, registry);
 
         int[] called = new int[3];
         root.getEventBus().subscribe(new Object() {
@@ -324,9 +319,6 @@ public class BaseStructureSetParentTest {
 
         DataTreeManager<?> manager = new DataTreeManager<BaseHierarchyRoot>(root, registry);
         DataTreeManager<?> manager2 = new DataTreeManager<BaseHierarchyRoot>(root2, registry);
-
-        EventBusManager busManager = new EventBusManager(manager, registry);
-        EventBusManager busManager2 = new EventBusManager(manager2, registry);
 
         int[] called = new int[3];
         root.getEventBus().subscribe(new Object() {
