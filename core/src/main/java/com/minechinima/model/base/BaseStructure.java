@@ -745,8 +745,12 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             }
 
             /* setter might cause events, like internal events when removing a node
-            *  These events should be buffered since mutation might fail even because of failed event creation */
-            if (!setter.call()) return;
+             * These events should be buffered since mutation might fail even because of failed event creation 
+             * throw exception to trigger undo and eventbusmanager buffering.
+             */
+            if (!setter.call()) {
+                throw new RuntimeException("Setter returned false.");
+            }
             event = createChangeEvent.get();
 
             /* if someone else started buffering before it will handle flushing */
@@ -767,7 +771,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             } finally {
                 if (this.dataTreeManager != null) {
                     this.dataTreeManager.getEventBusManager().stopBuffering();
-                    this.dataTreeManager.getEventBusManager().clearBuffer();
+                    this.dataTreeManager.getEventBusManager().clearBuffer(); //TODO this would clear entire buffer, what if buffering was done before. Buffer Frames?
                 }
             }
 
