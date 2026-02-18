@@ -1,19 +1,16 @@
 package com.minechinima.model.events;
 
-import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.events.types.*;
 import com.minechinima.model.events.types.changes.*;
 
 import java.util.*;
 
 @Deprecated(forRemoval = true)
 public class EventTypeRegistry {
-    private final Set<Class<? extends Event>> availableEvents = new HashSet<>();
+    private final Set<Class<? extends AbstractEvent>> availableEvents = new HashSet<>();
 
     public static void registerDefaultEventTypes(EventTypeRegistry registry) {
-        registry.availableEvents.add(Event.class);
+        registry.availableEvents.add(AbstractEvent.class);
         /* register the module's default event types from type package */
         registry.availableEvents.add(RemoveFromTreeEvent.class);
         registry.availableEvents.add(AddToTreeEvent.class);
@@ -34,31 +31,31 @@ public class EventTypeRegistry {
     }
 
 
-    public Set<Class<? extends Event>> getAvailableEvents() {
+    public Set<Class<? extends AbstractEvent>> getAvailableEvents() {
         return Set.copyOf(this.availableEvents);
     }
 
-    public void addEventClass(Class<? extends Event> cls) {
+    public void addEventClass(Class<? extends AbstractEvent> cls) {
         /* no need to add root of all events */
-        if (cls == Event.class) return;
+        if (cls == AbstractEvent.class) return;
         this.availableEvents.add(cls);
     }
 
-    public EventTypeNode<Event> compileEventHierarchy() {
-        Map<Class<? extends Event>, Set<Class<? extends Event>>> subclasses = new HashMap<>();
+    public EventTypeNode<AbstractEvent> compileEventHierarchy() {
+        Map<Class<? extends AbstractEvent>, Set<Class<? extends AbstractEvent>>> subclasses = new HashMap<>();
 
         /* first create a map of classes and their immediate super classes */
-        for (Class<? extends Event> eventClass : this.availableEvents) {
-            Class<? extends Event> superclass = (Class<? extends Event>) eventClass.getSuperclass();
+        for (Class<? extends AbstractEvent> eventClass : this.availableEvents) {
+            Class<? extends AbstractEvent> superclass = (Class<? extends AbstractEvent>) eventClass.getSuperclass();
             subclasses.computeIfAbsent(superclass, k -> new HashSet<>()).add(eventClass);
         }
 
-        return buildNode(Event.class, subclasses);
+        return buildNode(AbstractEvent.class, subclasses);
     }
 
-    private <T extends Event> EventTypeNode<T> buildNode(Class<T> currentClass,
-                                                         Map<Class<? extends Event>, Set<Class<? extends Event>>> subclassMap) {
-        Set<Class<? extends Event>> subclasses = subclassMap.getOrDefault(currentClass, Collections.emptySet());
+    private <T extends AbstractEvent> EventTypeNode<T> buildNode(Class<T> currentClass,
+                                                                 Map<Class<? extends AbstractEvent>, Set<Class<? extends AbstractEvent>>> subclassMap) {
+        Set<Class<? extends AbstractEvent>> subclasses = subclassMap.getOrDefault(currentClass, Collections.emptySet());
         Set<EventTypeNode<? extends T>> subTypes = new HashSet<>();
         for (Class<?> subclass : subclasses) {
             subTypes.add(buildNode((Class<? extends T>) subclass, subclassMap));

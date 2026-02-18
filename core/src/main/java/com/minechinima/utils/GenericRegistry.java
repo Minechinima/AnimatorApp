@@ -45,7 +45,7 @@ public class GenericRegistry<T> implements IGenericRegistry<T> {
 
     @Override
     public Integer getID(T value) {
-        return this.idRegistry.get(value.getClass());
+        return value == null ? null : this.idRegistry.get(value.getClass());
     }
 
     @Override

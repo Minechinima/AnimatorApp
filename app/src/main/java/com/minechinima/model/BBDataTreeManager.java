@@ -1,6 +1,7 @@
 package com.minechinima.model;
 
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.events.EventTypeRegistry;
 import com.minechinima.utils.IGenericRegistry;
 

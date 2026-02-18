@@ -1,8 +1,7 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.logging.datainterfaces.IDMutable;
-import com.minechinima.model.logging.datainterfaces.IValue;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.logging.operations.IdentifierChange;
 
 public class IdentifierChangeEvent extends ChangeEvent<IdentifierChange> {

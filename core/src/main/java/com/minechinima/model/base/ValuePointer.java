@@ -184,6 +184,7 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
             throw new IllegalArgumentException("Cannot set the value to this pointer as the type is not compatible.");
         }
 
+        //TODO get rid of referenceframes - use global paths and root, and just
         /*
          * Allow setting the value when it is not in the tree,
          * as then it can't hurt tree structure with an illegal reference frame.
@@ -206,64 +207,50 @@ public class ValuePointer<T extends BaseStructure> extends BaseStructure impleme
 
         this.checkConstraintsForValueAndThrow(value, true);
 
-        /* clear pointer */
-        if (value == null) {
-            final T prev = this.referenced;
-            final String prevCachedPath = this.cachedUniquePath;
-            this.referenced = null;
-            this.cachedUniquePath = null;
-            try {
-                prev.removePointer(this);
-            } catch (Exception e) {
-                this.referenced = prev;
-                this.cachedUniquePath = prevCachedPath;
-                throw e;
-            }
-
-            this.triggerEvent(new ValueChangeEvent(this, new StringType(prevCachedPath), prev, NullType.INSTANCE, null));
-        } else {
-            /* change pointer */
-            ValuePath path = value.getRelativePath(this.referenceFrame);
+        final T prev = this.referenced;
+        final String prevCachedPath = this.cachedUniquePath;
+        final ValuePath path = value != null ? value.getRelativePath(this.referenceFrame) : null;
+        final String uniquePathNewReference = value != null && path != null ? path.toUniquePath() : null;
+        /* safety checks when changing pointer reference */
+        if (value != null) {
             if (!value.isChildOf(this.referenceFrame)) {
                 throw new IllegalArgumentException("Cannot point to a node that is not a child of the pointer's reference frame.");
             }
 
-            String uniquePath;
             if (path == null ||
-                    this.referenceFrame.getChildByUniquePath(uniquePath = path.toUniquePath()) != value) {
+                    this.referenceFrame.getChildByUniquePath(uniquePathNewReference) != value) {
                 throw new IllegalArgumentException("Cannot point to a node as it is not addressable with a path.");
             }
-
-            final T prev = this.referenced;
-            //TODO value is referenced here but addPointer called under a condition.
-            this.referenced = value;
-            /* can only perform the listening operations when we are in the same tree */
-            if (this.getParent() != null) {
-                try {
-                    this.referenced.addPointer(this);
-                } catch (Exception e) {
-                    this.referenced = prev;
-                    throw e;
-                }
-            }
-
-            if (prev != null) {
-                try {
-                    prev.removePointer(this);
-                } catch (Exception e) {
-                    this.referenced = prev;
-                    try {
-                        value.removePointer(this);
-                    } catch (Exception e1) {
-                        throw new MemoryLeakError();
-                    }
-                }
-            }
-
-            String prevPath = this.cachedUniquePath;
-            this.cachedUniquePath = uniquePath;
-            this.triggerEvent(new ValueChangeEvent(this, prev, value));
         }
+
+        this.mutate(() -> {
+            this.referenced = value;
+            if (value == null) {
+                this.cachedUniquePath = null;
+            } else {
+                /* can only perform the listening operations when we are in the same tree */
+                this.referenced.addPointer(this);
+
+                if (prev != null) {
+                    prev.removePointer(this);
+                }
+                this.cachedUniquePath = uniquePathNewReference;
+            }
+            if (prev != null) prev.removePointer(this);
+            return true;
+        }, () -> {
+            this.referenced = prev;
+            this.cachedUniquePath = prevCachedPath;
+            if (prev != null) prev.addPointer(this);
+            if (value != null) value.removePointer(this);
+            return true;
+        }, () -> {
+            if (value == null) {
+                return new ValueChangeEvent(this, new StringType(prevCachedPath), prev, NullType.INSTANCE, null);
+            } else {
+                return new ValueChangeEvent(this, prev, value);
+            }
+        });
     }
 
     public T get() {

@@ -1,6 +1,6 @@
 package com.minechinima.controller;
 
-import com.minechinima.model.DataTreeManager;
+import com.minechinima.model.base.DataTreeManager;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.exceptions.UserException;
@@ -10,8 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
-import java.util.Queue;
 import java.util.Stack;
 
 public class ControllerManager {
@@ -34,14 +32,29 @@ public class ControllerManager {
     @Nullable
     private Exception e;
     private boolean abort;
+    private boolean isAborting;
+    private final ControllerFacade api = new ControllerFacade(this);
 
     public ControllerManager(DataTreeManager<?> app, Logger logger) {
         this.dataTree = app;
+        app.setControllerFacade(this.api);
         this.logger = logger;
     }
 
+    /**
+     * @return true when a transaction is in the cache. This does not mean that currently write operations
+     * are happening. See {@link #isWriting()}
+     */
     public boolean isActive() {
         return this.currentTransaction != null;
+    }
+
+    /**
+     *
+     * @return true when currently data operations are performed and written to a transaction.
+     */
+    public boolean isWriting() {
+        return this.isAborting || (this.nestedLevel > 0 && this.isActive());
     }
 
     public DataTreeManager<?> getDataTree() {
@@ -125,7 +138,7 @@ public class ControllerManager {
             this.nestedLevel--;
             /* only pause the log in the root of the controller call stack */
             if (this.nestedLevel == 0) {
-                this.currentTransaction.getLog().pause();
+                if (this.currentTransaction != null) this.currentTransaction.getLog().pause();
                 this.dataTree.getReferenceManager().stopCachingClearedReferences();
             }
         }
@@ -192,6 +205,7 @@ public class ControllerManager {
         }
 
         try {
+            this.isAborting = true;
             this.currentTransaction.getLog().close();
             this.currentTransaction.abortedState();
 
@@ -226,6 +240,8 @@ public class ControllerManager {
             this.abort = false;
         } catch (Exception e) {
             throw new Error(e);
+        } finally {
+            this.isAborting = false;
         }
     }
 }

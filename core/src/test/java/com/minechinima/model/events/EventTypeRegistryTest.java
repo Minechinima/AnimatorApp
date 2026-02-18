@@ -1,11 +1,8 @@
 package com.minechinima.model.events;
 
 import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.events.types.AddToTreeEvent;
+import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
-import com.minechinima.model.events.types.changes.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +13,7 @@ public class EventTypeRegistryTest {
     public void compileFullEventHierarchy() {
         /* simple test whether a normal, without missings or any other weird stuff, hierarchy works */
         EventTypeRegistry registry = new EventTypeRegistry();
-        registry.addEventClass(Event.class);
+        registry.addEventClass(AbstractEvent.class);
         registry.addEventClass(EventSub.class);
         registry.addEventClass(EventSub2.class);
         registry.addEventClass(EventSubSub.class);
@@ -24,16 +21,16 @@ public class EventTypeRegistryTest {
         registry.addEventClass(EventSubSubSub.class);
         registry.addEventClass(EventSubSubSub2.class);
 
-        EventTypeNode<Event> root = registry.compileEventHierarchy();
+        EventTypeNode<AbstractEvent> root = registry.compileEventHierarchy();
 
-        Assertions.assertEquals(Event.class, root.eventType);
+        Assertions.assertEquals(AbstractEvent.class, root.eventType);
         Assertions.assertEquals(2, root.immediateSubTypes.size());
 
-        Set<Class<? extends Event>> layer1 = Set.of(EventSub.class, EventSub2.class);
-        Set<Class<? extends Event>> layer2 = Set.of(EventSubSub.class, EventSubSub2.class);
-        Set<Class<? extends Event>> layer3 = Set.of(EventSubSubSub.class, EventSubSubSub2.class);
+        Set<Class<? extends AbstractEvent>> layer1 = Set.of(EventSub.class, EventSub2.class);
+        Set<Class<? extends AbstractEvent>> layer2 = Set.of(EventSubSub.class, EventSubSub2.class);
+        Set<Class<? extends AbstractEvent>> layer3 = Set.of(EventSubSubSub.class, EventSubSubSub2.class);
 
-        EventTypeNode<Event> current = root;
+        EventTypeNode<AbstractEvent> current = root;
     }
 
     @Test
@@ -43,9 +40,9 @@ public class EventTypeRegistryTest {
         registry.addEventClass(EventSubSubSub.class);
         registry.addEventClass(EventSubSubSub2.class);
 
-        EventTypeNode<Event> root = registry.compileEventHierarchy();
+        EventTypeNode<AbstractEvent> root = registry.compileEventHierarchy();
 
-        Assertions.assertEquals(Event.class, root.eventType);
+        Assertions.assertEquals(AbstractEvent.class, root.eventType);
         Assertions.assertEquals(0, root.immediateSubTypes.size());
     }
 

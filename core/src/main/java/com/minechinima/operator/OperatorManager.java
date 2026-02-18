@@ -7,7 +7,7 @@ import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.bus.SubscribeEvent;
-import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.ReleaseConfirmHotKey;
 import com.minechinima.operator.config.modal.*;
@@ -34,7 +34,6 @@ import com.minechinima.ui.elements.window.UIRegion;
 import com.minechinima.ui.elements.window.UISpace;
 import com.minechinima.utils.Pair;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

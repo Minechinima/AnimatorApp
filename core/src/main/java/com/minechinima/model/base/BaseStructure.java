@@ -3,10 +3,7 @@ package com.minechinima.model.base;
 import com.minechinima.data.IDataSerializable;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.model.events.bus.EventBus;
-import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
-import com.minechinima.model.events.types.ParentChangeEvent;
-import com.minechinima.model.events.types.RemoveFromTreeEvent;
+import com.minechinima.model.events.types.*;
 import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.logging.operations.IDataOperation;
 import com.minechinima.model.exceptions.ContractViolatedException;
@@ -14,7 +11,6 @@ import com.minechinima.model.memory.MemoryLeakError;
 import com.minechinima.model.utils.*;
 import com.minechinima.utils.Pair;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
-import com.minechinima.model.events.types.changes.ChangeEvent;
 import com.minechinima.model.events.types.changes.IdentifierChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import org.jetbrains.annotations.Contract;
@@ -22,7 +18,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * The base for all nodes in the data tree.
@@ -75,6 +73,11 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * The bus for dispatching events that happen on this node.
      */
     private final EventBusImpl bus = new EventBusImpl(this);
+
+    /**
+     * @implNote give only access to subclasses and package so {@link DataTreeManager} can access it.
+     */
+    protected DataTreeManager dataTreeManager;
 
     /**
      * @param id
@@ -608,7 +611,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      *                          </ul>
      */
     @Contract(pure = false)
-    protected final void _setID(@NotNull String identifier) throws RuntimeException {
+    protected final void _setID(final @NotNull String identifier) throws RuntimeException {
         if (identifier == null) {
             throw new IllegalArgumentException("Setting identifier to null is not allowed.");
         }
@@ -636,23 +639,25 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
 
         if (this.parent == null) {
             this.throwExceptionForInvalidIDChange(this.id, identifier);
-            this.id = identifier;
-            IdentifierChangeEvent event = new IdentifierChangeEvent(this, originalID, this.id);
-            this.triggerEvent(event);
+            this.mutate(() -> (this.id = identifier).equals(identifier),
+                    () -> (this.id = originalID).equals(originalID),
+                    () -> new IdentifierChangeEvent(this, originalID, identifier));
             return;
         }
 
         BaseValueHierarchy<?> uniquenessContext = this.parent.getPathCollisionContext();
         List<BaseStructure> neighbors = uniquenessContext.getChildrenForPathCollisions();
+        final String resolvedIdentifier;
         if (!neighbors.isEmpty()) {
-            identifier = PathUtils.resolvePathCollisions(identifier, this);
+            resolvedIdentifier = PathUtils.resolvePathCollisions(identifier, this);
+        } else {
+            resolvedIdentifier = identifier;
         }
 
-        this.throwExceptionForInvalidIDChange(this.id, identifier);
-        this.id = identifier;
-
-        IdentifierChangeEvent event = new IdentifierChangeEvent(this, originalID, this.id);
-        this.triggerEvent(event);
+        this.throwExceptionForInvalidIDChange(this.id, resolvedIdentifier);
+        this.mutate(() -> (this.id = resolvedIdentifier).equals(resolvedIdentifier),
+                () -> (this.id = originalID).equals(originalID),
+                () -> new IdentifierChangeEvent(this, originalID, this.id));
     }
 
     private final void throwExceptionForInvalidIDState(String id) {
@@ -704,7 +709,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
         }
     }
 
-    private final <T extends Event> void bubbleChildEvent(T event) {
+    private final <T extends AbstractEvent> void bubbleChildEvent(T event) {
         this.onChildEvent(event);
         this.bus._dispatchEventFromChildNode(event);
         if (this.parent != null) {
@@ -713,8 +718,92 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     }
 
     /**
+     * Mutate data and trigger a change event. The callbacks represent template method pattern.
+     * <br><br>
+     * <b>Important:</b> all the logic should be split and encapsulated into the lambdas,
+     * to allow mutability control.
+     * @param setter perform the mutation of the internal datastructure. Return false or any exception will trigger the undo callback.
+     * @param undo undo the mutation. Any exception here will crash the app to prevent corrupt data.
+     *             Returnining false will also crash the app-
+     * @param createChangeEvent create the change event here so we can catch potential exceptions, e.g. when the event performs
+     *                          serialization.
+     * @param <T>
+     */
+    protected final <T extends ChangeEvent<?>> void mutate(Callable<Boolean> setter,
+                                                           Callable<Boolean> undo,
+                                                           Supplier<T> createChangeEvent) {
+        if (this.dataTreeManager != null && !this.dataTreeManager.canMutate()) {
+            throw new UnsupportedOperationException("Cannot mutate data when mutation gate is closed. Likely no transaction is running.");
+        }
+
+        final T event;
+        try {
+            boolean wasBufferingBefore = false;
+            if (this.dataTreeManager != null) {
+                wasBufferingBefore = this.dataTreeManager.getEventBusManager().isBuffering();
+                this.dataTreeManager.getEventBusManager().startBuffering();
+            }
+
+            /* setter might cause events, like internal events when removing a node
+             * These events should be buffered since mutation might fail even because of failed event creation 
+             * throw exception to trigger undo and eventbusmanager buffering.
+             */
+            if (!setter.call()) {
+                throw new RuntimeException("Setter returned false.");
+            }
+            event = createChangeEvent.get();
+
+            /* if someone else started buffering before it will handle flushing */
+            if (this.dataTreeManager != null && !wasBufferingBefore) {
+                this.dataTreeManager.getEventBusManager().stopBuffering();
+                this.dataTreeManager.getEventBusManager().flush();
+            }
+
+            /* for change events terminate, as logging needs to always be successful. */
+            if (event.getTrigger() != this) {
+                throw new Error("ChangeEvent has incorrect triggering node set.");
+            }
+        } catch (Exception e) {
+            try {
+                if (!undo.call()) throw new Error("Could not recover from failed data operation, undo method returned false.");
+            } catch (Exception undoE) {
+                throw new Error("Could not recover from failed data operation", undoE);
+            } finally {
+                if (this.dataTreeManager != null) {
+                    this.dataTreeManager.getEventBusManager().stopBuffering();
+                    this.dataTreeManager.getEventBusManager().clearBuffer(); //TODO this would clear entire buffer, what if buffering was done before. Buffer Frames?
+                }
+            }
+
+            throw new RuntimeException(e);
+        }
+
+        /*
+         * perform logging outside try-catch, as internal undo will be unecessary: either operation logged (becomes undo-able),
+         * or logging failed and app crashes.
+         * Log changes before triggering events.
+         * Events might result in new changes, so first record the source change for correct chronological order.
+         */
+        try {
+            this.bubbleDataOperation(event);
+        } catch (Exception e) {
+            /*
+             * If there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
+             * The App needs to crash, so we can quickly fix the underlying issue!
+             */
+            throw new Error("An exception happened during logging the change. This is a critical bug!", e);
+        }
+
+        /* trigger the event after logging and internal data change -> any exception here does not harm the data, as
+         * the operation was logged. */
+        this._triggerEvent(event);
+    }
+
+    /**
      * Triggers an event on this element and passes and event to the parents.
      * <br><br>
+     *
+     *
      * <h2>Important:</h2><br>
      * The logging happens first. If any exception happens during logging, the app is terminated with an Error.
      * Therefore, you can assume that this method will not cause an exception that prevents logging a change, as a failed logging
@@ -728,39 +817,47 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      */
     @NoExceptions
     protected final <T extends Event> void triggerEvent(T event) {
+        this._triggerEvent(event);
+    }
+
+    /**
+     * Internal trigger Event method only for this class. Subclasses should either use {@link #triggerEvent(Event)} or
+     * for {@link ChangeEvent} the mutate method. This is to enforce on compiler level that changes / mutation and data operations
+     * can only happen there to control mutability.
+     * @param event
+     * @param <T>
+     */
+    @NoExceptions
+    private final <T extends AbstractEvent> void _triggerEvent(T event) {
         if (event.getTrigger() != this) {
             /* for change events terminate, as logging needs to always be successful. */
             if (event instanceof ChangeEvent<?>) throw new Error("Cannot trigger event where the trigger is not this.");
             else throw new IllegalArgumentException("Cannot trigger event where the trigger is not this.");
         }
 
-        try {
+        //TODO for future event system:
+        // events should be dispatched through a stream API for buffering and better connectivity. Buffering the entire method
+        // call is wonky. Also remove internal onEvent and register this node as FIRST event receiver to the bus,
+        // to streamline onEvent and participate internal onEvent in buffering.
+        Runnable eventCall = () -> {
+            this.onEvent(event);
+            this.bus._dispatchEventOnThis(event);
+
             /*
-             * Log changes before triggering events.
-             * Events might result in new changes, so first record the source change for correct chronological order.
+             * Dieser Code wurde in der Gemeinschaft mit Marlon gesegnet (3.10.2024 23:22 Areon Pictures Discord).
+             * In nomine Patris et Fili, et Spiritus Sancti. Amen.
+             * Die Architektur liegt nun in Gottes Händen. ≽^•⩊•^≼ mowmow
+             * FurryFlo war auch dabei.
              */
-            if (event instanceof ChangeEvent<?> changeEvent) {
-                this.bubbleDataOperation(changeEvent);
+            if (this.parent != null) {
+                ((BaseStructure) this.parent).bubbleChildEvent(event);
             }
-        } catch (Exception e) {
-            /*
-             * If there is a problem with logging, it is a critical bug, as we cannot revert changes properly.
-             * The App needs to crash, so we can quickly fix the underlying issue!
-             */
-            throw new Error("An exception happened during logging the change. This is a critical bug!", e);
-        }
+        };
 
-        this.onEvent(event);
-        this.bus._dispatchEventOnThis(event);
-
-        /*
-         * Dieser Code wurde in der Gemeinschaft mit Marlon gesegnet (3.10.2024 23:22 Areon Pictures Discord).
-         * In nomine Patris et Fili, et Spiritus Sancti. Amen.
-         * Die Architektur liegt nun in Gottes Händen. ≽^•⩊•^≼ mowmow
-         * FurryFlo war auch dabei.
-         */
-        if (this.parent != null) {
-            ((BaseStructure) this.parent).bubbleChildEvent(event);
+        if (this.dataTreeManager != null && this.dataTreeManager.getEventBusManager().isBuffering()) {
+            this.dataTreeManager.getEventBusManager().bufferEventCall(eventCall);
+        } else {
+            eventCall.run();
         }
     }
 
@@ -768,13 +865,13 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
      * For internal event handling code without the event bus overhead.
      * @param event
      */
-    protected void onEvent(Event event) { }
+    protected void onEvent(AbstractEvent event) { }
 
     /**
      * For internal event handling code without the event bus overhead.
      * @param event
      */
-    protected void onChildEvent(Event event) { }
+    protected void onChildEvent(AbstractEvent event) { }
 
     /**
      * Template method pattern, also enforce important things that should always happen when removing from the tree.
@@ -856,11 +953,11 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
             super(owner);
         }
 
-        final void _dispatchEventOnThis(Event event) {
+        final void _dispatchEventOnThis(AbstractEvent event) {
             super.dispatchEventOnThis(event);
         }
 
-        final void _dispatchEventFromChildNode(Event event) {
+        final void _dispatchEventFromChildNode(AbstractEvent event) {
             super.dispatchEventFromChildNode(event);
         }
     }

@@ -138,8 +138,21 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @Override
     @MustBeInvokedByOverriders
     public boolean add(@NotNull T value) {
-        ValueAddEvent event = BaseOperationsUtils.addChildOrThrow(value, this, this.children, () -> new ValueAddEvent(this, value));
-        this.triggerEvent(event);
+        if (value == null) throw new IllegalArgumentException("A BaseValueHierarchy does not permit null values.");
+        if (this.children.contains(value)) return true;
+
+        final BaseValueHierarchy prevParent = value.getParent();
+
+        this.mutate(() -> {
+            if (!this.children.add(value)) return false;
+            value.setParent(this);
+            return true;
+        }, () -> {
+            if (this.children.contains(value) && !this.children.remove(value)) return false;
+            value.setParent(prevParent);
+            return true;
+        }, () -> new ValueAddEvent(this, value));
+
         return true;
     }
 
@@ -175,8 +188,16 @@ public abstract class BaseValueMap<T extends BaseStructure> extends BaseMutableV
     @MustBeInvokedByOverriders
     public boolean remove(T child) {
         if (!this.children.contains(child)) return false;
-        ValueRemoveEvent e = BaseOperationsUtils.removeChildOrThrow(child, this.children, () -> new ValueRemoveEvent(this, child));
-        this.triggerEvent(e);
+
+        this.mutate(() -> {
+            if (!this.children.remove(child)) return false;
+            child.setParent(null);
+            return true;
+        }, () -> {
+            if (!this.children.contains(child) && !this.children.add(child)) return false;
+            child.setParent(this);
+            return true;
+        }, () -> new ValueRemoveEvent(this, child));
         return true;
     }
 

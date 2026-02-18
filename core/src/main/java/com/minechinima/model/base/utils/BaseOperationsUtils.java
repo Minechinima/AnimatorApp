@@ -2,7 +2,7 @@ package com.minechinima.model.base.utils;
 
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
-import com.minechinima.model.events.types.changes.ChangeEvent;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import org.jetbrains.annotations.NotNull;

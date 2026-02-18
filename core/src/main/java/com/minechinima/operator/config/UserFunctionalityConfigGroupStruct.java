@@ -3,7 +3,7 @@ package com.minechinima.operator.config;
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
-import com.minechinima.model.events.types.Event;
+import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
 import com.minechinima.model.events.types.changes.ValueAddEvent;
 import com.minechinima.model.values.base.ValueGroup;
@@ -57,7 +57,7 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
     }
 
     @Override
-    protected final void onChildEvent(Event event) {
+    protected final void onChildEvent(AbstractEvent event) {
         if (event instanceof AddToTreeEvent addToTreeEvent) {
             if (addToTreeEvent.getTrigger() instanceof OperatorConfigCategoryGroupStruct opCategory) {
                 this.addSpaceRegionMapping(Set.of(opCategory));

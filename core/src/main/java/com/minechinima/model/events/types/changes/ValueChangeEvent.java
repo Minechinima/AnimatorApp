@@ -1,6 +1,7 @@
 package com.minechinima.model.events.types.changes;
 
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.events.types.ChangeEvent;
 import com.minechinima.model.logging.operations.ValueChange;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.base.BaseStructure;
