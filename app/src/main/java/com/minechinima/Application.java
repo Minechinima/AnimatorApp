@@ -190,7 +190,7 @@ public class Application {
     public void setupModal() {
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropertyModifierConfigsMapStruct propertyModifiers = config.propModifiers;
-        PropertyModifiersListStruct<TranslateProps> translate_modal = new PropertyModifiersListStruct<>("transform_modal", TranslateProps.class, config.hotKeyConfigRegistry);
+        PropertyModifiersListStruct<TransformProps> translate_modal = new PropertyModifiersListStruct<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
         propertyModifiers.add(translate_modal);
 
         translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
@@ -201,13 +201,13 @@ public class Application {
         dragValueSlider.modifierRegistry().register(1, RoundModal.class, RoundModal::new);
         PropertyModifiersListStruct<DragValueSliderProp> dragConfig = (PropertyModifiersListStruct<DragValueSliderProp>) propertyModifiers.get(dragValueSlider.modifierConfigIdentifier());
 
-        PropertyModifierHotKeyConfig<TranslateProps> xCfg = translate_modal.newConfig();
+        PropertyModifierHotKeyConfig<TransformProps> xCfg = translate_modal.newConfig();
         xCfg.modifier.set(new TranslateModalAxisX());
         xCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_X);
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropertyModifierHotKeyConfig<TranslateProps> yCfg = translate_modal.newConfig();
+        PropertyModifierHotKeyConfig<TransformProps> yCfg = translate_modal.newConfig();
         yCfg.modifier.set(new TranslateModalAxisY());
         yCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);

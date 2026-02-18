@@ -10,7 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-public abstract class TranslateModalAxis extends PropertyModifierConfig<TranslateProps> {
+public abstract class TranslateModalAxis extends PropertyModifierConfig<TransformProps> {
     private final AxisEnumValueStruct.Axis axisToSet;
 
     public TranslateModalAxis(AxisEnumValueStruct.Axis axisToSet) {
@@ -19,10 +19,10 @@ public abstract class TranslateModalAxis extends PropertyModifierConfig<Translat
     }
 
     @Override
-    public IPropertyModifierCommand<TranslateProps, ?> factory() {
+    public IPropertyModifierCommand<TransformProps, ?> factory() {
         return new IPropertyModifierCommand<>(this) {
             @Override
-            public IControllerCommand modify(TranslateProps props) {
+            public IControllerCommand modify(TransformProps props) {
                 if (props.axis.get() == this.modifierConfig.axisToSet) {
                     return props.transformOnAxis.controller().set(false);
                 }
