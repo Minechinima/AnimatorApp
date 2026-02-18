@@ -1254,7 +1254,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
 
     /**
-     * Every data / command that is needed during running a modal operator. This represents on modal operator process.
+     * Every data / command that is needed during running a modal operator. This represents one modal operator process.
      * @param type
      * @param op
      * @param modifiersWaitingRelease set of modifiers that await a release event.

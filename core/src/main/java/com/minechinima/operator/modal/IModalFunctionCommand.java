@@ -5,6 +5,14 @@ import com.minechinima.operator.OperatorManager;
 import com.minechinima.operator.config.modal.ModalFunctionConfig;
 import com.minechinima.operator.ot.commands.IModalOperator;
 
+/**
+ * A command that can be executed for any operator during modal mode. This can be used to modify the system.
+ * This is not used to modify the properties and execution of one specific Operator, see {@link IPropertyModifierCommand}.
+ * <br><br>
+ * This command is cleaned up after execution finished, it cannot be used to build a state machine.
+ * @param <CTX>
+ * @param <CFG> the config that spawned this command.
+ */
 public abstract class IModalFunctionCommand<CTX extends IContext, CFG extends ModalFunctionConfig<CTX>> {
     protected final CFG config;
 
