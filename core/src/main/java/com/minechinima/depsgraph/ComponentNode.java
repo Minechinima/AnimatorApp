@@ -117,9 +117,20 @@ public class ComponentNode<T extends BaseStructure> extends Node {
     }
 
     public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+                                         OperationNode.OperationCode code) {
+        return this.addOperation(func, code, null, null);
+    }
+
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
                                          OperationNode.OperationCode code,
                                          @Nullable final String name) {
         return this.addOperation(func, code, name, null);
+    }
+
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+                                         OperationNode.OperationCode code,
+                                         @Nullable DataScope scope) {
+        return this.addOperation(func, code, null, scope);
     }
 
     /**

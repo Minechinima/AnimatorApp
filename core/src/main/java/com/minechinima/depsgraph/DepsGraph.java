@@ -14,4 +14,11 @@ import java.util.Set;
 public class DepsGraph {
     private final Map<BaseStructure, DataNode> dataNodes = new HashMap<>();
     private final Set<OperationNode> operationNodes = new HashSet<>();
+
+    private final HashMap<Class<? extends BaseStructure>, Set<DataNode<? extends BaseStructure>>> dataNodesByClass = new HashMap<>();
+
+
+    public void addDataNode(DataNode<?> node) {
+
+    }
 }
