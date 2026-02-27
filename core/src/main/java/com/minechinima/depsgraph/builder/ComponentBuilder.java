@@ -2,6 +2,7 @@ package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.ComponentNode;
 import com.minechinima.depsgraph.DataNode;
+import com.minechinima.depsgraph.DataScope;
 import com.minechinima.depsgraph.OperationNode;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
@@ -26,7 +27,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
      * singletons for keys, so that we can safely use the key for hashmap lookups in the component nodes and avoid unnecessary
      * instances.
      */
-    private final ComponentNode.ComponentKey key;
+    private final ComponentNode.ComponentType key;
     /**
      * Builders for the internal operation nodes, except entry and exit, which are built separately.
      */
@@ -36,7 +37,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
      */
     private final List<RelationBuilder<ComponentNode<T>>> relationBuilders = new LinkedList<>();
 
-    public ComponentBuilder(ComponentNode.ComponentKey key) {
+    public ComponentBuilder(ComponentNode.ComponentType key) {
         this.key = key;
     }
 
@@ -51,7 +52,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
     }
 
     public ComponentNode<T> buildComponent(DataNode<T> owner) {
-        ComponentNode<T> component = new ComponentNode<>(owner, this.key);
+        ComponentNode<T> component = new ComponentNode<>(owner, this.key, this.getDataScope(owner.getOriginalData()));
         this.addEntryExitOperation(component);
         if (component.getEntry() == null || component.getExit() == null) {
             throw new IllegalStateException("Entry and exit operation must be set in addEntryExitOperation.");
@@ -64,15 +65,10 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
 
     /**
      * @return The attributes that belong to this component, e.g. for a transform component it would be the location, rotation and scale attributes.
-     *         These are specific attributes. Entire trees of data can be declared in {@link #getManagedDataTrees},
-     *         e.g. all transform related attributes, all geometry related attributes, etc.
      */
-    public abstract Set<BaseStructure> getManagedDataAttributes(T data);
+    @Nullable
+    public abstract DataScope getDataScope(T data);
 
-    /**
-     * @return The trees of data that belong to this component, e.g. for a transform component it would be the entire transform hierarchy of the data structure.
-     */
-    public abstract Set<BaseValueHierarchy> getManagedDataTrees(T data);
     public abstract void addEntryExitOperation(ComponentNode<T> component);
 
     @FunctionalInterface
