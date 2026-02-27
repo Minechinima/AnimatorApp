@@ -8,6 +8,7 @@ import java.util.*;
 
 /**
  * Manages a datascope and ensures storage stays efficient.
+ * Used to map nodes in the dependency graph to the data they represent.
  */
 public class DataScope {
     /**

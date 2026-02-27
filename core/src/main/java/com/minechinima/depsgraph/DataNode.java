@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * One node represents one datastructure to update. A data node is further structured into
@@ -42,6 +43,25 @@ public class DataNode<T extends BaseStructure> extends Node {
         return copy;
     }
 
+    @Nullable
+    public ComponentNode<T> getComponent(ComponentNode.ComponentType type) {
+        return this.components.get(type);
+    }
+
+    public Set<ComponentNode<T>> getComponents() {
+        return Set.copyOf(this.components.values());
+    }
+
+    @Override
+    public @NotNull OperationNode<T> getEntry() {
+        return this.entryComponent.getEntry();
+    }
+
+    @Override
+    public @NotNull OperationNode<T> getExit() {
+        return this.exitComponent.getExit();
+    }
+
     public void addComponent(ComponentNode<T> componentNode) {
         if (this.components.containsValue(componentNode) || this.components.containsKey(componentNode.getType())) {
             throw new IllegalArgumentException("Component already present in data node.");
@@ -64,11 +84,6 @@ public class DataNode<T extends BaseStructure> extends Node {
         this.components.put(componentNode.getType(), componentNode);
         this.getEntry().addFromRelationTo(componentNode, "DataNode Entry -> Component " + componentNode.getType());
         componentNode.addFromRelationTo(this.getExit(), "Component " + componentNode.getType() + " -> DataNode Exit");
-    }
-
-    @Nullable
-    public ComponentNode<T> getComponent(ComponentNode.ComponentType type) {
-        return this.components.get(type);
     }
 
     public boolean isComponentNodePresent(ComponentNode node) {
@@ -107,15 +122,5 @@ public class DataNode<T extends BaseStructure> extends Node {
         }
 
         this.exitComponent = exit;
-    }
-
-    @Override
-    public @NotNull OperationNode<T> getEntry() {
-        return this.entryComponent.getEntry();
-    }
-
-    @Override
-    public @NotNull OperationNode<T> getExit() {
-        return this.exitComponent.getExit();
     }
 }

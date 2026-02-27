@@ -101,6 +101,10 @@ public class OperationNode<T extends BaseStructure> extends Node {
         return name;
     }
 
+    public String getIdentifier() {
+        return this.code.getName() + (this.name.isEmpty() ? "" : "_" + this.name);
+    }
+
     @Override
     public @NotNull OperationNode<?> getEntry() {
         return this.owner.getEntry();
