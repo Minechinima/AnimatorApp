@@ -26,6 +26,14 @@ public class DataScope {
         this.clean(this.specialAttributes, this.dataTrees);
     }
 
+    public Set<BaseStructure> getSpecialAttributes() {
+        return new HashSet<>(specialAttributes);
+    }
+
+    public Set<BaseValueHierarchy> getDataTrees() {
+        return new HashSet<>(dataTrees);
+    }
+
     /**
      * @param data
      * @return true if the given data is in the scope of this data.
@@ -81,14 +89,6 @@ public class DataScope {
         return new DataScope(attribtuesMerged, dataTrees);
     }
 
-    public Set<BaseStructure> getSpecialAttributes() {
-        return new HashSet<>(specialAttributes);
-    }
-
-    public Set<BaseValueHierarchy> getDataTrees() {
-        return new HashSet<>(dataTrees);
-    }
-
     private void clean(Set<BaseStructure> attribtues, Set<BaseValueHierarchy> trees) {
         Iterator<BaseStructure> it = attribtues.iterator();
         while (it.hasNext()) {
@@ -115,7 +115,7 @@ public class DataScope {
             /* remove trees that are children of other trees - unecessary to store them separately */
             for (BaseValueHierarchy<?> otherTree : trees) {
                 if (tree.isChildOf(otherTree)) {
-                    it.remove();
+                    it2.remove();
                     break;
                 }
             }
