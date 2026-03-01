@@ -1,9 +1,9 @@
 package com.minechinima.operator;
 
-import com.minechinima.model.AxisEnumValueStruct;
+import com.minechinima.model.AxisConstraintEnumValueStruct.AxisConstraint;
 
 public class TranslateModalAxisY extends TranslateModalAxis {
     public TranslateModalAxisY() {
-        super(AxisEnumValueStruct.Axis.Y);
+        super(AxisConstraint.Y);
     }
 }

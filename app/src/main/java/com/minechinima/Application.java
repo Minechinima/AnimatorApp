@@ -127,6 +127,11 @@ public class Application {
         rotateConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) rotateConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_R);
 
+        OperatorConfigGroupStruct scaleConfig = viewport.newConfig();
+        scaleConfig.operatorType.set(bb.ops.scale);
+        scaleConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) scaleConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_S);
+
         OperatorConfigGroupStruct duplicateCOnfig = viewport.newConfig();
         duplicateCOnfig.operatorType.set(bb.ops.duplicateMoveObject);
         duplicateCOnfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
@@ -202,6 +207,12 @@ public class Application {
 
         translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
         translate_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
+        translate_modal.register(2, TranslateModalAxisZ.class, TranslateModalAxisZ::new);
+        translate_modal.register(3, TransformModalPlaneYZ.class, TransformModalPlaneYZ::new);
+        translate_modal.register(4, TransformModalPlaneXZ.class, TransformModalPlaneXZ::new);
+        translate_modal.register(5, TransformModalPlaneXY.class, TransformModalPlaneXY::new);
+        translate_modal.register(6, TransformModalPrecision.class, TransformModalPrecision::new);
+        translate_modal.register(7, TransformModalSnap.class, TransformModalSnap::new);
 
         OTDragValueSlider dragValueSlider = this.dataTree.getRoot().ops.dragUISlider;
         dragValueSlider.modifierRegistry().register(0, DragIncrementModal.class, DragIncrementModal::new);
@@ -220,6 +231,45 @@ public class Application {
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
+        PropertyModifierHotKeyConfig<TransformProps> zCfg = translate_modal.newConfig();
+        zCfg.modifier.set(new TranslateModalAxisZ());
+        zCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
+        ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropertyModifierHotKeyConfig<TransformProps> planeYZCfg = translate_modal.newConfig();
+        planeYZCfg.modifier.set(new TransformModalPlaneYZ());
+        planeYZCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) planeYZCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_X);
+        ((HotKeyKeyboardConfigGroupStruct) planeYZCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyKeyboardConfigGroupStruct) planeYZCfg.hotKeyConfigSelector.get()).mod.shift.set(true);
+
+        PropertyModifierHotKeyConfig<TransformProps> planeXZCfg = translate_modal.newConfig();
+        planeXZCfg.modifier.set(new TransformModalPlaneXZ());
+        planeXZCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) planeXZCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
+        ((HotKeyKeyboardConfigGroupStruct) planeXZCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyKeyboardConfigGroupStruct) planeXZCfg.hotKeyConfigSelector.get()).mod.shift.set(true);
+
+        PropertyModifierHotKeyConfig<TransformProps> planeXYCfg = translate_modal.newConfig();
+        planeXYCfg.modifier.set(new TransformModalPlaneXY());
+        planeXYCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) planeXYCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
+        ((HotKeyKeyboardConfigGroupStruct) planeXYCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyKeyboardConfigGroupStruct) planeXYCfg.hotKeyConfigSelector.get()).mod.shift.set(true);
+
+        PropertyModifierHotKeyConfig<TransformProps> precisionCfg = translate_modal.newConfig();
+        precisionCfg.modifier.set(new TransformModalPrecision());
+        precisionCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) precisionCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_SHIFT);
+        ((HotKeyKeyboardConfigGroupStruct) precisionCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropertyModifierHotKeyConfig<TransformProps> snapCfg = translate_modal.newConfig();
+        snapCfg.modifier.set(new TransformModalSnap());
+        snapCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) snapCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_CONTROL);
+        ((HotKeyKeyboardConfigGroupStruct) snapCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
         PropertyModifierHotKeyConfig<DragValueSliderProp> slider1Cfg = dragConfig.newConfig();
         slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
         slider1Cfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
@@ -236,7 +286,7 @@ public class Application {
         sliderRoundCfg.modifier.set(new RoundModal());
         sliderRoundCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) sliderRoundCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_LEFT_ALT);
-        ((HotKeyKeyboardConfigGroupStruct) sliderCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+        ((HotKeyKeyboardConfigGroupStruct) sliderRoundCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
 
         ModalFunctionConfigsMapStruct<BBOperatorContext> modalFunctions = config.modalFunctions;

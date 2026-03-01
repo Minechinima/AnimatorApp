@@ -1,21 +1,17 @@
 package com.minechinima.operator;
 
 import com.minechinima.controller.IControllerCommand;
-import com.minechinima.model.AxisEnumValueStruct;
+import com.minechinima.model.AxisConstraintEnumValueStruct;
+import com.minechinima.model.AxisConstraintEnumValueStruct.AxisConstraint;
 import com.minechinima.operator.config.modal.PropertyModifierConfig;
 import com.minechinima.operator.modal.IPropertyModifierCommand;
-import com.minechinima.operator.properties.TranslateProps;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
 public abstract class TranslateModalAxis extends PropertyModifierConfig<TransformProps> {
-    private final AxisEnumValueStruct.Axis axisToSet;
+    private final AxisConstraint constraintToSet;
 
-    public TranslateModalAxis(AxisEnumValueStruct.Axis axisToSet) {
+    public TranslateModalAxis(AxisConstraint constraintToSet) {
         super("Axis", "");
-        this.axisToSet = axisToSet;
+        this.constraintToSet = constraintToSet;
     }
 
     @Override
@@ -23,12 +19,10 @@ public abstract class TranslateModalAxis extends PropertyModifierConfig<Transfor
         return new IPropertyModifierCommand<>(this) {
             @Override
             public IControllerCommand modify(TransformProps props) {
-                if (props.axis.get() == this.modifierConfig.axisToSet) {
-                    return props.transformOnAxis.controller().set(false);
+                if (props.axisConstraint.get() == this.modifierConfig.constraintToSet) {
+                    return props.axisConstraint.controller().set(AxisConstraint.ALL);
                 }
-
-                return props.transformOnAxis.controller().set(true)
-                        .next(props.axis.controller().set(this.modifierConfig.axisToSet));
+                return props.axisConstraint.controller().set(this.modifierConfig.constraintToSet);
             }
         };
     }
