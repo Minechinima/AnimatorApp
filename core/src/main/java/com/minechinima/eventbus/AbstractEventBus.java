@@ -148,12 +148,59 @@ public abstract class AbstractEventBus<E, C, A extends Annotation> {
      * <br><br>
      * Implementations use the fields of the annotation (which encode the developer's constraints)
      * together with the dispatch-time context to make this decision.
+     * <br><br>
+     * When the listener annotation exposes an array of {@link IEventConstraint} class objects,
+     * implementations can delegate to {@link #evaluateConstraintClasses} to avoid repeating the
+     * instantiation and evaluation loop.
      *
      * @param annotation        the annotation found on the listener method
      * @param constraintContext the context provided at dispatch time
      * @return {@code true} if the listener should receive the event
      */
     protected abstract boolean evaluateConstraints(A annotation, C constraintContext);
+
+    /**
+     * Utility method for implementations whose listener annotations declare an array of
+     * {@link IEventConstraint} class objects.  Every class is instantiated via its no-arg
+     * constructor and evaluated against {@code constraintContext}; <em>all</em> must return
+     * {@code true} for this method to return {@code true} (logical AND).
+     * <br><br>
+     * Because listener annotations typically expose a domain-specific base constraint type
+     * (e.g. {@code Class<? extends MyConstraint>[]}) rather than
+     * {@code Class<? extends IEventConstraint<C>>[]}, callers usually need an unchecked cast
+     * at the call site.  That cast is safe as long as the concrete constraint classes implement
+     * {@link IEventConstraint}&lt;C&gt;, which is guaranteed by the annotation's element type.
+     * <br><br>
+     * Example usage inside {@code evaluateConstraints}:
+     * <pre>{@code
+     * @Override
+     * protected boolean evaluateConstraints(MyListener annotation, MyContext ctx) {
+     *     @SuppressWarnings("unchecked")
+     *     Class<? extends IEventConstraint<MyContext>>[] constraints =
+     *             (Class<? extends IEventConstraint<MyContext>>[]) annotation.constraints();
+     *     return evaluateConstraintClasses(constraints, ctx);
+     * }
+     * }</pre>
+     *
+     * @param constraintClasses the constraint classes declared in the listener annotation
+     * @param constraintContext the context to evaluate each constraint against
+     * @return {@code true} if every constraint matches (or the array is empty)
+     * @throws RuntimeException wrapping any {@link ReflectiveOperationException} if a constraint
+     *                          class cannot be instantiated via its no-arg constructor
+     */
+    protected final boolean evaluateConstraintClasses(
+            Class<? extends IEventConstraint<C>>[] constraintClasses, C constraintContext) {
+        for (Class<? extends IEventConstraint<C>> cls : constraintClasses) {
+            try {
+                if (!cls.getDeclaredConstructor().newInstance().matches(constraintContext)) {
+                    return false;
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to instantiate event constraint class: " + cls.getName(), e);
+            }
+        }
+        return true;
+    }
 
     /**
      * Descriptor for a single annotated listener method, held inside {@link #subscribers}.

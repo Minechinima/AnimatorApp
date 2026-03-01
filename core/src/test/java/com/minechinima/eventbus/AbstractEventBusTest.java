@@ -79,15 +79,10 @@ public class AbstractEventBusTest {
 
         @Override
         protected boolean evaluateConstraints(Listen annotation, Channel channel) {
-            for (Class<? extends TestConstraint> constraintClass : annotation.constraints()) {
-                try {
-                    TestConstraint constraint = constraintClass.getDeclaredConstructor().newInstance();
-                    if (!constraint.matches(channel)) return false;
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to instantiate constraint: " + constraintClass, e);
-                }
-            }
-            return true;
+            @SuppressWarnings("unchecked")
+            Class<? extends IEventConstraint<Channel>>[] constraints =
+                    (Class<? extends IEventConstraint<Channel>>[]) annotation.constraints();
+            return evaluateConstraintClasses(constraints, channel);
         }
 
         /** Expose dispatch so tests can call it. */
@@ -206,5 +201,29 @@ public class AbstractEventBusTest {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> bus.subscribe(badSubscriber),
                 "Subscribing a method with incompatible parameter type must throw");
+    }
+
+    @Test
+    void testMultipleConstraintsAllMustMatch() {
+        /* A listener that requires BOTH ChannelAConstraint AND ChannelBConstraint.
+         * Since an event is dispatched on exactly one channel, both constraints can never be
+         * satisfied at the same time, so this listener must never fire. */
+        class MultiConstraintSubscriber {
+            int count = 0;
+
+            @Listen(constraints = {ChannelAConstraint.class, ChannelBConstraint.class})
+            public void onAandB(TestEvent event) { count++; }
+        }
+
+        MultiConstraintSubscriber sub = new MultiConstraintSubscriber();
+        bus.subscribe(sub);
+
+        bus.fire(new TestEvent("e"), Channel.A);
+        Assertions.assertEquals(0, sub.count,
+                "Listener with two mutually-exclusive constraints must not fire on channel A");
+
+        bus.fire(new TestEvent("e"), Channel.B);
+        Assertions.assertEquals(0, sub.count,
+                "Listener with two mutually-exclusive constraints must not fire on channel B");
     }
 }
