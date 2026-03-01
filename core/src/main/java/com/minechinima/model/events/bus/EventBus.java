@@ -1,13 +1,12 @@
 package com.minechinima.model.events.bus;
 
+import com.minechinima.eventbus.AbstractEventBus;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.types.AbstractEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Objects;
 
 /**
  * The base EventBus class for a {@link BaseStructure} node to dispatch events through.
@@ -20,12 +19,13 @@ import java.util.*;
  * and open the {@link #dispatchEventFromChildNode(AbstractEvent)} and {@link #dispatchEventOnThis(AbstractEvent)}
  * methods.
  * Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
+ * <br><br>
+ * Internally uses the general-purpose {@link AbstractEventBus} framework.
+ * The {@link EventOrigin} enum serves as the constraint context, and {@link SubscribeEvent} is
+ * the listener annotation whose {@link SubscribeEvent.Type} field specifies which origins a
+ * listener wants to receive events from.
  */
-public abstract class EventBus {
-    /**
-     * Maps subscribers and their event type to the event bus.
-     */
-    private final Map<Object, Set<EventMethodHandler>> subscribers = new IdentityHashMap<>();
+public abstract class EventBus extends AbstractEventBus<AbstractEvent, EventOrigin, SubscribeEvent> {
     /**
      * Important to define what the owner of the eventbus is, so no one else
      * can dispatch events through it.
@@ -39,7 +39,7 @@ public abstract class EventBus {
      * @implNote protected so only the owner can instantiate it.
      */
     protected EventBus(@NotNull BaseStructure owner) {
-
+        super(AbstractEvent.class, SubscribeEvent.class);
         this.owner = Objects.requireNonNull(owner);
     }
 
@@ -48,58 +48,26 @@ public abstract class EventBus {
     }
 
     /**
-     * Subscribe an object to an EventBus. The Object must declare methods with annotations that want to receive events.
-     * @param subscriber
+     * Evaluates the {@link SubscribeEvent.Type} constraint against the dispatch {@link EventOrigin}.
+     * <ul>
+     *   <li>{@link SubscribeEvent.Type#ALL} – always receives the event.</li>
+     *   <li>{@link SubscribeEvent.Type#ON_NODE} – only receives events dispatched on the owner node.</li>
+     *   <li>{@link SubscribeEvent.Type#IN_CHILDREN} – only receives events dispatched from child nodes.</li>
+     * </ul>
      */
-    public void subscribe(Object subscriber) {
-        /* overwrite old mappings */
-        this.subscribers.remove(subscriber);
-
-        Set<EventMethodHandler> methodHandlers = new HashSet<>();
-        /* go through the class and all its superclasses, collecting all annotated methods and check them */
-        //TODO possible optimization (cache methodhandlers for classes?)
-        Class clazz = subscriber.getClass();
-        while (clazz != null) {
-            /* go through methods and search for subscribe annotation */
-            for (Method method : clazz.getDeclaredMethods()) {
-                SubscribeEvent annotation = method.getAnnotation(SubscribeEvent.class);
-
-                if (annotation != null) {
-                    Class<?>[] parameterTypes = method.getParameterTypes();
-
-                    /* validate subscription method */
-                    if (parameterTypes.length != 1) {
-                        throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, but declares " +
-                                parameterTypes.length + " arguments.  Event handler methods must require a single argument.");
-                    }
-
-                    if (!AbstractEvent.class.isAssignableFrom(parameterTypes[0])) {
-                        throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, " +
-                                "but the method argument is not a subclass or the same as Event.class");
-                    }
-
-                    Class<AbstractEvent> eventType = (Class<AbstractEvent>) parameterTypes[0];
-                    SubscribeEvent.Type listenType = annotation.type();
-
-                    methodHandlers.add(new EventMethodHandler(method, listenType, eventType));
-                }
-            }
-            clazz = clazz.getSuperclass();
-        }
-
-        if (!methodHandlers.isEmpty()) {
-            this.subscribers.put(subscriber, methodHandlers);
-        }
-    }
-
-    public void unsubscribe(Object subscriber) {
-        this.subscribers.remove(subscriber);
+    @Override
+    protected boolean evaluateConstraints(SubscribeEvent annotation, EventOrigin constraintContext) {
+        return switch (annotation.type()) {
+            case ALL -> true;
+            case ON_NODE -> constraintContext == EventOrigin.NODE;
+            case IN_CHILDREN -> constraintContext == EventOrigin.CHILDREN;
+        };
     }
 
     /**
      * Dispatch an event that happened on this node.
      * @param event
-     * @throws IllegalArgumentException if the event trigger is not a child node of this bus owner.
+     * @throws IllegalArgumentException if the event trigger is not equal to the bus owner.
      * @implNote protected so only subclasses can call it and control the access modifier further, to secure what can
      * dispatch events through it.
      */
@@ -108,9 +76,7 @@ public abstract class EventBus {
             throw new IllegalArgumentException("Cannot dispatch an event with a different trigger node than the bus owner.");
         }
 
-        this.subscribers.forEach((subscriber, handlers) -> {
-            handlers.forEach(handler -> handler.handleEvent(subscriber, EventOrigin.NODE, event));
-        });
+        dispatch(event, EventOrigin.NODE);
     }
 
     /**
@@ -126,43 +92,6 @@ public abstract class EventBus {
             throw new IllegalArgumentException("Cannot dispatch a child event from a node that is not child of the bus owner.");
         }
 
-        this.subscribers.forEach((subscriber, handlers) -> {
-            handlers.forEach(handler -> handler.handleEvent(subscriber, EventOrigin.CHILDREN, event));
-        });
-    }
-
-    private static class EventMethodHandler {
-        private final Method method;
-        private final SubscribeEvent.Type listenType;
-        private final Class<? extends AbstractEvent> eventType;
-
-        private EventMethodHandler(Method method, SubscribeEvent.Type listenType, Class<? extends AbstractEvent> eventtype) {
-            this.listenType = listenType;
-            this.method = method;
-            this.eventType = eventtype;
-            method.setAccessible(true);
-        }
-
-        public void handleEvent(Object subscriber, EventOrigin origin, AbstractEvent event) {
-            switch (this.listenType) {
-                case ALL:
-                    break;
-                case ON_NODE:
-                    if (origin == EventOrigin.CHILDREN) return;
-                    break;
-                case IN_CHILDREN:
-                    if (origin == EventOrigin.NODE) return;
-                    break;
-            }
-
-            //TODO possible optimization (this would be called for all parent nodes when event bubbles up)
-            if (!this.eventType.isAssignableFrom(event.getClass())) return;
-
-            try {
-                this.method.invoke(subscriber, event);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        dispatch(event, EventOrigin.CHILDREN);
     }
 }
