@@ -1,6 +1,6 @@
 package com.minechinima.model.events.bus;
 
-import com.minechinima.eventbus.AbstractEventBus;
+import com.minechinima.eventbus.AbstractConstrainedEventBus;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.events.types.AbstractEvent;
@@ -20,12 +20,12 @@ import java.util.Objects;
  * methods.
  * Ideally, they get the default access-modifier to further restrict who can dispatch events through a bus.
  * <br><br>
- * Internally uses the general-purpose {@link AbstractEventBus} framework.
+ * Internally uses the general-purpose {@link AbstractConstrainedEventBus} framework.
  * The {@link EventOrigin} enum serves as the constraint context, and {@link SubscribeEvent} is
  * the listener annotation whose {@link SubscribeEvent.Type} field specifies which origins a
  * listener wants to receive events from.
  */
-public abstract class EventBus extends AbstractEventBus<AbstractEvent, EventOrigin, SubscribeEvent> {
+public abstract class EventBus extends AbstractConstrainedEventBus<AbstractEvent, EventOrigin, SubscribeEvent> {
     /**
      * Important to define what the owner of the eventbus is, so no one else
      * can dispatch events through it.
@@ -39,29 +39,12 @@ public abstract class EventBus extends AbstractEventBus<AbstractEvent, EventOrig
      * @implNote protected so only the owner can instantiate it.
      */
     protected EventBus(@NotNull BaseStructure owner) {
-        super(AbstractEvent.class, SubscribeEvent.class);
+        super(AbstractEvent.class, SubscribeEvent.class, SubscribeEvent.Type.class);
         this.owner = Objects.requireNonNull(owner);
     }
 
     public BaseStructure getOwner() {
         return owner;
-    }
-
-    /**
-     * Evaluates the {@link SubscribeEvent.Type} constraint against the dispatch {@link EventOrigin}.
-     * <ul>
-     *   <li>{@link SubscribeEvent.Type#ALL} – always receives the event.</li>
-     *   <li>{@link SubscribeEvent.Type#ON_NODE} – only receives events dispatched on the owner node.</li>
-     *   <li>{@link SubscribeEvent.Type#IN_CHILDREN} – only receives events dispatched from child nodes.</li>
-     * </ul>
-     */
-    @Override
-    protected boolean evaluateConstraints(SubscribeEvent annotation, EventOrigin constraintContext) {
-        return switch (annotation.type()) {
-            case ALL -> true;
-            case ON_NODE -> constraintContext == EventOrigin.NODE;
-            case IN_CHILDREN -> constraintContext == EventOrigin.CHILDREN;
-        };
     }
 
     /**

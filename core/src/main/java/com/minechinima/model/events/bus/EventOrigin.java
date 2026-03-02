@@ -1,6 +1,8 @@
 package com.minechinima.model.events.bus;
 
-public enum EventOrigin {
+import com.minechinima.eventbus.IEventContext;
+
+public enum EventOrigin implements IEventContext {
     /**
      * Event got triggered in the children and now bubbles up.
      */

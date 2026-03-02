@@ -10,13 +10,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Tests for the general-purpose {@link AbstractEventBus} framework.
+ * Tests for the general-purpose {@link AbstractConstrainedEventBus} framework.
  * <br>
  * Uses a simple self-contained bus implementation (no BaseStructure dependency) to verify that
  * the framework handles subscription, dispatch, constraint evaluation, and event-type filtering
  * independently of any domain-specific code.
  */
-public class AbstractEventBusTest {
+public class AbstractConstrainedEventBusTest {
 
     /* ------------------------------------------------------------------
      * Minimal domain definitions used only in this test
@@ -34,26 +34,59 @@ public class AbstractEventBusTest {
     }
 
     /** Constraint context: which "channel" the event is dispatched on. */
-    enum Channel { A, B }
+    public static class EventTestContext implements IEventContext {
+        private final Channel channel;
+        private final Origin origin;
+
+        public EventTestContext(Channel channel, Origin origin) {
+            this.channel = channel;
+            this.origin = origin;
+        }
+
+        enum Channel {
+            A, B
+        }
+
+        enum Origin {
+            NODE, CHILDREN
+        }
+    }
 
     /**
      * Base constraint class for the test bus.
-     * Implementing {@link IEventConstraint}&lt;{@link Channel}&gt; allows the test annotation to
+     * Implementing {@link IEventConstraint}&lt;{@link EventTestContext}&gt; allows the test annotation to
      * expose a typed {@code Class<? extends TestConstraint>} element, so IDEs can auto-suggest
      * concrete constraint implementations.
      */
-    abstract static class TestConstraint implements IEventConstraint<Channel> {}
+    interface TestConstraint extends IEventConstraint<EventTestContext> {}
 
-    /** Accepts only events dispatched on channel A. */
-    static class ChannelAConstraint extends TestConstraint {
+    enum ChannelConstraint implements TestConstraint {
+        A,
+        B,
+        ALL;
+
         @Override
-        public boolean matches(Channel channel) { return channel == Channel.A; }
+        public boolean matches(EventTestContext constraintContext) {
+            return switch (this) {
+                case A -> constraintContext.channel == EventTestContext.Channel.A;
+                case B -> constraintContext.channel == EventTestContext.Channel.B;
+                case ALL -> true;
+            };
+        }
     }
 
     /** Accepts only events dispatched on channel B. */
-    static class ChannelBConstraint extends TestConstraint {
+    enum OriginConstraint implements TestConstraint {
+        NODE,
+        CHILDREN;
+
         @Override
-        public boolean matches(Channel channel) { return channel == Channel.B; }
+        public boolean matches(EventTestContext context) {
+            return switch (this) {
+                case NODE -> context.origin == EventTestContext.Origin.NODE;
+                case CHILDREN -> context.origin == EventTestContext.Origin.CHILDREN;
+            };
+        }
     }
 
     /**
@@ -64,29 +97,21 @@ public class AbstractEventBusTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface Listen {
-        /** Zero or more constraint classes; all must match for the listener to be invoked. */
-        Class<? extends TestConstraint>[] constraints() default {};
+        ChannelConstraint channel() default ChannelConstraint.ALL;  // for testing default values
+        OriginConstraint origin() default OriginConstraint.NODE;  // for testing default values
     }
 
     /**
      * Concrete bus implementation that instantiates and evaluates constraint classes declared in
      * the {@link Listen} annotation.
      */
-    static class TestEventBus extends AbstractEventBus<TestEvent, Channel, Listen> {
+    static class TestEventBus extends AbstractConstrainedEventBus<TestEvent, EventTestContext, Listen> {
         TestEventBus() {
-            super(TestEvent.class, Listen.class);
-        }
-
-        @Override
-        protected boolean evaluateConstraints(Listen annotation, Channel channel) {
-            @SuppressWarnings("unchecked")
-            Class<? extends IEventConstraint<Channel>>[] constraints =
-                    (Class<? extends IEventConstraint<Channel>>[]) annotation.constraints();
-            return evaluateConstraintClasses(constraints, channel);
+            super(TestEvent.class, Listen.class, OriginConstraint.class, ChannelConstraint.class);
         }
 
         /** Expose dispatch so tests can call it. */
-        void fire(TestEvent event, Channel channel) {
+        void fire(TestEvent event, EventTestContext channel) {
             dispatch(event, channel);
         }
     }
@@ -105,10 +130,10 @@ public class AbstractEventBusTest {
         @Listen
         public void onAll(TestEvent event) { onAll++; }
 
-        @Listen(constraints = {ChannelAConstraint.class})
+        @Listen(channel = ChannelConstraint.A)
         public void onA(TestEvent event) { onA++; }
 
-        @Listen(constraints = {ChannelBConstraint.class})
+        @Listen(channel = ChannelConstraint.B)
         public void onB(TestEvent event) { onB++; }
 
         /** Only receives SpecialTestEvent instances, on any channel. */
@@ -132,7 +157,7 @@ public class AbstractEventBusTest {
 
     @Test
     void testDispatchOnChannelA() {
-        bus.fire(new TestEvent("e"), Channel.A);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.NODE));
 
         Assertions.assertEquals(1, subscriber.onAll,     "onAll should receive channel A events");
         Assertions.assertEquals(1, subscriber.onA,       "onA should receive channel A events");
@@ -142,7 +167,7 @@ public class AbstractEventBusTest {
 
     @Test
     void testDispatchOnChannelB() {
-        bus.fire(new TestEvent("e"), Channel.B);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.B, EventTestContext.Origin.NODE));
 
         Assertions.assertEquals(1, subscriber.onAll,     "onAll should receive channel B events");
         Assertions.assertEquals(0, subscriber.onA,       "onA should not receive channel B events");
@@ -152,7 +177,7 @@ public class AbstractEventBusTest {
 
     @Test
     void testEventTypeFiltering() {
-        bus.fire(new SpecialTestEvent(), Channel.A);
+        bus.fire(new SpecialTestEvent(), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.NODE));
 
         Assertions.assertEquals(1, subscriber.onAll,     "onAll should receive SpecialTestEvent");
         Assertions.assertEquals(1, subscriber.onA,       "onA should receive SpecialTestEvent on channel A");
@@ -163,7 +188,7 @@ public class AbstractEventBusTest {
     @Test
     void testUnsubscribe() {
         bus.unsubscribe(subscriber);
-        bus.fire(new TestEvent("e"), Channel.A);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.NODE));
 
         Assertions.assertEquals(0, subscriber.onAll, "No events should be delivered after unsubscribe");
         Assertions.assertEquals(0, subscriber.onA,   "No events should be delivered after unsubscribe");
@@ -172,7 +197,7 @@ public class AbstractEventBusTest {
     @Test
     void testResubscribeReplacesOldSubscription() {
         bus.subscribe(subscriber);  // re-subscribe with the same object
-        bus.fire(new TestEvent("e"), Channel.A);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.NODE));
 
         /* listener should be called exactly once, not twice */
         Assertions.assertEquals(1, subscriber.onAll, "Re-subscribing the same object must not double the handlers");
@@ -211,19 +236,23 @@ public class AbstractEventBusTest {
         class MultiConstraintSubscriber {
             int count = 0;
 
-            @Listen(constraints = {ChannelAConstraint.class, ChannelBConstraint.class})
+            @Listen(channel = ChannelConstraint.A, origin = OriginConstraint.NODE)
             public void onAandB(TestEvent event) { count++; }
         }
 
         MultiConstraintSubscriber sub = new MultiConstraintSubscriber();
         bus.subscribe(sub);
 
-        bus.fire(new TestEvent("e"), Channel.A);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.B, EventTestContext.Origin.NODE));
         Assertions.assertEquals(0, sub.count,
                 "Listener with two mutually-exclusive constraints must not fire on channel A");
 
-        bus.fire(new TestEvent("e"), Channel.B);
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.CHILDREN));
         Assertions.assertEquals(0, sub.count,
+                "Listener with two mutually-exclusive constraints must not fire on channel B");
+
+        bus.fire(new TestEvent("e"), new EventTestContext(EventTestContext.Channel.A, EventTestContext.Origin.NODE));
+        Assertions.assertEquals(1, sub.count,
                 "Listener with two mutually-exclusive constraints must not fire on channel B");
     }
 }

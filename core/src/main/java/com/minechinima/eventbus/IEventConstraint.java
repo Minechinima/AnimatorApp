@@ -21,7 +21,7 @@ package com.minechinima.eventbus;
  *
  * @param <C> the type of the constraint context that is provided by the event bus at dispatch time
  */
-public interface IEventConstraint<C> {
+public interface IEventConstraint<C extends IEventContext> {
     /**
      * Returns true if this constraint is satisfied for the given dispatch context.
      *
