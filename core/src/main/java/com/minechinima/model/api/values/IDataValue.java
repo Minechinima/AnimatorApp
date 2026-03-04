@@ -1,7 +1,7 @@
-package com.minechinima.model.api;
+package com.minechinima.model.api.values;
 
-import com.minechinima.data.types.BaseType;
-import com.minechinima.model.exceptions.BaseTypeCannotBeParsed;
+import com.minechinima.model.api.IData;
+import com.minechinima.model.api.IDataTree;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * @see IData for core node operations
  * @see IDataTree for hierarchy operations
  */
-public interface IValueNode<T> extends IData {
+public interface IDataValue<T> extends IData {
 
     /**
      * Gets the current value held by this node.
