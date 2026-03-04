@@ -5,6 +5,7 @@ import com.minechinima.controller.factories.ValueControllerFactory;
 import com.minechinima.data.types.BaseType;
 import com.minechinima.data.types.NullType;
 import com.minechinima.data.types.StringType;
+import com.minechinima.model.api.IDataPointer;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import com.minechinima.model.exceptions.SetParentNotAllowed;
 import com.minechinima.model.logging.datainterfaces.IValue;
@@ -26,7 +27,7 @@ import java.util.List;
  * This value is not going to serialize and store the target itself, it only points to it with a path.
  * @param <T>
  */
-public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
+public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T>, IDataPointer<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     /**
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.
      */
