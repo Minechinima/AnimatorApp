@@ -1,7 +1,6 @@
 package com.minechinima.ui.elements;
 
 import com.minechinima.model.api.IData;
-import com.minechinima.model.base.BaseStructure;
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 
