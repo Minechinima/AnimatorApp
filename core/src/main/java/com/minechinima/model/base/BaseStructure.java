@@ -149,7 +149,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>>, I
      * as it is a core part of the tree state and should not be changed by application.
      */
     void setDataTreeManager(@Nullable DataTreeManager dataTreeManager) {
-        if (dataTreeManager == null && this.getRoot() != dataTreeManager.getRoot()) {
+        if (dataTreeManager != null && this.getRoot() != dataTreeManager.getRoot()) {
             throw new IllegalArgumentException("Datatree manager root is different than the root node of this data.");
         }
         this.dataTreeManager = dataTreeManager;
