@@ -7,6 +7,7 @@ import com.minechinima.model.base.dummies.DummyBaseImmutableHierarchy;
 import com.minechinima.model.base.dummies.DummyBaseMutableHierarchy;
 import com.minechinima.model.utils.ValuePath;
 import com.minechinima.model.values.DoubleValue;
+import com.minechinima.utils.ReflectionUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ public class DataTreeManagerTest {
 
         test.add(group);
 
-        this.recursiveTreeCheck(group, node -> Assertions.assertEquals(treeManager, node.dataTreeManager));
+        this.recursiveTreeCheck(group, node -> Assertions.assertEquals(treeManager, ReflectionUtils.getPrivateField(node, "dataTreeManager")));
     }
 
     @Test
@@ -55,7 +56,7 @@ public class DataTreeManagerTest {
         test.add(group);
         test.removeChild(group);
 
-        this.recursiveTreeCheck(group, node -> Assertions.assertNull(node.dataTreeManager));
+        this.recursiveTreeCheck(group, node -> Assertions.assertNull(ReflectionUtils.getPrivateField(node, "dataTreeManager")));
     }
 
     private void recursiveTreeCheck(BaseStructure node, Consumer<BaseStructure> consumer) {

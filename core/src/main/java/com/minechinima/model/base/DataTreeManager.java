@@ -11,12 +11,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represents the entire database and has important management code.
- * <br><br>
- * Builder like pattern - the "build" steps are performed automatically when a node is added to the tree.
- * <br><br>
- * Design Rationale:
- * This completely decouples management from the data tree. A tree node doesn't need any reference/event logic.
- * This increases flexibility and makes BaseStructure cleaner.
  */
 public class DataTreeManager<T extends BaseHierarchyRoot> {
     private final ReferenceManager referenceManager;
@@ -30,7 +24,7 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
 
     public DataTreeManager(@NotNull T root, EventTypeRegistry eventRegistry) {
         this.root = root;
-        this.root.dataTreeManager = this;
+        this.root.setDataTreeManager(this);
         this.referenceManager = new ReferenceManager(root);
         this.eventBusManager = new EventBusManager();
         //this.referenceManager.initEventSubscription(this.eventBusManager);
@@ -59,7 +53,7 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     }
 
     private void removeDataTreeManagerToSubTree(BaseStructure node) {
-        node.dataTreeManager = null;
+        node.setDataTreeManager(null);
 
         if (node instanceof BaseValueHierarchy<?> baseValueHierarchy) {
             baseValueHierarchy.getChildren().forEach(this::removeDataTreeManagerToSubTree);
@@ -67,7 +61,7 @@ public class DataTreeManager<T extends BaseHierarchyRoot> {
     }
 
     private void addDataTreeManagerToSubTree(BaseStructure node) {
-        node.dataTreeManager = this;
+        node.setDataTreeManager(this);
 
         if (node instanceof BaseValueHierarchy<?> baseValueHierarchy) {
             baseValueHierarchy.getChildren().forEach(this::addDataTreeManagerToSubTree);

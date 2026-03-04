@@ -33,4 +33,14 @@ public class ReflectionUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static Object getPrivateField(Object target, String fieldName) {
+        try {
+            java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(target);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package com.minechinima.model.base;
 
+import com.minechinima.model.api.IData;
+import com.minechinima.model.api.IDataTree;
 import com.minechinima.model.exceptions.ContractViolatedException;
 import com.minechinima.model.exceptions.PathParsingException;
 import com.minechinima.model.utils.ID;
@@ -18,7 +20,7 @@ import java.util.*;
  * and should not be overridden.
  * @param <T>
  */
-public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
+public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure implements IDataTree<T> permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
     private final ValuePath.IFormat format;
 
     public BaseValueHierarchy(String id, ValuePath.IFormat pathFormat) {
@@ -117,6 +119,12 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
      * create new list objects
      */
     public abstract boolean isDirectChild(BaseStructure child);
+
+    @Override
+    public boolean isDirectChild(IData child) {
+        if (!(child instanceof BaseStructure structure)) return false;
+        return this.isDirectChild(structure);
+    }
 
     @Nullable
     public final BaseStructure getChildByValuePath(String relativePath) {
