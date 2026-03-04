@@ -36,7 +36,21 @@ public class ReflectionUtils {
 
     public static Object getPrivateField(Object target, String fieldName) {
         try {
-            java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+            Class<?> clazz = target.getClass();
+            java.lang.reflect.Field field = null;
+
+            while (clazz != null) {
+                try {
+                    field = clazz.getDeclaredField(fieldName);
+                    break;
+                } catch (NoSuchFieldException e) {
+                    clazz = clazz.getSuperclass();
+                }
+            }
+
+            if (field == null) {
+                throw new NoSuchFieldException("Field '" + fieldName + "' not found on " + target.getClass());
+            }
             field.setAccessible(true);
             return field.get(target);
         } catch (Exception e) {
