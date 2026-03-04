@@ -2,13 +2,13 @@ package com.minechinima.model.values.base;
 
 import com.minechinima.controller.factories.IControllerFactoryProvider;
 import com.minechinima.controller.factories.ValueControllerFactory;
-import com.minechinima.data.types.BaseType;
+import com.minechinima.model.api.values.IDataValue;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.events.types.changes.ValueChangeEvent;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
-public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
+public abstract class BaseValue<T> extends BaseStructure implements IValue<T>, IDataValue<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     private T value;
     private final T defaultValue;
     private final ValueControllerFactory<T, BaseValue<T>> controllers = new ValueControllerFactory<>(this);

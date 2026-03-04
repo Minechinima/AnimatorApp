@@ -1,5 +1,9 @@
 package com.minechinima.model.app.object;
 
+import com.minechinima.model.api.IBaseObject;
+import com.minechinima.model.api.IDataPointer;
+import com.minechinima.model.api.values.IDataValue;
+import com.minechinima.model.api.values.vectors.IVector3f;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.logging.datainterfaces.IDMutable;
 import com.minechinima.model.values.base.ValueGroup;
@@ -16,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class BaseObject extends ValueGroup implements IDMutable {
+public class BaseObject extends ValueGroup implements IBaseObject {
     @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
     @InGui(entrypoint = IBimsSubUIHandler.class, translationPrefix = "base_object.transformation.translation", as = UIVectorElement.class)
     public final Vector3fValue translation = new Vector3fValue("translation");
@@ -77,5 +81,35 @@ public class BaseObject extends ValueGroup implements IDMutable {
     @Override
     public UUID getUUID() {
         return this.uuid;
+    }
+
+    @Override
+    public IVector3f translation() {
+        return this.translation;
+    }
+
+    @Override
+    public IVector3f rotation() {
+        return this.rotation;
+    }
+
+    @Override
+    public IVector3f scale() {
+        return this.scale;
+    }
+
+    @Override
+    public IDataValue<Boolean> viewportVisibility() {
+        return this.viewportVisibility;
+    }
+
+    @Override
+    public IDataValue<Boolean> renderVisibility() {
+        return this.renderVisibility;
+    }
+
+    @Override
+    public IDataPointer<? extends IBaseObject> parent() {
+        return this.parent;
     }
 }

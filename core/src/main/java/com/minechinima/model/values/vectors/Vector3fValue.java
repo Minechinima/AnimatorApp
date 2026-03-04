@@ -2,13 +2,15 @@ package com.minechinima.model.values.vectors;
 
 import com.minechinima.controller.factories.IControllerFactoryProvider;
 import com.minechinima.controller.factories.VectorControllerFactory;
+import com.minechinima.model.api.values.IDataValue;
+import com.minechinima.model.api.values.vectors.IVector3f;
 import com.minechinima.model.values.FloatValue;
 import com.minechinima.model.values.base.ValueGroup;
 import org.joml.Vector3f;
 
-import java.util.UUID;
+import java.util.*;
 
-public class Vector3fValue extends ValueGroup implements IControllerFactoryProvider<VectorControllerFactory> {
+public class Vector3fValue extends ValueGroup implements IControllerFactoryProvider<VectorControllerFactory>, IVector3f {
     public final FloatValue x = new FloatValue("x");
     public final FloatValue y = new FloatValue("y");
     public final FloatValue z = new FloatValue("z");
@@ -33,5 +35,20 @@ public class Vector3fValue extends ValueGroup implements IControllerFactoryProvi
     @Override
     public VectorControllerFactory controller() {
         return this.controllers;
+    }
+
+    @Override
+    public IDataValue<Float> x() {
+        return this.x;
+    }
+
+    @Override
+    public IDataValue<Float> y() {
+        return this.y;
+    }
+
+    @Override
+    public IDataValue<Float> z() {
+        return this.z;
     }
 }

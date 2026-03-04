@@ -2,6 +2,8 @@ package com.minechinima.model.base;
 
 import com.minechinima.data.IDataSerializable;
 import com.minechinima.data.types.BaseType;
+import com.minechinima.model.api.IData;
+import com.minechinima.model.api.IDataTree;
 import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.events.types.*;
 import com.minechinima.model.logging.DataOperationBus;
@@ -31,7 +33,7 @@ import java.util.function.Supplier;
  * <br><br>
  * A lot of methods are final in this class. This has important safety reasons and should never be changed!
  */
-public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
+public abstract class BaseStructure implements IDataSerializable<BaseType<?>>, IData {
     /**
      * The String identifier used for building paths to retrieve nodes.
      * <br><br>
@@ -75,9 +77,10 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     private final EventBusImpl bus = new EventBusImpl(this);
 
     /**
-     * @implNote give only access to subclasses and package so {@link DataTreeManager} can access it.
+     * @implNote give only access to package so {@link DataTreeManager} can access it.
+     * Important that this is not exposed to UI. Access to the entire database should be limited by us.
      */
-    protected DataTreeManager dataTreeManager;
+    private DataTreeManager dataTreeManager;
 
     /**
      * @param id
@@ -139,6 +142,17 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     @Contract(pure = true)
     public final EventBus getEventBus() {
         return this.bus;
+    }
+
+    /**
+     * @implNote package-private to ensure only the DataTreeManager can set it,
+     * as it is a core part of the tree state and should not be changed by application.
+     */
+    void setDataTreeManager(@Nullable DataTreeManager dataTreeManager) {
+        if (dataTreeManager != null && this.getRoot() != dataTreeManager.getRoot()) {
+            throw new IllegalArgumentException("Datatree manager root is different than the root node of this data.");
+        }
+        this.dataTreeManager = dataTreeManager;
     }
 
     /**
@@ -416,10 +430,19 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>> {
     @Nullable
     @Contract(pure = true)
     public final BaseValueHierarchy<?> getRoot() {
+        /* optimization - no need to traverse tree if datatreemanager is set */
+        if (this.dataTreeManager != null) return this.dataTreeManager.getRoot();
+
         if (this.parent != null) return this.parent.getRoot();
 
         /* cast should be safe here, going to the top of the parents must be a BaseValueHierarchy */
         return this instanceof BaseValueHierarchy<?> h ? h : null;
+    }
+
+    @Override
+    public boolean isChildOf(IDataTree parent) {
+        if (!(parent instanceof BaseValueHierarchy hierarchy)) return false;
+        return this.isChildOf(hierarchy);
     }
 
     /**

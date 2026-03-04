@@ -1,6 +1,6 @@
 package com.minechinima.ui.elements;
 
-import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.api.IData;
 import com.minechinima.operator.IContext;
 import com.minechinima.ui.UIContext;
 
@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  * otherwise nothing will be drawn.
  * @param <T>
  */
-public abstract class UIValueElement<J, T extends BaseStructure, C extends IContext> extends UIElement<C> {
+public abstract class UIValueElement<J, T extends IData, C extends IContext> extends UIElement<C> {
     protected T value;
     protected Consumer<J> setCallback;
 
