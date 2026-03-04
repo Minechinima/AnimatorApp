@@ -440,7 +440,7 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>>, I
     }
 
     @Override
-    public boolean isChildOf(IDataTree<?> parent) {
+    public boolean isChildOf(IDataTree parent) {
         if (!(parent instanceof BaseValueHierarchy hierarchy)) return false;
         return this.isChildOf(hierarchy);
     }

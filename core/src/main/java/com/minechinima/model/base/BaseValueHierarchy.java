@@ -20,7 +20,7 @@ import java.util.*;
  * and should not be overridden.
  * @param <T>
  */
-public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure implements IDataTree<T> permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
+public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends BaseStructure implements IDataTree permits BaseImmutableValueHierarchy, BaseMutableValueHierarchy {
     private final ValuePath.IFormat format;
 
     public BaseValueHierarchy(String id, ValuePath.IFormat pathFormat) {

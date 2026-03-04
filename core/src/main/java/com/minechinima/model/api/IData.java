@@ -34,7 +34,7 @@ public interface IData {
      */
     @Nullable
     @Contract(pure = true)
-    IDataTree<?> getParent();
+    IDataTree getParent();
 
     /**
      * Gets the root node of the tree containing this node.
@@ -46,7 +46,7 @@ public interface IData {
      */
     @Nullable
     @Contract(pure = true)
-    IDataTree<?> getRoot();
+    IDataTree getRoot();
 
     /**
      * Checks if this node is a child (direct or distant) of the given parent.
@@ -55,7 +55,7 @@ public interface IData {
      * @return true if this node is a child of the given parent
      */
     @Contract(pure = true)
-    boolean isChildOf(IDataTree<?> parent);
+    boolean isChildOf(IDataTree parent);
 
     /**
      * Gets the event bus for this node.

@@ -17,11 +17,9 @@ import java.util.function.Predicate;
  * <br><br>
  * <b>Design Note:</b> This is a read-only view of a hierarchy. Use the controller factory
  * to perform mutations on the tree structure (adding/removing children, etc.).
- *
- * @param <T> the type of child nodes held by this hierarchy
  * @see IData for core node operations
  */
-public interface IDataTree<T extends IData> extends IData {
+public interface IDataTree extends IData {
 
     /**
      * Gets all direct children of this data tree node.
@@ -29,7 +27,7 @@ public interface IDataTree<T extends IData> extends IData {
      * @return an unmodifiable collection of direct children, never null
      */
     @Contract(pure = true)
-    Collection<T> getChildren();
+    Collection<? extends IData> getChildren();
 
     /**
      * Checks if a given node is a direct child of this hierarchy.
