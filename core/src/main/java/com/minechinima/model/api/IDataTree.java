@@ -24,7 +24,9 @@ public interface IDataTree extends IData {
     /**
      * Gets all direct children of this data tree node.
      *
-     * @return an unmodifiable collection of direct children, never null
+     * @return a collection of direct children, never {@code null}. Modifying the returned
+     * collection does not affect this tree; implementations may return either a mutable
+     * copy or an unmodifiable view.
      */
     @Contract(pure = true)
     Collection<? extends IData> getChildren();
