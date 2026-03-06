@@ -4,10 +4,12 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 import com.minechinima.operator.ot.IOTModalModifierProvider;
 import com.minechinima.operator.properties.TranslateProps;
+import com.minechinima.utils.GenericRegistry;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 
 public class OTTranslateObject extends OTTransformObject<TranslateObject, TranslateProps> implements IOTModalModifierProvider<BBOperatorContext, TranslateObject, TranslateProps> {
+    private final IGenericRegistry<PropertyModifierCommandConfig<TranslateProps>> modifierRegistry = new GenericRegistry<>();
 
     public OTTranslateObject(String id, String title, String description) {
         super(id, title, description);
@@ -45,7 +47,7 @@ public class OTTranslateObject extends OTTransformObject<TranslateObject, Transl
 
     @Override
     public IGenericRegistry<PropertyModifierCommandConfig<TranslateProps>> modifierRegistry() {
-        return null;
+        return this.modifierRegistry;
     }
 
     @Override

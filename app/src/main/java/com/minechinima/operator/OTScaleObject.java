@@ -4,10 +4,12 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 import com.minechinima.operator.ot.IOTModalModifierProvider;
 import com.minechinima.operator.properties.ScaleProps;
+import com.minechinima.utils.GenericRegistry;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 
 public class OTScaleObject extends OTTransformObject<ScaleObject, ScaleProps> implements IOTModalModifierProvider<BBOperatorContext, ScaleObject, ScaleProps> {
+    private final IGenericRegistry<PropertyModifierCommandConfig<ScaleProps>> modifierRegistry = new GenericRegistry<>();
 
     public OTScaleObject(String id, String title, String description) {
         super(id, title, description);
@@ -46,7 +48,7 @@ public class OTScaleObject extends OTTransformObject<ScaleObject, ScaleProps> im
 
     @Override
     public IGenericRegistry<PropertyModifierCommandConfig<ScaleProps>> modifierRegistry() {
-        return null;
+        return this.modifierRegistry;
     }
 
     @Override
