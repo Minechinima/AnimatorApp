@@ -21,8 +21,9 @@ public abstract class IPropertyModifierReleasableCommand<P extends OperatorPrope
     }
 
     /**
+     * Is only called when {@link PropertyModifierReleaseableConfig#useReleaseEvent()} is true.
      * @param props
-     * @implNote Is executed on the same instance -> cached attributes can be used for persistent storage till this event is fired.
+     * @implNote Is executed on the same instance -> cached attributes can be used for persistent storage as a state machine utill this event is fired.
      */
     public abstract IControllerCommand onReleaseEvent(P props);
 }
