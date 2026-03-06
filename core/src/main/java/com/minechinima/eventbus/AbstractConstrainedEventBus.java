@@ -148,7 +148,7 @@ public abstract class AbstractConstrainedEventBus<E, C extends IEventContext, A 
                         foundConstraints.add((IEventConstraint<C>) value);
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to instantiate constraint from annotation", e);
+                    e.printStackTrace(); //TODO better logging
                 }
             }
         }
