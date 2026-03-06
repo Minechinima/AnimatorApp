@@ -62,7 +62,7 @@ public class ControllerChain extends IControllerCommand implements Iterable<ICon
     }
 
     @Override
-    public void execute() throws UserException {
+    protected void execute() throws UserException {
         /* start from the head */
         if (this.head != this) this.head.execute();
 
