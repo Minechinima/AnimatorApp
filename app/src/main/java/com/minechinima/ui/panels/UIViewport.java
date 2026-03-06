@@ -223,6 +223,7 @@ public class UIViewport extends UISpace<BBOperatorContext> {
             glRotatef((float) object.rotation.x.get(), 1, 0, 0);
             glRotatef((float) object.rotation.y.get(), 0, 1, 0);
             glRotatef((float) object.rotation.z.get(), 0, 0, 1);
+            glScalef(object.scale.x.get(), object.scale.y.get(), object.scale.z.get());
             this.renderCube();
             glPopMatrix();
         });

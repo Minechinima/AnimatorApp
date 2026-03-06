@@ -2,9 +2,7 @@ package com.minechinima.operator;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
-import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.IOTModalModifierProvider;
-import com.minechinima.operator.ot.OperatorTypePropertyProvider;
 import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +52,6 @@ public class OTTranslateObject extends OTTransformObject<TranslateObject, Transl
 
     @Override
     public String modifierConfigIdentifier() {
-        return "translate_modifiers";
+        return "transform_modifiers";
     }
 }

@@ -44,6 +44,7 @@ import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.history.strategies.ValueChangeMerge;
 import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
+import com.minechinima.operator.properties.ScaleProps;
 import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
@@ -97,6 +98,7 @@ public class Application {
 
     public static final IGenericRegistry<PropertyModifierCommandConfig<TranslateProps>> TRANSLATE_MODIFIER_REGISTRY = new GenericRegistry<>();
     public static final IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> ROTATE_MODIFIER_REGISTRY = new GenericRegistry<>();
+    public static final IGenericRegistry<PropertyModifierCommandConfig<ScaleProps>> SCALE_MODIFIER_REGISTRY = new GenericRegistry<>();
 
     public Application() {
         this.logger = LogManager.getLogger(Application.class);
@@ -131,6 +133,11 @@ public class Application {
         rotateConfig.operatorType.set(bb.ops.rotate);
         rotateConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) rotateConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_R);
+
+        OperatorConfigGroupStruct scaleConfig = viewport.newConfig();
+        scaleConfig.operatorType.set(bb.ops.scale);
+        scaleConfig.hotKeyConfigSelector.set(this.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) scaleConfig.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_S);
 
         OperatorConfigGroupStruct duplicateCOnfig = viewport.newConfig();
         duplicateCOnfig.operatorType.set(bb.ops.duplicateMoveObject);
@@ -203,13 +210,23 @@ public class Application {
         BBOperatorTypeRegistryGroupStruct operatorTypes = this.dataTree.getRoot().ops;
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropertyModifierConfigsMapStruct propertyModifiers = config.propModifiers;
+
+        // Shared transform property modifier keymap for translate, rotate, and scale
         PropertyModifiersList<TransformProps> transform_modal = new PropertyModifiersList<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
         propertyModifiers.add(transform_modal);
         transform_modal.addOperatorType(operatorTypes.move);
         transform_modal.addOperatorType(operatorTypes.rotate);
+        transform_modal.addOperatorType(operatorTypes.scale);
 
         transform_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
         transform_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
+        transform_modal.register(2, TranslateModalAxisZ.class, TranslateModalAxisZ::new);
+        transform_modal.register(3, TransformOrientationConfig.class, TransformOrientationConfig::new);
+
+        // Secondary rotate-specific property modifier keymap
+        PropertyModifiersList<RotateProps> rotate_modal = new PropertyModifiersList<>("rotate_modal", RotateProps.class, config.hotKeyConfigRegistry);
+        propertyModifiers.add(rotate_modal);
+        rotate_modal.addOperatorType(operatorTypes.rotate);
 
         OTDragValueSlider dragValueSlider = this.dataTree.getRoot().ops.dragUISlider;
         dragValueSlider.modifierRegistry().register(0, DragIncrementModal.class, DragIncrementModal::new);
@@ -227,6 +244,20 @@ public class Application {
         yCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropertyModifierHotKeyConfig<TransformProps> zCfg = transform_modal.newConfig();
+        zCfg.modifier.set(new TranslateModalAxisZ());
+        zCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
+        ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropertyModifierHotKeyConfig<TransformProps> orientCfg = transform_modal.newConfig();
+        orientCfg.modifier.set(new TransformOrientationConfig());
+        orientCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) orientCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_K);
+        ((HotKeyKeyboardConfigGroupStruct) orientCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+
 
         PropertyModifierHotKeyConfig<DragValueSliderProp> slider1Cfg = dragConfig.newConfig();
         slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
