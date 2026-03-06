@@ -38,15 +38,14 @@ public class TranslateObject extends AbstractTransformOperator<TranslateProps> {
         double nx0 = MathUtils.mapRange(moveEvent.prevMouseX(), contentArea.getX(), contentArea.getEndX(), -1, 1);
         double ny0 = -MathUtils.mapRange(moveEvent.prevMouseY(), contentArea.getY(), contentArea.getEndY(), -1, 1);
 
-        RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx, ny, viewVector, objectPos)
-                .ifPresent(destination -> {
-                    RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx0, ny0, viewVector, objectPos)
-                            .ifPresent(origin -> {
-                                Vector3d delta = destination.sub(origin);
-                                this.props.value.x.set((float) (this.props.value.x.get() + delta.x));
-                                this.props.value.y.set((float) (this.props.value.y.get() + delta.y));
-                                this.props.value.z.set((float) (this.props.value.z.get() + delta.z));
-                            });
-                });
+        var optDestination = RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx, ny, viewVector, objectPos);
+        var optOrigin = RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx0, ny0, viewVector, objectPos);
+
+        if (optDestination.isPresent() && optOrigin.isPresent()) {
+            Vector3d delta = optDestination.get().sub(optOrigin.get());
+            this.props.value.x.set((float) (this.props.value.x.get() + delta.x));
+            this.props.value.y.set((float) (this.props.value.y.get() + delta.y));
+            this.props.value.z.set((float) (this.props.value.z.get() + delta.z));
+        }
     }
 }
