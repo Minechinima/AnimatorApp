@@ -3,6 +3,7 @@ package com.minechinima.operator;
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
+import com.minechinima.model.OrientationEnumValueStruct;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.exceptions.UserException;
@@ -13,10 +14,9 @@ import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
 import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
 import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.operator.properties.TranslateProps;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
-
-import java.util.Queue;
 
 public class TranslateObject extends IPropertyOperator<BBOperatorContext, TranslateProps> implements IRepeatableOperator<BBOperatorContext>, IModalOperator<BBOperatorContext> {
     private Vector3f startTranslation;
@@ -28,7 +28,20 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
     @Override
     public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
         if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
-        this.startTranslation = context.bbContext().activeObject.get().translation.asVector3f();
+        BaseObject object = context.bbContext().activeObject.get();
+        this.startTranslation = object.translation.asVector3f();
+
+        if (this.props.orientation.get() == OrientationEnumValueStruct.Orientation.LOCAL) {
+            Vector3f rot = object.rotation.asVector3f();
+            Matrix3f rotM = new Matrix3f();
+            rotM.rotateX((float) Math.toRadians(rot.x));
+            rotM.rotateY((float) Math.toRadians(rot.y));
+            rotM.rotateZ((float) Math.toRadians(rot.z));
+            this.props.orientationMatrix.set(rotM);
+        } else {
+            this.props.orientationMatrix.set(new Matrix3f());
+        }
+
         return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
     }
 
@@ -37,15 +50,7 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
         if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED);
         BaseObject object = context.bbContext().activeObject.get();
         Vector3fValue translation = object.translation;
-        Vector3f offset = this.props.value.asVector3f();
-        Vector3f rot = object.rotation.asVector3f();
-        if (this.props.local.get()) {
-            Matrix3f rotM = new Matrix3f();
-            rotM.rotateX((float) Math.toRadians(rot.x));
-            rotM.rotateY((float) Math.toRadians(rot.y));
-            rotM.rotateZ((float) Math.toRadians(rot.z));
-            rotM.transform(offset);
-        }
+        Vector3f offset = computeOffset();
 
         return new OPReturnValue<>(OpExecuteFlag.FINISHED, translation.controller().set(offset.add(this.startTranslation)));
     }
@@ -57,9 +62,12 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
 
     @Override
     public OPReturnValue<OpExecuteFlag> repeat(BBOperatorContext context) throws UserException {
+        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED);
+        this.startTranslation = context.bbContext().activeObject.get().translation.asVector3f();
         return this.execute(context);
     }
 
+    @NotNull
     @Override
     public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
         if (event instanceof KeyMapMouseMoveEvent moveEvent) {
@@ -69,35 +77,28 @@ public class TranslateObject extends IPropertyOperator<BBOperatorContext, Transl
 
         BaseObject object = context.bbContext().activeObject.get();
         Vector3fValue translation = object.translation;
-        Vector3f offset = this.props.value.asVector3f();
-        Vector3f rot = object.rotation.asVector3f();
-        if (this.props.local.get()) {
-            Matrix3f rotM = new Matrix3f();
-            rotM.rotateX((float) Math.toRadians(rot.x));
-            rotM.rotateY((float) Math.toRadians(rot.y));
-            rotM.rotateZ((float) Math.toRadians(rot.z));
-            rotM.transform(offset);
-        }
-
-        if (this.props.transformOnAxis.get()) {
-            switch (this.props.axis.get()) {
-                case X -> {
-                    offset.y = 0;
-                    offset.z = 0;
-                }
-                case Y -> {
-                    offset.x = 0;
-                    offset.z = 0;
-                }
-                case Z -> {
-                    offset.x = 0;
-                    offset.y = 0;
-                }
-            }
-        }
-
+        Vector3f offset = computeOffset();
 
         IControllerCommand cmd = translation.controller().set(offset.add(this.startTranslation));
         return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), cmd);
+    }
+
+    private Vector3f computeOffset() {
+        Vector3f offset = this.props.value.asVector3f();
+        offset.mul(this.props.scaleFactor.get());
+
+        Matrix3f orientationMatrix = this.props.orientationMatrix.asMatrix3f();
+        orientationMatrix.transform(offset);
+
+        boolean cx = this.props.constraintX.get();
+        boolean cy = this.props.constraintY.get();
+        boolean cz = this.props.constraintZ.get();
+        if (cx || cy || cz) {
+            if (!cx) offset.x = 0;
+            if (!cy) offset.y = 0;
+            if (!cz) offset.z = 0;
+        }
+
+        return offset;
     }
 }

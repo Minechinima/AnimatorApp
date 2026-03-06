@@ -1,16 +1,17 @@
 package com.minechinima.operator;
 
 import com.minechinima.controller.IControllerCommand;
-import com.minechinima.model.AxisEnumValueStruct;
 import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 import com.minechinima.operator.modal.IPropertyModifierCommand;
 
 public abstract class TranslateModalAxis extends PropertyModifierCommandConfig<TransformProps> {
-    private final AxisEnumValueStruct.Axis axisToSet;
+    public enum ConstraintAxis { X, Y, Z }
 
-    public TranslateModalAxis(AxisEnumValueStruct.Axis axisToSet) {
+    private final ConstraintAxis constraintAxis;
+
+    public TranslateModalAxis(ConstraintAxis constraintAxis) {
         super("Axis", "");
-        this.axisToSet = axisToSet;
+        this.constraintAxis = constraintAxis;
     }
 
     @Override
@@ -18,12 +19,36 @@ public abstract class TranslateModalAxis extends PropertyModifierCommandConfig<T
         return new IPropertyModifierCommand<>(this) {
             @Override
             public IControllerCommand modify(TransformProps props) {
-                if (props.axis.get() == this.modifierConfig.axisToSet) {
-                    return props.transformOnAxis.controller().set(!props.transformOnAxis.get());
+                switch (this.modifierConfig.constraintAxis) {
+                    case X -> {
+                        boolean wasOnlyX = props.constraintX.get() && !props.constraintY.get() && !props.constraintZ.get();
+                        if (wasOnlyX) {
+                            return props.constraintX.controller().set(false);
+                        }
+                        return props.constraintX.controller().set(true)
+                                .next(props.constraintY.controller().set(false))
+                                .next(props.constraintZ.controller().set(false));
+                    }
+                    case Y -> {
+                        boolean wasOnlyY = !props.constraintX.get() && props.constraintY.get() && !props.constraintZ.get();
+                        if (wasOnlyY) {
+                            return props.constraintY.controller().set(false);
+                        }
+                        return props.constraintX.controller().set(false)
+                                .next(props.constraintY.controller().set(true))
+                                .next(props.constraintZ.controller().set(false));
+                    }
+                    case Z -> {
+                        boolean wasOnlyZ = !props.constraintX.get() && !props.constraintY.get() && props.constraintZ.get();
+                        if (wasOnlyZ) {
+                            return props.constraintZ.controller().set(false);
+                        }
+                        return props.constraintX.controller().set(false)
+                                .next(props.constraintY.controller().set(false))
+                                .next(props.constraintZ.controller().set(true));
+                    }
                 }
-
-                return props.transformOnAxis.controller().set(true)
-                        .next(props.axis.controller().set(this.modifierConfig.axisToSet));
+                return null;
             }
         };
     }

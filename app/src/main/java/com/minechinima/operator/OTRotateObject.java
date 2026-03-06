@@ -2,22 +2,14 @@ package com.minechinima.operator;
 
 import com.minechinima.model.exceptions.UserException;
 import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
-import com.minechinima.operator.ot.IOTModal;
 import com.minechinima.operator.ot.IOTModalModifierProvider;
-import com.minechinima.operator.ot.OperatorTypePropertyProvider;
-import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.utils.IGenericRegistry;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class OTRotateObject extends OTTransformObject<RotateObject, RotateProps> implements IOTModalModifierProvider<BBOperatorContext, RotateObject, RotateProps> {
-    private final IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> modifierRegistry;
 
-    public OTRotateObject(String id, String title, String description, IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> modifierRegistry) {
+    public OTRotateObject(String id, String title, String description) {
         super(id, title, description);
-        this.modifierRegistry = modifierRegistry;
     }
 
     @Override
@@ -53,11 +45,11 @@ public class OTRotateObject extends OTTransformObject<RotateObject, RotateProps>
 
     @Override
     public IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> modifierRegistry() {
-        return modifierRegistry;
+        return null;
     }
 
     @Override
     public String modifierConfigIdentifier() {
-        return "rotate";
+        return "rotate_modifiers";
     }
 }
