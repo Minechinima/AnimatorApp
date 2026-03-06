@@ -22,7 +22,7 @@ public class OTTranslateObject extends OTTransformObject<TranslateObject, Transl
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return false;
     }
 

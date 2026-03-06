@@ -31,7 +31,7 @@ public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValu
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return true;
     }
 

@@ -16,7 +16,7 @@ public class OTRotateObject extends OTTransformObject<RotateObject, RotateProps>
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return false;
     }
 

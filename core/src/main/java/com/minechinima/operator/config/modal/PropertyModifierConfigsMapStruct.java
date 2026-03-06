@@ -37,6 +37,10 @@ public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModif
         return null;
     }
 
+    //TODO currently property modifier is solely mapped to properties. Use the OTModalMOdifierProvider identifier or something
+    // to allow registering multiple modifier configs per property and retrieve them for the operator type.
+    // operatortype still is the last instance of control -> allow OT to declare whether it even uses modal modifier keymap
+    // and perhaps if it uses a different e.g. multiple modal keymaps for one property, but for multiple operatortypes.
     /**
      *
      * @param props

@@ -30,7 +30,7 @@ public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSlide
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return false;
     }
 }

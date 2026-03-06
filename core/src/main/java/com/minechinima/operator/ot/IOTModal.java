@@ -19,9 +19,10 @@ public interface IOTModal<C extends IContext, O extends IModalOperator<C>> exten
     O getOperator();
 
     /**
-     * @return true if by default the hotkey configuration should enable releasing the key to confirm.
+     * @return true if the release event for the hotkey should confirm the modal mode.
      */
-    boolean confirmOnReleaseDefault();
+    boolean useReleaseEvent();
+
     /**
      * A set of other OperatorTypes that can replace this
      * while this is running in modal mode.

@@ -41,7 +41,7 @@ public class DragIncrementModal extends PropertyModifierReleaseableConfig<DragVa
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return true;
     }
 }

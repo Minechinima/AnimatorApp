@@ -10,9 +10,6 @@ import com.minechinima.model.logging.datainterfaces.IValue;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.base.BaseSingleValueHierarchy;
 import com.minechinima.model.values.base.ValueGroup;
-import com.minechinima.ui.annotation.InGui;
-import com.minechinima.ui.elements.UICheckBox;
-import com.minechinima.ui.elements.UIEnum;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -57,7 +54,7 @@ public class ReleaseConfirmHotKey<T extends BaseStructure & IValue> extends Base
                 HotKeyConfigGroupStruct releaseConfig;
                 if ((releaseConfig = this.parentHotKeySelector.get().getReleaseConfig()) == null) return;
 
-                Config config = new Config(releasableModule.confirmOnReleaseDefault());
+                Config config = new Config(releasableModule.useReleaseEvent());
                 config.hotKeyConfigSelector.set(releaseConfig);
 
                 this.set(config);
@@ -78,7 +75,7 @@ public class ReleaseConfirmHotKey<T extends BaseStructure & IValue> extends Base
                 this.set(null);
                 return;
             }
-            boolean confirm = this.get() != null ? this.get().confirmOnRelease.get() : releasableModule.confirmOnReleaseDefault();
+            boolean confirm = this.get() != null ? this.get().confirmOnRelease.get() : releasableModule.useReleaseEvent();
             Config config = new Config(confirm);
             config.hotKeyConfigSelector.set(releaseConfig);
             this.set(config);
