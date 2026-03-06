@@ -19,7 +19,7 @@ public abstract class TranslateModalAxis extends PropertyModifierCommandConfig<T
             @Override
             public IControllerCommand modify(TransformProps props) {
                 if (props.axis.get() == this.modifierConfig.axisToSet) {
-                    return props.transformOnAxis.controller().set(false);
+                    return props.transformOnAxis.controller().set(!props.transformOnAxis.get());
                 }
 
                 return props.transformOnAxis.controller().set(true)

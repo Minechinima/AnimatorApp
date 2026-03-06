@@ -44,6 +44,7 @@ import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.history.strategies.ValueChangeMerge;
 import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
+import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -56,6 +57,7 @@ import com.minechinima.ui.uihandlers.UIHandlerRegistry;
 import com.minechinima.ui.panels.UIOutlinerPanel;
 import com.minechinima.ui.panels.UIPropertiesPanel;
 import com.minechinima.utils.GenericRegistry;
+import com.minechinima.utils.IGenericRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.*;
@@ -91,6 +93,10 @@ public class Application {
     private final TranslationBackpack translationBackpack;
     private final Logger logger;
     private final GenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
+
+
+    public static final IGenericRegistry<PropertyModifierCommandConfig<TranslateProps>> TRANSLATE_MODIFIER_REGISTRY = new GenericRegistry<>();
+    public static final IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> ROTATE_MODIFIER_REGISTRY = new GenericRegistry<>();
 
     public Application() {
         this.logger = LogManager.getLogger(Application.class);
@@ -194,26 +200,29 @@ public class Application {
     }
 
     public void setupModal() {
+        BBOperatorTypeRegistryGroupStruct operatorTypes = this.dataTree.getRoot().ops;
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropertyModifierConfigsMapStruct propertyModifiers = config.propModifiers;
-        PropertyModifiersList<TransformProps> translate_modal = new PropertyModifiersList<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
-        propertyModifiers.add(translate_modal);
+        PropertyModifiersList<TransformProps> transform_modal = new PropertyModifiersList<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
+        propertyModifiers.add(transform_modal);
+        transform_modal.addOperatorType(operatorTypes.move);
+        transform_modal.addOperatorType(operatorTypes.rotate);
 
-        translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
-        translate_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
+        transform_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
+        transform_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
 
         OTDragValueSlider dragValueSlider = this.dataTree.getRoot().ops.dragUISlider;
         dragValueSlider.modifierRegistry().register(0, DragIncrementModal.class, DragIncrementModal::new);
         dragValueSlider.modifierRegistry().register(1, RoundModal.class, RoundModal::new);
         PropertyModifiersList<DragValueSliderProp> dragConfig = (PropertyModifiersList<DragValueSliderProp>) propertyModifiers.get(dragValueSlider.modifierConfigIdentifier());
 
-        PropertyModifierHotKeyConfig<TransformProps> xCfg = translate_modal.newConfig();
+        PropertyModifierHotKeyConfig<TransformProps> xCfg = transform_modal.newConfig();
         xCfg.modifier.set(new TranslateModalAxisX());
         xCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_X);
         ((HotKeyKeyboardConfigGroupStruct) xCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
 
-        PropertyModifierHotKeyConfig<TransformProps> yCfg = translate_modal.newConfig();
+        PropertyModifierHotKeyConfig<TransformProps> yCfg = transform_modal.newConfig();
         yCfg.modifier.set(new TranslateModalAxisY());
         yCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) yCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Y);
