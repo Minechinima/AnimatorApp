@@ -109,9 +109,6 @@ public abstract class AbstractTransformOperator<P extends TransformProps>
         Vector3f offset = this.props.value.asVector3f();
         offset.mul(this.props.scaleFactor.get());
 
-        Matrix3f orientationMatrix = this.props.orientationMatrix.asMatrix3f();
-        orientationMatrix.transform(offset);
-
         boolean cx = this.props.constraintX.get();
         boolean cy = this.props.constraintY.get();
         boolean cz = this.props.constraintZ.get();
@@ -120,6 +117,9 @@ public abstract class AbstractTransformOperator<P extends TransformProps>
             if (!cy) offset.y = 0;
             if (!cz) offset.z = 0;
         }
+
+        Matrix3f orientationMatrix = this.props.orientationMatrix.asMatrix3f();
+        orientationMatrix.transform(offset);
 
         return offset;
     }

@@ -221,6 +221,7 @@ public class Application {
         transform_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
         transform_modal.register(1, TranslateModalAxisY.class, TranslateModalAxisY::new);
         transform_modal.register(2, TranslateModalAxisZ.class, TranslateModalAxisZ::new);
+        transform_modal.register(3, TransformOrientationConfig.class, TransformOrientationConfig::new);
 
         // Secondary rotate-specific property modifier keymap
         PropertyModifiersList<RotateProps> rotate_modal = new PropertyModifiersList<>("rotate_modal", RotateProps.class, config.hotKeyConfigRegistry);
@@ -249,6 +250,14 @@ public class Application {
         zCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
         ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_Z);
         ((HotKeyKeyboardConfigGroupStruct) zCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+        PropertyModifierHotKeyConfig<TransformProps> orientCfg = transform_modal.newConfig();
+        orientCfg.modifier.set(new TransformOrientationConfig());
+        orientCfg.hotKeyConfigSelector.set(config.hotKeyConfigRegistry.getNew(1));
+        ((HotKeyKeyboardConfigGroupStruct) orientCfg.hotKeyConfigSelector.get()).key.set(KeyboardKeyEnum.KEY_K);
+        ((HotKeyKeyboardConfigGroupStruct) orientCfg.hotKeyConfigSelector.get()).type.set(KeyType.PRESS);
+
+
 
         PropertyModifierHotKeyConfig<DragValueSliderProp> slider1Cfg = dragConfig.newConfig();
         slider1Cfg.modifier.set(new DragIncrementModal(0.1F));
