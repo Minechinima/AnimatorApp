@@ -1,104 +1,52 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.IControllerCommand;
-import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
-import com.minechinima.model.OrientationEnumValueStruct;
 import com.minechinima.model.app.object.BaseObject;
-import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.vectors.Vector3fValue;
-import com.minechinima.operator.ot.commands.*;
-import com.minechinima.operator.ot.commands.flags.OPReturnValue;
-import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
-import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
-import com.minechinima.operator.ot.commands.flags.OpModalFlag;
 import com.minechinima.operator.properties.TranslateProps;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix3f;
-import org.joml.Vector3f;
+import com.minechinima.ui.utils.Area;
+import com.minechinima.utils.MathUtils;
+import com.minechinima.utils.RenderingMathUtils;
+import org.joml.Matrix3d;
+import org.joml.Matrix4d;
+import org.joml.Vector3d;
 
-public class TranslateObject extends IPropertyOperator<BBOperatorContext, TranslateProps> implements IRepeatableOperator<BBOperatorContext>, IModalOperator<BBOperatorContext> {
-    private Vector3f startTranslation;
+public class TranslateObject extends AbstractTransformOperator<TranslateProps> {
 
     public TranslateObject(TranslateProps props) {
         super(props);
     }
 
     @Override
-    public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
-        BaseObject object = context.bbContext().activeObject.get();
-        this.startTranslation = object.translation.asVector3f();
-
-        if (this.props.orientation.get() == OrientationEnumValueStruct.Orientation.LOCAL) {
-            Vector3f rot = object.rotation.asVector3f();
-            Matrix3f rotM = new Matrix3f();
-            rotM.rotateX((float) Math.toRadians(rot.x));
-            rotM.rotateY((float) Math.toRadians(rot.y));
-            rotM.rotateZ((float) Math.toRadians(rot.z));
-            this.props.orientationMatrix.set(rotM);
-        } else {
-            this.props.orientationMatrix.set(new Matrix3f());
-        }
-
-        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
+    protected Vector3fValue getTargetValue(BaseObject object) {
+        return object.translation;
     }
 
     @Override
-    public OPReturnValue<OpExecuteFlag> execute(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED);
-        BaseObject object = context.bbContext().activeObject.get();
-        Vector3fValue translation = object.translation;
-        Vector3f offset = computeOffset();
+    protected void applyMouseInput(BBOperatorContext context, KeyMapMouseMoveEvent moveEvent) {
+        if (this.viewport == null) return;
 
-        return new OPReturnValue<>(OpExecuteFlag.FINISHED, translation.controller().set(offset.add(this.startTranslation)));
-    }
+        Matrix4d projection = this.viewport.getProjection();
+        Matrix3d viewRotation = this.viewport.getViewRotation();
+        Vector3d viewVector = this.viewport.getViewVector();
+        Vector3d cameraPos = new Vector3d(this.viewport.getPos());
+        Vector3d objectPos = new Vector3d(this.startValue);
 
-    @Override
-    public OPReturnValue<OpExecuteFlag> onUIPropChange(BBOperatorContext context, BaseStructure changedProp) throws UserException {
-        return this.execute(context);
-    }
+        Area contentArea = this.viewport.getArea();
+        double nx = MathUtils.mapRange(moveEvent.mouseX(), contentArea.getX(), contentArea.getEndX(), -1, 1);
+        double ny = -MathUtils.mapRange(moveEvent.mouseY(), contentArea.getY(), contentArea.getEndY(), -1, 1);
+        double nx0 = MathUtils.mapRange(moveEvent.prevMouseX(), contentArea.getX(), contentArea.getEndX(), -1, 1);
+        double ny0 = -MathUtils.mapRange(moveEvent.prevMouseY(), contentArea.getY(), contentArea.getEndY(), -1, 1);
 
-    @Override
-    public OPReturnValue<OpExecuteFlag> repeat(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpExecuteFlag.CANCELLED);
-        this.startTranslation = context.bbContext().activeObject.get().translation.asVector3f();
-        return this.execute(context);
-    }
-
-    @NotNull
-    @Override
-    public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
-        if (event instanceof KeyMapMouseMoveEvent moveEvent) {
-            this.props.value.x.set((float) (this.props.value.x.get() + moveEvent.dragX() * 0.005));
-            this.props.value.y.set((float) (this.props.value.y.get() - moveEvent.dragY() * 0.005));
-        }
-
-        BaseObject object = context.bbContext().activeObject.get();
-        Vector3fValue translation = object.translation;
-        Vector3f offset = computeOffset();
-
-        IControllerCommand cmd = translation.controller().set(offset.add(this.startTranslation));
-        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), cmd);
-    }
-
-    private Vector3f computeOffset() {
-        Vector3f offset = this.props.value.asVector3f();
-        offset.mul(this.props.scaleFactor.get());
-
-        Matrix3f orientationMatrix = this.props.orientationMatrix.asMatrix3f();
-        orientationMatrix.transform(offset);
-
-        boolean cx = this.props.constraintX.get();
-        boolean cy = this.props.constraintY.get();
-        boolean cz = this.props.constraintZ.get();
-        if (cx || cy || cz) {
-            if (!cx) offset.x = 0;
-            if (!cy) offset.y = 0;
-            if (!cz) offset.z = 0;
-        }
-
-        return offset;
+        RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx, ny, viewVector, objectPos)
+                .ifPresent(destination -> {
+                    RenderingMathUtils.projectScreenOntoPlane(cameraPos, projection, viewRotation, nx0, ny0, viewVector, objectPos)
+                            .ifPresent(origin -> {
+                                Vector3d delta = destination.sub(origin);
+                                this.props.value.x.set((float) (this.props.value.x.get() + delta.x));
+                                this.props.value.y.set((float) (this.props.value.y.get() + delta.y));
+                                this.props.value.z.set((float) (this.props.value.z.get() + delta.z));
+                            });
+                });
     }
 }
