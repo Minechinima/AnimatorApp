@@ -4,13 +4,9 @@ import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.values.FloatValue;
 import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
 import com.minechinima.operator.defaults.DragValueSliderProp;
-import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
+import com.minechinima.operator.config.modal.PropertyModifierReleasableCommandConfig;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
-public class DragIncrementModal extends PropertyModifierReleaseableConfig<DragValueSliderProp> {
+public class DragIncrementModal extends PropertyModifierReleasableCommandConfig<DragValueSliderProp> {
     public final FloatValue incrementMultiplier;
 
     public DragIncrementModal() {
@@ -41,7 +37,7 @@ public class DragIncrementModal extends PropertyModifierReleaseableConfig<DragVa
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return true;
     }
 }

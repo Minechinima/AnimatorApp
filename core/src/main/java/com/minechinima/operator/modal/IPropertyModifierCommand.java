@@ -2,9 +2,7 @@ package com.minechinima.operator.modal;
 
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.operator.OperatorProperties;
-import com.minechinima.operator.config.modal.PropertyModifierConfig;
-
-import java.util.Queue;
+import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 
 /**
  * Command that modifies the properties of an Operator while it is running in modal mode to influence its execution logic.
@@ -13,7 +11,7 @@ import java.util.Queue;
  * @param <P>
  * @param <C> the config that spawned this command.
  */
-public abstract class IPropertyModifierCommand<P extends OperatorProperties, C extends PropertyModifierConfig<P>> {
+public abstract class IPropertyModifierCommand<P extends OperatorProperties, C extends PropertyModifierCommandConfig<P>> {
     protected final C modifierConfig;
 
     public IPropertyModifierCommand(C modifierConfig) {

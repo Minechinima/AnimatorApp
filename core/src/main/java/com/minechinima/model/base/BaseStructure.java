@@ -40,6 +40,9 @@ public abstract class BaseStructure implements IDataSerializable<BaseType<?>>, I
      *
      * @implNote This is private as it can only be changed by methods that are final to ensure
      * that the path algorithms and uniqueness cannot be overridden!
+     * Note about design: This is not usually deserialized by this instance.
+     * The data owner, e.g list, map, group sets the identifier during init when the data owner deserializes and
+     * instantiates its child data nodes.
      */
     @NotNull
     private String id;

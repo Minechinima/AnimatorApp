@@ -17,10 +17,7 @@ import com.minechinima.operator.config.operator.OperatorMacroPropertiesConfig;
 import com.minechinima.operator.eventblockers.ICachedEventBlocker;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.modal.*;
-import com.minechinima.operator.ot.IOTModal;
-import com.minechinima.operator.ot.OperatorType;
-import com.minechinima.operator.ot.IOTPropertyProvider;
-import com.minechinima.operator.ot.UIOperatorType;
+import com.minechinima.operator.ot.*;
 import com.minechinima.operator.ot.commands.*;
 import com.minechinima.operator.ot.commands.flags.OPReturnValue;
 import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
@@ -976,6 +973,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
 
     private void runPropertyModifiers(KeyMapEvent event) {
         if (!(this.modal.op instanceof IPropertyOperator propOp)) return;
+        if (!(this.modal.type instanceof IOTModalModifierProvider modalModifierProvider)) return;
 
         Iterator<ModalFrame.ModifierRelease<?>> it = this.modal.modifiersWaitingRelease.iterator();
         while (it.hasNext()) {
@@ -993,10 +991,10 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
             }
         }
 
-        List<PropertyModifierHotKeyConfig<OperatorProperties>> propertyModalKeymap = this.config.propModifiers.getConfigs(propOp.props());
+        List<PropertyModifierHotKeyConfig<OperatorProperties>> propertyModalKeymap = this.config.propModifiers.getConfigs(propOp.props(), modalModifierProvider);
         for (PropertyModifierHotKeyConfig<?> cfg : propertyModalKeymap) {
             if (cfg.hotKeyConfigSelector.get().onEvent(event)) {
-                PropertyModifierConfig modifier = cfg.modifier.get();
+                PropertyModifierCommandConfig modifier = cfg.modifier.get();
                 IPropertyModifierCommand command = modifier.factory();
 
                 ControllerResult result = this.controller.writeToTransaction(command.modify(propOp.props()));
@@ -1011,7 +1009,7 @@ public class OperatorManager<C extends IContext> implements IKeyMapEventListener
                  * and if the modifier config has a modal release confirm module and a hotkey set for
                  * the release confirm.
                  */
-                if (modifier instanceof PropertyModifierReleaseableConfig<?> releaseableConfig
+                if (modifier instanceof PropertyModifierReleasableCommandConfig<?> releaseableConfig
                         && command instanceof IPropertyModifierReleasableCommand<?,?> releasableCommand
                         && cfg.modalConfirmConfig.get() != null
                         && cfg.modalConfirmConfig.get().hotKeyConfigSelector.get() != null

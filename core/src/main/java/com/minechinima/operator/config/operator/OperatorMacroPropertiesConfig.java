@@ -174,7 +174,7 @@ public class OperatorMacroPropertiesConfig extends BaseSingleValueHierarchy<Oper
         public ModalMacroConfig(String id, final OperatorType.Macro<C> macro,
                                 @NotNull final OT operatorType, final P props) {
             super(id, operatorType, props);
-            this.addChild("cancel_macros", this.cancelMacros = new BooleanValue("cancel_macros", macro.isCancelMacroOnModalCancel()));
+            this.addChild("cancel_macros", this.cancelMacros = new BooleanValue("cancel_macros", macro.cancelEntireOTOnMacroCancel()));
         }
     }
 }

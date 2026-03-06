@@ -1,15 +1,11 @@
 package com.minechinima.operator.defaults.modal.uidrag;
 
 import com.minechinima.controller.IControllerCommand;
-import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
+import com.minechinima.operator.config.modal.PropertyModifierReleasableCommandConfig;
 import com.minechinima.operator.defaults.DragValueSliderProp;
 import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
-public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSliderProp> {
+public class RoundModal extends PropertyModifierReleasableCommandConfig<DragValueSliderProp> {
     public RoundModal() {
         super("round", "round to nearest integer");
     }
@@ -30,7 +26,7 @@ public class RoundModal extends PropertyModifierReleaseableConfig<DragValueSlide
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return false;
     }
 }

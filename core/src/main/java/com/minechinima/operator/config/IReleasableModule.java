@@ -6,5 +6,11 @@ package com.minechinima.operator.config;
  * hotkey correctly.
  */
 public interface IReleasableModule {
-    boolean confirmOnReleaseDefault();
+    /**
+     * @return true if the release event should be used to trigger another onRelease method.
+     * Can be used for various purposes: confirming an operator on release, executing another method on release,
+     * Removing the effect of a property modifier on release.
+     * TODO this can be user configured, this is just default value. Add a framework for user configurable flags and whether they can be overridden by the user.
+     */
+    boolean useReleaseEvent();
 }

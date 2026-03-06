@@ -2,15 +2,10 @@ package com.minechinima.operator;
 
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.model.AxisEnumValueStruct;
-import com.minechinima.operator.config.modal.PropertyModifierConfig;
+import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 import com.minechinima.operator.modal.IPropertyModifierCommand;
-import com.minechinima.operator.properties.TranslateProps;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
-public abstract class TranslateModalAxis extends PropertyModifierConfig<TransformProps> {
+public abstract class TranslateModalAxis extends PropertyModifierCommandConfig<TransformProps> {
     private final AxisEnumValueStruct.Axis axisToSet;
 
     public TranslateModalAxis(AxisEnumValueStruct.Axis axisToSet) {
@@ -24,7 +19,7 @@ public abstract class TranslateModalAxis extends PropertyModifierConfig<Transfor
             @Override
             public IControllerCommand modify(TransformProps props) {
                 if (props.axis.get() == this.modifierConfig.axisToSet) {
-                    return props.transformOnAxis.controller().set(false);
+                    return props.transformOnAxis.controller().set(!props.transformOnAxis.get());
                 }
 
                 return props.transformOnAxis.controller().set(true)

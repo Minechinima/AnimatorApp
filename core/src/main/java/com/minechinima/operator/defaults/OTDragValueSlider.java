@@ -1,14 +1,10 @@
 package com.minechinima.operator.defaults;
 
 import com.minechinima.model.exceptions.UserException;
-import com.minechinima.operator.IContext;
 import com.minechinima.operator.UIOperatorContext;
-import com.minechinima.operator.config.modal.PropertyModifierConfig;
-import com.minechinima.operator.ot.IOTModal;
+import com.minechinima.operator.config.modal.PropertyModifierCommandConfig;
 import com.minechinima.operator.ot.IOTModalModifierProvider;
-import com.minechinima.operator.ot.IOTPropertyProvider;
 import com.minechinima.operator.ot.UIOperatorTypePropertyProvider;
-import com.minechinima.operator.ot.commands.IOperator;
 import com.minechinima.ui.elements.UIDragFloat;
 import com.minechinima.utils.GenericRegistry;
 import com.minechinima.utils.IGenericRegistry;
@@ -19,7 +15,7 @@ public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValu
     public OTDragValueSlider(String id, String title, String description) {
         super(id, title, description, true);
     }
-    private final IGenericRegistry<PropertyModifierConfig<DragValueSliderProp>> modifierRegistry = new GenericRegistry<>();
+    private final IGenericRegistry<PropertyModifierCommandConfig<DragValueSliderProp>> modifierRegistry = new GenericRegistry<>();
     @Override
     public boolean poll(UIOperatorContext context) throws UserException {
         return context.currentHoveredWidget() instanceof UIDragFloat<?>;
@@ -31,7 +27,7 @@ public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValu
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return true;
     }
 
@@ -51,7 +47,7 @@ public class OTDragValueSlider extends UIOperatorTypePropertyProvider<UIDragValu
     }
 
     @Override
-    public IGenericRegistry<PropertyModifierConfig<DragValueSliderProp>> modifierRegistry() {
+    public IGenericRegistry<PropertyModifierCommandConfig<DragValueSliderProp>> modifierRegistry() {
         return this.modifierRegistry;
     }
 

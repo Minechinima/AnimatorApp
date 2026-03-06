@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 
 /**
  * For Operators that support modal mode.
+ * Modal mode means the operator is kept alive and consumed input events.
  * @param <C>
  */
 public interface IModalOperator<C extends IContext> extends IOperator<C> {

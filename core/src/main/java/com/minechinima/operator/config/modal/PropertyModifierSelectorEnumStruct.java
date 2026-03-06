@@ -5,8 +5,8 @@ import com.minechinima.operator.OperatorProperties;
 import org.jetbrains.annotations.NotNull;
 
 public class PropertyModifierSelectorEnumStruct<P extends OperatorProperties>
-        extends AbstractEnumValueHierarchyReg<PropertyModifierConfig<P>> {
-    public PropertyModifierSelectorEnumStruct(String id, PropertyModifiersListStruct<P> category, @NotNull PropertyModifierConfig<P> defaultValue) {
+        extends AbstractEnumValueHierarchyReg<PropertyModifierCommandConfig<P>> {
+    public PropertyModifierSelectorEnumStruct(String id, PropertyModifiersList<P> category, @NotNull PropertyModifierCommandConfig<P> defaultValue) {
         super(id, category, defaultValue);
     }
 }
