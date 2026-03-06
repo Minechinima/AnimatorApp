@@ -44,7 +44,6 @@ import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.history.strategies.ValueChangeMerge;
 import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
-import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -197,7 +196,7 @@ public class Application {
     public void setupModal() {
         UserFunctionalityConfigGroupStruct<BBOperatorContext> config = this.dataTree.getRoot().opConfig;
         PropertyModifierConfigsMapStruct propertyModifiers = config.propModifiers;
-        PropertyModifiersListStruct<TransformProps> translate_modal = new PropertyModifiersListStruct<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
+        PropertyModifiersList<TransformProps> translate_modal = new PropertyModifiersList<>("transform_modal", TransformProps.class, config.hotKeyConfigRegistry);
         propertyModifiers.add(translate_modal);
 
         translate_modal.register(0, TranslateModalAxisX.class, TranslateModalAxisX::new);
@@ -206,7 +205,7 @@ public class Application {
         OTDragValueSlider dragValueSlider = this.dataTree.getRoot().ops.dragUISlider;
         dragValueSlider.modifierRegistry().register(0, DragIncrementModal.class, DragIncrementModal::new);
         dragValueSlider.modifierRegistry().register(1, RoundModal.class, RoundModal::new);
-        PropertyModifiersListStruct<DragValueSliderProp> dragConfig = (PropertyModifiersListStruct<DragValueSliderProp>) propertyModifiers.get(dragValueSlider.modifierConfigIdentifier());
+        PropertyModifiersList<DragValueSliderProp> dragConfig = (PropertyModifiersList<DragValueSliderProp>) propertyModifiers.get(dragValueSlider.modifierConfigIdentifier());
 
         PropertyModifierHotKeyConfig<TransformProps> xCfg = translate_modal.newConfig();
         xCfg.modifier.set(new TranslateModalAxisX());

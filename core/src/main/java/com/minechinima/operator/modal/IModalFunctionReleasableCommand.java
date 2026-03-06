@@ -3,7 +3,7 @@ package com.minechinima.operator.modal;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorManager;
 import com.minechinima.operator.config.modal.ModalFunctionReleasableConfig;
-import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
+import com.minechinima.operator.config.modal.PropertyModifierReleasableCommandConfig;
 import com.minechinima.operator.ot.commands.IModalOperator;
 
 /**
@@ -24,7 +24,7 @@ public abstract class IModalFunctionReleasableCommand<CTX extends IContext, CFG 
     }
 
     /**
-     * Is only called when {@link PropertyModifierReleaseableConfig#useReleaseEvent()} is true.
+     * Is only called when {@link PropertyModifierReleasableCommandConfig#useReleaseEvent()} is true.
      * @param operatorManager
      * @param context
      * @param currentModal

@@ -6,7 +6,7 @@ import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.config.ReleaseConfirmHotKey;
 
 /**
- * Configuration for a {@link PropertyModifierConfig}
+ * Configuration for a {@link PropertyModifierCommandConfig}
  * @param <P>
  */
 public class PropertyModifierHotKeyConfig<P extends OperatorProperties> extends ValueGroup {
@@ -14,7 +14,7 @@ public class PropertyModifierHotKeyConfig<P extends OperatorProperties> extends 
     public final PropertyModifierSelectorEnumStruct<P> modifier;
     public final ReleaseConfirmHotKey<PropertyModifierSelectorEnumStruct<P>> modalConfirmConfig;
 
-    public PropertyModifierHotKeyConfig(PropertyModifiersListStruct<P> category) {
+    public PropertyModifierHotKeyConfig(PropertyModifiersList<P> category) {
         super("");
         this.addChild("hotkey_config",
                 this.hotKeyConfigSelector = new HotKeyConfigSelectorEnumStruct("hotkey_config", category.hotKeyConfigRegistry));
