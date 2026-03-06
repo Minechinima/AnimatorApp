@@ -6,10 +6,108 @@ import com.minechinima.operator.IContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class ControllerChainTest {
+    @Test
+    public void testExecuteFromNodeOtherThanHead() throws UserException {
+        List<Integer> executionOrder = new ArrayList<>();
+
+        IControllerCommand cmd1 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(1);
+            }
+        };
+        IControllerCommand cmd2 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(2);
+            }
+        };
+        IControllerCommand cmd3 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(3);
+            }
+        };
+
+        ControllerChain chain = new ControllerChain(cmd1);
+        ControllerChain middle = chain.next(cmd2);
+        ControllerChain end = middle.next(cmd3);
+
+        // Execute from the middle node, should still start from head
+        middle.execute();
+        Assertions.assertEquals(List.of(1, 2, 3), executionOrder);
+
+        executionOrder.clear();
+
+        end.execute();
+        Assertions.assertEquals(List.of(1, 2, 3), executionOrder);
+    }
+
+    @Test
+    public void testExecuteFromNodeReturnedByNext() throws UserException {
+        List<Integer> executionOrder = new ArrayList<>();
+
+        IControllerCommand cmd1 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(1);
+            }
+        };
+        IControllerCommand cmd2 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(2);
+            }
+        };
+        IControllerCommand cmd3 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(3);
+            }
+        };
+
+        ControllerChain chain = new ControllerChain(cmd1).next(cmd2).next(cmd3);
+
+        // Execute from the middle node, should still start from head
+        chain.execute();
+        Assertions.assertEquals(List.of(1, 2, 3), executionOrder);
+    }
+
+    @Test
+    public void testChainNextFromIControllerCommandAPI() throws UserException {
+        List<Integer> executionOrder = new ArrayList<>();
+
+        IControllerCommand cmd1 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(1);
+            }
+        };
+        IControllerCommand cmd2 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(2);
+            }
+        };
+        IControllerCommand cmd3 = new DummyCommand() {
+            @Override
+            protected void execute() {
+                executionOrder.add(3);
+            }
+        };
+
+        ControllerChain chain = cmd1.next(cmd2).next(cmd3);
+
+        // Execute from the middle node, should still start from head
+        chain.execute();
+        Assertions.assertEquals(List.of(1, 2, 3), executionOrder);
+    }
+
     @Test
     public void testIteratorFlattenNestedChains() {
 
