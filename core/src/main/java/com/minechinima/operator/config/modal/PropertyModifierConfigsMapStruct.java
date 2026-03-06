@@ -80,16 +80,12 @@ public class PropertyModifierConfigsMapStruct extends BaseValueMap<PropertyModif
 
     @Override
     protected @NotNull PropertyModifiersList instantiate(String id, @Nullable UUID uuid, BaseType<?> data) {
-        //TODO property modifier should be a map, as we might want to add operators later on at runtime
-        // however, it cant instantiate, it is a datastructure that is set by code. We cant create a modifier list
-        // as we do not have the registry instances.
+        //TODO How can we instantiate - PropertyModifierList has attribtues that cannot be deserialized.
+        // possible solution: Store the identifier of the OTModalModifierProvider in the data and retrieve the provider
+        // from the registry to get the attributes needed for instantiation - even property type.
         return null;
     }
 
-    //TODO currently property modifier is solely mapped to properties. Use the OTModalMOdifierProvider identifier or something
-    // to allow registering multiple modifier configs per property and retrieve them for the operator type.
-    // operatortype still is the last instance of control -> allow OT to declare whether it even uses modal modifier keymap
-    // and perhaps if it uses a different e.g. multiple modal keymaps for one property, but for multiple operatortypes.
     /**
      *
      * @param props
