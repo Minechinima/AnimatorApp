@@ -53,7 +53,7 @@ public class OTRotateObject extends OTTransformObject<RotateObject, RotateProps>
 
     @Override
     public IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> modifierRegistry() {
-        return null;
+        return modifierRegistry;
     }
 
     @Override
