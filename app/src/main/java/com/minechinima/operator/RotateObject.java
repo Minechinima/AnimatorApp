@@ -4,13 +4,12 @@ import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.app.object.BaseObject;
 import com.minechinima.model.values.vectors.Vector3fValue;
 import com.minechinima.ui.utils.Area;
-import org.joml.Matrix4d;
-import org.joml.Vector3d;
-import org.joml.Vector3f;
-import org.joml.Vector4d;
+import org.joml.*;
+
+import java.lang.Math;
 
 public class RotateObject extends AbstractTransformOperator<RotateProps> {
-
+    private float angleSum;
     public RotateObject(RotateProps props) {
         super(props);
     }
@@ -70,11 +69,14 @@ public class RotateObject extends AbstractTransformOperator<RotateProps> {
         double cross = prevDx * currDy - prevDy * currDx;
         double dot = prevDx * currDx + prevDy * currDy;
         float deltaAngle = (float) Math.toDegrees(Math.atan2(cross, dot));
-
+        this.angleSum -= deltaAngle;
         // Apply the angle as rotation around the viewport's view vector axis
         Vector3d viewVector = this.viewport.getViewVector();
-        this.props.value.x.set((float) (this.props.value.x.get() + deltaAngle * viewVector.x));
-        this.props.value.y.set((float) (this.props.value.y.get() + deltaAngle * viewVector.y));
-        this.props.value.z.set((float) (this.props.value.z.get() + deltaAngle * viewVector.z));
+        Matrix3d rot = new Matrix3d().rotate((float) Math.toRadians(this.angleSum), viewVector);
+        Vector3d angles = new Vector3d();
+        rot.getEulerAnglesXYZ(angles);
+        this.props.value.x.set((float) (Math.toDegrees(angles.x)));
+        this.props.value.y.set((float) (Math.toDegrees(angles.y)));
+        this.props.value.z.set((float) (Math.toDegrees(angles.z)));
     }
 }

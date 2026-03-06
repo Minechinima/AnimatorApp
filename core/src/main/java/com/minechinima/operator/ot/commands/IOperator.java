@@ -39,4 +39,5 @@ public interface IOperator<C extends IContext> extends Closeable {
 
     @NotNull
     OPReturnValue<OpInvokeFlag> invoke(C context) throws UserException;
+    // TODO we need invoke for keymap events too? RND BLender
 }
