@@ -61,6 +61,11 @@ public class RotateObject extends AbstractTransformOperator<RotateProps> {
         double currDx = moveEvent.mouseX() - screenObjX;
         double currDy = -(moveEvent.mouseY() - screenObjY);
 
+        // Skip if mouse is too close to projected center (angle would be unstable)
+        double prevLenSq = prevDx * prevDx + prevDy * prevDy;
+        double currLenSq = currDx * currDx + currDy * currDy;
+        if (prevLenSq < 4.0 || currLenSq < 4.0) return;
+
         // Signed angle between the two vectors (atan2 of 2D cross product and dot product)
         double cross = prevDx * currDy - prevDy * currDx;
         double dot = prevDx * currDx + prevDy * currDy;
