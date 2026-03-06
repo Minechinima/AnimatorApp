@@ -3,9 +3,9 @@ package com.minechinima.operator;
 import com.minechinima.Application;
 
 public class BBOperatorTypeRegistryGroupStruct extends OperatorTypeRegistry<BBOperatorContext> {
-    public final OTRotateObject rotate = new OTRotateObject("rotate", "rotate", "Rotate given object");
-    public final OTTranslateObject move = new OTTranslateObject("translate", "translate", "Move given object");
-    public final OTScaleObject scale = new OTScaleObject("scale", "scale", "Scale given object");
+    public final OTRotateObject rotate = new OTRotateObject("rotate", "rotate", "Rotate given object", Application.ROTATE_MODIFIER_REGISTRY);
+    public final OTTranslateObject move = new OTTranslateObject("translate", "translate", "Move given object", Application.TRANSLATE_MODIFIER_REGISTRY);
+    public final OTScaleObject scale = new OTScaleObject("scale", "scale", "Scale given object", Application.SCALE_MODIFIER_REGISTRY);
     public final OTDeleteObject delete = new OTDeleteObject("delete", "delete object", "Delete");
     public final OTOrbitViewport orbitViewport = new OTOrbitViewport("orbit", "Orbit Viewport", "Move viewport.");
     public final OTPanViewport panViewport = new OTPanViewport("pan", "Pan Viewport", "Move viewport.");

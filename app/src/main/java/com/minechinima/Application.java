@@ -44,6 +44,8 @@ import com.minechinima.operator.history.CompressionStrategyRegistry;
 import com.minechinima.operator.history.HistoryManager;
 import com.minechinima.operator.history.strategies.ValueChangeMerge;
 import com.minechinima.operator.history.strategies.ValueChangeParallelCheck;
+import com.minechinima.operator.properties.ScaleProps;
+import com.minechinima.operator.properties.TranslateProps;
 import com.minechinima.rendering.IWindow;
 
 import com.minechinima.ui.ImguiLoader;
@@ -93,6 +95,10 @@ public class Application {
     private final Logger logger;
     private final GenericRegistry<HotKeyConfigGroupStruct> hotKeyConfigRegistry;
 
+
+    public static final IGenericRegistry<PropertyModifierCommandConfig<TranslateProps>> TRANSLATE_MODIFIER_REGISTRY = new GenericRegistry<>();
+    public static final IGenericRegistry<PropertyModifierCommandConfig<RotateProps>> ROTATE_MODIFIER_REGISTRY = new GenericRegistry<>();
+    public static final IGenericRegistry<PropertyModifierCommandConfig<ScaleProps>> SCALE_MODIFIER_REGISTRY = new GenericRegistry<>();
 
     public Application() {
         this.logger = LogManager.getLogger(Application.class);
