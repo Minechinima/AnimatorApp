@@ -86,15 +86,15 @@ public class OperationNode<T extends BaseStructure> extends Node {
 
     public OperationNode(ComponentNode<T> owner, @Nullable EvalFunction<T, OperationNodeDTO<T>> func,
                          OperationCode code) {
-        this(owner, func, code, "", null);
+        this(owner, func, code, null, null);
     }
 
     public OperationNode(ComponentNode<T> owner, OperationCode code, String name) {
-        this(owner, (EvalFunction<T, OperationNodeDTO<T>>) null, code, name, null);
+        this(owner, null, code, name, null);
     }
 
     public OperationNode(ComponentNode<T> owner, OperationCode code) {
-        this(owner, (EvalFunction<T, OperationNodeDTO<T>>) null, code, "", null);
+        this(owner, null, code, null, null);
     }
 
     public ComponentNode<T> getComponent() {
