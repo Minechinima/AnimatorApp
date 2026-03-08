@@ -5,4 +5,8 @@ package com.minechinima.depsgraph;
  */
 public class DepsGraphDataManager {
     private final DepsGraph graph;
+
+    public DepsGraphDataManager(DepsGraph graph) {
+        this.graph = graph;
+    }
 }

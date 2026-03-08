@@ -145,7 +145,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
          * Methods for adding an operation node to the component
          */
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope,
@@ -158,35 +158,81 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
             return new RelationBuilderHelper(node);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope) {
             return this.addOperation(func, code, name, scope, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope) {
             return this.addOperation(func, code, null, scope, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope,
                                                   @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
             return this.addOperation(func, code, null, scope, operationNodeRelationBuilder);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code) {
             return this.addOperation(func, code, null, null, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
             return this.addOperation(func, code, null, null, operationNodeRelationBuilder);
+        }
+
+        /*
+         * Methods for adding an operation node with a custom DTO factory
+         */
+
+        public <D extends OperationNodeDTO<T>> RelationBuilderHelper addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                  OperationNode.EvalFunction<T, D> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable final String name,
+                                                  @Nullable DataScope scope,
+                                                  @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
+            OperationNode<T> node = componentNode.addOperation(factory, func, code, name, scope);
+            if (operationNodeRelationBuilder != null) {
+                this.relationBuilderBuffer.add(new OpNodeRelationBuilder<OperationNode<T>, T>(node, operationNodeRelationBuilder));
+            }
+
+            return new RelationBuilderHelper(node);
+        }
+
+        public <D extends OperationNodeDTO<T>> RelationBuilderHelper addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                  OperationNode.EvalFunction<T, D> func,
+                                                  OperationNode.OperationCode code) {
+            return this.addOperation(factory, func, code, null, null, null);
+        }
+
+        public <D extends OperationNodeDTO<T>> RelationBuilderHelper addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                  OperationNode.EvalFunction<T, D> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable final String name,
+                                                  @Nullable DataScope scope) {
+            return this.addOperation(factory, func, code, name, scope, null);
+        }
+
+        public <D extends OperationNodeDTO<T>> RelationBuilderHelper addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                  OperationNode.EvalFunction<T, D> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable DataScope scope) {
+            return this.addOperation(factory, func, code, null, scope, null);
+        }
+
+        public <D extends OperationNodeDTO<T>> RelationBuilderHelper addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                  OperationNode.EvalFunction<T, D> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
+            return this.addOperation(factory, func, code, null, null, operationNodeRelationBuilder);
         }
 
         /**

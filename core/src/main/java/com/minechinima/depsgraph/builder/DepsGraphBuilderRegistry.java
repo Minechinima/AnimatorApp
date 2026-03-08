@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DepsGraphBuilderRegistry {
-    private static final GenericComponentBuilder<?> GENERICDATAENTRY = new GenericComponentBuilder<>(ComponentTypes.DATA_ENTRY) {
+    private static final GenericComponentBuilder<BaseStructure> GENERICDATAENTRY = new GenericComponentBuilder<>(ComponentTypes.DATA_ENTRY) {
         @Override
         public @Nullable DataScope getDataScope(BaseStructure data) {
             return null;
         }
     };
-    private static final GenericComponentBuilder<?> GENERICDATAEXIT = new GenericComponentBuilder<>(ComponentTypes.DATA_EXIT) {
+    private static final GenericComponentBuilder<BaseStructure> GENERICDATAEXIT = new GenericComponentBuilder<>(ComponentTypes.DATA_EXIT) {
         @Override
         public @Nullable DataScope getDataScope(BaseStructure data) {
             return null;
@@ -36,7 +36,7 @@ public class DepsGraphBuilderRegistry {
         if (this.builder.containsKey(dataClass)) {
             throw new IllegalArgumentException("Builder for data class " + dataClass.getName() + " already registered.");
         }
-        this.builder.put(dataClass, new BuilderEntry<>(genericDataEntryComponent, genericDataExitComponent));
+        this.builder.put(dataClass, new BuilderEntry<>(GENERICDATAENTRY, GENERICDATAEXIT));
     }
 
     public <T extends BaseStructure> void registerBuilder(Class<T> dataClass, ComponentBuilder<? super T> builder) {

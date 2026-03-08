@@ -116,32 +116,32 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         return this.operations.get(new OperationKey(key, name));
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                          OperationNode.OperationCode code) {
         return this.addOperation(func, code, null, null);
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                          OperationNode.OperationCode code,
                                          @Nullable final String name) {
         return this.addOperation(func, code, name, null);
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                          OperationNode.OperationCode code,
                                          @Nullable DataScope scope) {
         return this.addOperation(func, code, null, scope);
     }
 
     /**
-     *
-     * @param func
-     * @param code
+     * Adds an operation node with the default {@link OperationNodeDTO}.
+     * @param func eval function, or null for a NOOP node
+     * @param code operation code identifier
      * @param name can be null
      * @param scope datastructures that are managed by the operation node. Used for animation targetting.
-     * @return
+     * @return the created operation node
      */
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
+    public OperationNode<T> addOperation(OperationNode.EvalFunction<T, OperationNodeDTO<T>> func,
                                          OperationNode.OperationCode code,
                                          @Nullable final String name,
                                          @Nullable DataScope scope) {
@@ -152,6 +152,53 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         OperationNode<T> node = new OperationNode<>(this, func, code, name, scope);
         this.addOperationNode(node);
         return node;
+    }
+
+    /**
+     * Adds an operation node with a custom {@link OperationNode.DTOFactory}.
+     * The factory creates a typed DTO subclass from the evaluated copy,
+     * providing the eval function with type-safe access to specific subdata.
+     *
+     * @param factory creates the DTO from the evaluated copy
+     * @param func    eval function receiving the custom DTO
+     * @param code    operation code identifier
+     * @param name    can be null
+     * @param scope   datastructures that are managed by the operation node. Used for animation targetting.
+     * @param <D>     the concrete DTO type
+     * @return the created operation node
+     */
+    public <D extends OperationNodeDTO<T>> OperationNode<T> addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                                         OperationNode.EvalFunction<T, D> func,
+                                                                         OperationNode.OperationCode code,
+                                                                         @Nullable final String name,
+                                                                         @Nullable DataScope scope) {
+        if (this.findOperation(code, name) != null) {
+            throw new IllegalArgumentException("Operation with code " + code.getName() + " and name " + name + " already exists in component " + this.type.getName());
+        }
+
+        OperationNode<T> node = new OperationNode<>(this, factory, func, code, name, scope);
+        this.addOperationNode(node);
+        return node;
+    }
+
+    public <D extends OperationNodeDTO<T>> OperationNode<T> addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                                         OperationNode.EvalFunction<T, D> func,
+                                                                         OperationNode.OperationCode code) {
+        return this.addOperation(factory, func, code, null, null);
+    }
+
+    public <D extends OperationNodeDTO<T>> OperationNode<T> addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                                         OperationNode.EvalFunction<T, D> func,
+                                                                         OperationNode.OperationCode code,
+                                                                         @Nullable final String name) {
+        return this.addOperation(factory, func, code, name, null);
+    }
+
+    public <D extends OperationNodeDTO<T>> OperationNode<T> addOperation(OperationNode.DTOFactory<T, D> factory,
+                                                                         OperationNode.EvalFunction<T, D> func,
+                                                                         OperationNode.OperationCode code,
+                                                                         @Nullable DataScope scope) {
+        return this.addOperation(factory, func, code, null, scope);
     }
 
     private void addOperationNode(OperationNode<T> node) {
