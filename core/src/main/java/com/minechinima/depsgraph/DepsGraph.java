@@ -112,4 +112,13 @@ public class DepsGraph {
     public void clearAllTags() {
         this.tagStore.clearAll();
     }
+
+    /**
+     * Remove all tags from a specific node.
+     *
+     * @param node the node to clear all tags from
+     */
+    public void clearTags(Node node) {
+        this.tagStore.clearNode(node);
+    }
 }

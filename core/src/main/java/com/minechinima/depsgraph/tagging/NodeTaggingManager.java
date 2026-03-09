@@ -18,14 +18,9 @@ public class NodeTaggingManager {
     private final DepsGraph graph;
 
     /**
-     * Cache: IData → its EventBus (identity-based so every IData instance is unique).
+     * All subscription tokens grouped by node, so we can unsubscribe per node or in bulk.
      */
-    private final IdentityHashMap<IData, EventBus> eventBusCache = new IdentityHashMap<>();
-
-    /**
-     * All subscription tokens we created, so we can unsubscribe in bulk.
-     */
-    private final List<SubscriptionRecord> subscriptions = new ArrayList<>();
+    private final IdentityHashMap<Node, List<SubscriptionRecord>> subscriptions = new IdentityHashMap<>();
 
     public NodeTaggingManager(DepsGraph graph) {
         this.graph = graph;
@@ -44,9 +39,12 @@ public class NodeTaggingManager {
         T node = callback.node();
         NodeTaggingCreator<T> config = callback.config();
 
+        List<SubscriptionRecord> nodeSubscriptions = this.subscriptions
+                .computeIfAbsent(node, k -> new ArrayList<>());
+
         for (NodeTaggingCreator.TaggingEntry<T> entry : config.getEntries()) {
             for (IData data : entry.watchedData()) {
-                EventBus bus = this.resolveEventBus(data);
+                EventBus bus = data.getEventBus();
 
                 // The consumer that will be invoked by the event bus on matching events.
                 // Captures: graph, entry.listener, data (source), node.
@@ -61,7 +59,7 @@ public class NodeTaggingManager {
                 AbstractEventBus.Subscription subscription = bus.subscribe(
                         consumer, eventType, constraintTypes);
 
-                this.subscriptions.add(new SubscriptionRecord(bus, subscription));
+                nodeSubscriptions.add(new SubscriptionRecord(bus, subscription));
             }
         }
     }
@@ -81,19 +79,33 @@ public class NodeTaggingManager {
     }
 
     /**
+     * Unsubscribe all listeners for a specific node and clear its tags.
+     * Should be called when a node is removed from the dependency graph
+     * to prevent stale references keeping the node alive.
+     *
+     * @param node the node to unregister
+     */
+    public void unregister(Node node) {
+        List<SubscriptionRecord> nodeSubscriptions = this.subscriptions.remove(node);
+        if (nodeSubscriptions != null) {
+            for (SubscriptionRecord record : nodeSubscriptions) {
+                record.bus.unsubscribe(record.subscription);
+            }
+        }
+        this.graph.clearTags(node);
+    }
+
+    /**
      * Unsubscribe all listeners that were registered through this manager.
      * Should be called before a graph rebuild to prevent stale references.
      */
     public void unsubscribeAll() {
-        for (SubscriptionRecord record : this.subscriptions) {
-            record.bus.unsubscribe(record.subscription);
+        for (List<SubscriptionRecord> nodeSubscriptions : this.subscriptions.values()) {
+            for (SubscriptionRecord record : nodeSubscriptions) {
+                record.bus.unsubscribe(record.subscription);
+            }
         }
         this.subscriptions.clear();
-        this.eventBusCache.clear();
-    }
-
-    private EventBus resolveEventBus(IData data) {
-        return this.eventBusCache.computeIfAbsent(data, IData::getEventBus);
     }
 
     // ---- Supporting types ----

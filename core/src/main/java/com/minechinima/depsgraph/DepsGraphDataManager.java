@@ -40,6 +40,15 @@ public class DepsGraphDataManager {
         this.taggingManager = new NodeTaggingManager(this.graph);
     }
 
+    /**
+     * Remove a node
+     *
+     * @param node the node to unregister
+     */
+    public void removeNode(Node node) {
+        this.taggingManager.unregister(node);
+    }
+
     public DepsGraph getGraph() {
         return this.graph;
     }
