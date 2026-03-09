@@ -80,6 +80,11 @@ public class ComponentNode<DATA extends T, EVAL extends T, T extends IData> exte
         return mergedScope;
     }
 
+    /**
+     * Set the entry operation.
+     * @param entry
+     * @throw RuntimeException if the entry operation is already set or if the entry operation is the same instance as the exit operation.
+     */
     public void setEntry(@NotNull OperationNode<EVAL> entry) {
         Objects.requireNonNull(entry);
         /* changing the entry operation might cause unwanted relations/behaviour when other nodes are already connected to this entry */

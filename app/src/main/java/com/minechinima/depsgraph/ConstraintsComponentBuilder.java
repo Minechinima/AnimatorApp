@@ -3,6 +3,7 @@ package com.minechinima.depsgraph;
 import com.minechinima.depsgraph.builder.ComponentBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
 import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
+import com.minechinima.kernel.ConstraintBuilding;
 import com.minechinima.kernel.ConstraintEvalRegistry;
 import com.minechinima.kernel.Constraints;
 import com.minechinima.model.app.object.*;
@@ -22,9 +23,11 @@ public class ConstraintsComponentBuilder<DATA extends IConstraintsComponent, EVA
         super(ComponentTypes.CONSTRAINTS);
         this.constraintEvalRegistry = constraintEvalRegistry;
         this.addOperationNodeBuilder((obj, helper) ->
-                Constraints.buildConstraints(obj, constraintEvalRegistry, helper));
-        this.addComponentRelationBuilder(Constraints::buildConstraintComponentRelation);
+                ConstraintBuilding.buildConstraints(obj, constraintEvalRegistry, helper));
+        this.addComponentRelationBuilder(ConstraintBuilding::buildConstraintComponentRelation);
+        /* for any parameter change in constraints update the entire component */
         this.addComponentTaggingConfig(component -> NodeTaggingCreator.forData(component.constraints(), NodeTag.NEEDS_REEVALUATION));
+        /* changes in the constraint list require rebuilding relations */
         this.addComponentTaggingConfig(component -> NodeTaggingCreator.forEventConstraints(component.constraints(),
                 ChangeEvent.class, SubscribeEvent.Type.ON_NODE, NodeTag.REBUILD_TREE));
     }
@@ -32,11 +35,12 @@ public class ConstraintsComponentBuilder<DATA extends IConstraintsComponent, EVA
     @Nullable
     @Override
     public DataScope getDataScope(DATA data) {
-        return null;
+        return new DataScope(data.constraints());
     }
 
     @Override
     public void addEntryExitOperation(ComponentNode<DATA, EVAL, ITransformationComponent> component) {
-
+        component.setEntry(component.addOperation(null, OperationCodes.CONSTRAINTS_ENTRY));
+        component.setExit(component.addOperation(null, OperationCodes.CONSTRAINTS_EXIT));
     }
 }

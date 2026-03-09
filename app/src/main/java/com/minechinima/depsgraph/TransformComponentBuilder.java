@@ -1,6 +1,8 @@
 package com.minechinima.depsgraph;
 
 import com.minechinima.depsgraph.builder.ComponentBuilder;
+import com.minechinima.depsgraph.tagging.NodeTag;
+import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
 import com.minechinima.kernel.Transform;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.app.object.IEvaluatedTransformation;
@@ -15,6 +17,8 @@ public class TransformComponentBuilder<DATA extends ITransformationComponent, EV
         super(ComponentTypes.TRANSFORM);
         this.addOperationNodeBuilder(Transform::buildTransformComponent);
         this.addComponentRelationBuilder(Transform::buildTransformRelations);
+        this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forDataScope(this.getDataScope(transform), NodeTag.NEEDS_REEVALUATION));
+        this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forData(transform.parent(), NodeTag.REBUILD_TREE));
     }
 
     @Nullable

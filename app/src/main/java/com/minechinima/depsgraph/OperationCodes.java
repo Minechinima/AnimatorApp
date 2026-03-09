@@ -5,6 +5,8 @@ public enum OperationCodes implements OperationNode.OperationCode {
     TRANSFORM_LOCAL,
     TRANSFORM_PARENT,
     TRANSFORM_EXIT,
+    CONSTRAINTS_ENTRY,
+    CONSTRAINTS_EXIT,
     CONSTRAINTS;
 
     @Override
