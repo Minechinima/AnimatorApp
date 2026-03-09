@@ -8,9 +8,9 @@ import com.minechinima.operator.modal.IPropertyModifierReleasableCommand;
  * Configuraton for a property modifier command that can react to release event.
  * @param <P>
  */
-public abstract class PropertyModifierReleaseableConfig<P extends OperatorProperties> extends PropertyModifierConfig<P> implements IReleasableModule {
+public abstract class PropertyModifierReleasableCommandConfig<P extends OperatorProperties> extends PropertyModifierCommandConfig<P> implements IReleasableModule {
 
-    public PropertyModifierReleaseableConfig(String title, String description) {
+    public PropertyModifierReleasableCommandConfig(String title, String description) {
         super(title, description);
     }
 

@@ -4,7 +4,6 @@ import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
 import com.minechinima.operator.OperatorProperties;
-import com.minechinima.operator.config.operator.OperatorPropertiesConfig;
 import com.minechinima.operator.ot.commands.IModalOperator;
 import com.minechinima.operator.ot.commands.IOperator;
 import com.minechinima.operator.ot.commands.IPropertyOperator;
@@ -15,6 +14,10 @@ import java.util.LinkedHashSet;
 
 /**
  * Seperate the OperatorType from the command Operator logic for cleaner code.
+ * <br><br>
+ * The OperatorType acts as a declaration of the operator and how to handle it. OperatorTypes
+ * implement various interfaces to provide flags and information for the engine how to handle
+ * the operator logic.
  * @param <C> type of the Operator Context.
  * @implNote By defining {@link #poll(C)} here
  *           it allows generic bounds and type safety with the Context type of {@link IOperator <C>}.
@@ -77,11 +80,16 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
     @NotNull
     public abstract O getOperator();
 
+    /**
+     * To define one operator type in chain of macros.
+     *
+     * @param <C>
+     */
     public static class Macro<C extends IContext> {
         private final OperatorType<C, ?> ot;
         @Nullable
         private final OperatorProperties props;
-        private final boolean cancelMacroOnModalCancel;
+        private final boolean cancelEntireOTOnMacroCancel;
 
         public <OP extends IPropertyOperator<C, P>,
                 OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P>,
@@ -89,30 +97,30 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
         Macro(OT ot, P props) {
             this.ot = ot;
             this.props = props;
-            this.cancelMacroOnModalCancel = false;
+            this.cancelEntireOTOnMacroCancel = false;
         }
 
         public <OP extends IPropertyOperator<C, P> & IModalOperator<C>,
                 OT extends OperatorType<C, OP> & IOTPropertyProvider<OP, P> & IOTModal<C, OP>,
                 P extends OperatorProperties>
-        Macro(OT ot, P props, boolean cancelMacroOnModalCancel) {
+        Macro(OT ot, P props, boolean cancelEntireOTOnMacroCancel) {
             this.ot = ot;
             this.props = props;
-            this.cancelMacroOnModalCancel = cancelMacroOnModalCancel;
+            this.cancelEntireOTOnMacroCancel = cancelEntireOTOnMacroCancel;
         }
 
 
         public <OT extends OperatorType<C, ?>> Macro(OT ot) {
             this.ot = ot;
             this.props = null;
-            this.cancelMacroOnModalCancel = false;
+            this.cancelEntireOTOnMacroCancel = false;
         }
 
         public <OP extends IOperator<C> & IModalOperator<C>,
-                OT extends OperatorType<C, OP> & IOTModal<C, OP>> Macro(OT ot, boolean cancelMacroOnModalCancel) {
+                OT extends OperatorType<C, OP> & IOTModal<C, OP>> Macro(OT ot, boolean cancelEntireOTOnMacroCancel) {
             this.ot = ot;
             this.props = null;
-            this.cancelMacroOnModalCancel = cancelMacroOnModalCancel;
+            this.cancelEntireOTOnMacroCancel = cancelEntireOTOnMacroCancel;
         }
 
         public OperatorType<C, ?> getOperatorType() {
@@ -123,8 +131,13 @@ public abstract class OperatorType<C extends IContext, O extends IOperator<C>> e
             return props;
         }
 
-        public boolean isCancelMacroOnModalCancel() {
-            return cancelMacroOnModalCancel;
+        /**
+         * @return true if the entire OperatorType (all previous and coming macros), should be cancelled
+         * if this macro operator is cancelled.
+         * //TODO user configurable default value. add framework to let OT define whether this can be configured
+         */
+        public boolean cancelEntireOTOnMacroCancel() {
+            return cancelEntireOTOnMacroCancel;
         }
     }
 }

@@ -27,6 +27,8 @@ import java.util.List;
  * This value is not going to serialize and store the target itself, it only points to it with a path.
  * @param <T>
  */
+// TODO refactor valuepointer. Use root. No need for relative reference frame and shit
+// remove the setParent methods that iterate down the tree and all the methods that were only there for this
 public class ValuePointer<T extends BaseStructure> extends BaseStructure implements IValue<T>, IDataPointer<T>, IControllerFactoryProvider<ValueControllerFactory<T, ?>> {
     /**
      * When deserialized and the pointer target cannot be found, this will be set to the last known path.

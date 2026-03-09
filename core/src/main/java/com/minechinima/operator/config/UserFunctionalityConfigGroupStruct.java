@@ -1,18 +1,14 @@
 package com.minechinima.operator.config;
 
 import com.minechinima.input.hotkey.HotKeyConfigGroupStruct;
-import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.AddToTreeEvent;
 import com.minechinima.model.events.types.AbstractEvent;
 import com.minechinima.model.events.types.RemoveFromTreeEvent;
-import com.minechinima.model.events.types.changes.ValueAddEvent;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.operator.IContext;
-import com.minechinima.operator.OperatorProperties;
 import com.minechinima.operator.OperatorTypeRegistry;
 import com.minechinima.operator.config.modal.ModalFunctionConfigsMapStruct;
 import com.minechinima.operator.config.modal.PropertyModifierConfigsMapStruct;
-import com.minechinima.operator.config.modal.PropertyModifiersListStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoryGroupStruct;
 import com.minechinima.operator.config.operator.OperatorConfigGroupStruct;
 import com.minechinima.operator.config.operator.OperatorConfigCategoriesMapStruct;
@@ -49,11 +45,7 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
         this.operatorTypeRegistry = operatorTypeRegistry;
         this.addChild("configs", this.operators = new OperatorConfigCategoriesMapStruct<>("key_configurations", this));
         this.addChild("modal_functions", this.modalFunctions = new ModalFunctionConfigsMapStruct<>("modal_functions", this.hotKeyConfigRegistry));
-        this.addChild("prop_modifiers", this.propModifiers = new PropertyModifierConfigsMapStruct("prop_modifiers"));
-        this.operatorTypeRegistry.getEventBus().subscribe(this);
-        this.operatorTypeRegistry.getChildren().forEach(ot -> {
-            if (ot instanceof IOTModalModifierProvider provider) this.addPropertyModifierConfig(provider);
-        });
+        this.addChild("prop_modifiers", this.propModifiers = new PropertyModifierConfigsMapStruct("prop_modifiers", this.operatorTypeRegistry, this.hotKeyConfigRegistry));
     }
 
     @Override
@@ -68,21 +60,7 @@ public class UserFunctionalityConfigGroupStruct<C extends IContext> extends Valu
         }
     }
 
-    @SubscribeEvent(type = SubscribeEvent.Type.ON_NODE)
-    private void onAddOT(ValueAddEvent event) {
-        if (event.getAddedElement() instanceof IOTModalModifierProvider provider) {
-            this.addPropertyModifierConfig(provider);
-        }
-    }
 
-    private <P extends OperatorProperties> void addPropertyModifierConfig(IOTModalModifierProvider<C, ?, P> provider) {
-        Set<PropertyModifiersListStruct<P>> modifiers = this.propModifiers.getConfigCategoriesForDirect(provider.getPropertyType());
-
-        if (modifiers.isEmpty()) {
-            this.propModifiers.add(new PropertyModifiersListStruct<>(provider.modifierConfigIdentifier(),
-                    provider.getPropertyType(), provider.modifierRegistry(), this.hotKeyConfigRegistry));
-        }
-    }
 
     /**
      * @param space

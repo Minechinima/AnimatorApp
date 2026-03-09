@@ -13,11 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
- *
- * @param <P>
+ * An operator command that is controlled by input parameters.
+ * @param <P> type of the input parameters.
  * @param <C> context
- * @implNote Important why this is an interface: force subclasses that
- * implement {@link IAdjustableOperator} to also implement this interface.
  */
 public abstract class IPropertyOperator<C extends IContext, P extends OperatorProperties> implements IOperator<C> {
     @NotNull

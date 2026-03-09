@@ -30,7 +30,7 @@ public class BaseObject extends ValueGroup implements IBaseObject {
 
     @InUIGroup(key = "base_object.transformation", as = UIAccordion.class)
     @InGui(entrypoint = IBimsSubUIHandler.class, translationPrefix = "base_object.transformation.scale", as = UIVectorElement.class)
-    public final Vector3fValue scale = new Vector3fValue("scale");
+    public final Vector3fValue scale = new Vector3fValue("scale", 1, 1, 1);
 
     @InUIGroup(key = "base_object.visibility", as = UIAccordion.class)
     @InGui(entrypoint = UIObjectProperties.UIObjectPropertiesHandler.class,

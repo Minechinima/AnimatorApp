@@ -62,12 +62,22 @@ public class ControllerChain extends IControllerCommand implements Iterable<ICon
     }
 
     @Override
-    public void execute() throws UserException {
+    protected void execute() throws UserException {
         /* start from the head */
-        if (this.head != this) this.head.execute();
+        if (this.head != this) {
+            this.head.execute();
+            return;
+        }
 
         if (this.command != null) this.command.execute();
-        if (this.next != null) this.next.execute();
+        /* use internal method -> when starting from head
+         we dont need to check head again */
+        if (this.next != null) this.next._execute();
+    }
+
+    private void _execute() throws UserException {
+        if (this.command != null) this.command.execute();
+        if (this.next != null) this.next._execute();
     }
 
     @Override

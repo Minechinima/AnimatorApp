@@ -23,7 +23,7 @@ public class OTOrbitViewport extends OperatorType<BBOperatorContext, OrbitViewpo
     }
 
     @Override
-    public boolean confirmOnReleaseDefault() {
+    public boolean useReleaseEvent() {
         return true;
     }
 }

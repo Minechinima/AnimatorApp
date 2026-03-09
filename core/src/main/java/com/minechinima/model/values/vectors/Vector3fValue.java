@@ -11,20 +11,24 @@ import org.joml.Vector3f;
 import java.util.*;
 
 public class Vector3fValue extends ValueGroup implements IControllerFactoryProvider<VectorControllerFactory>, IVector3f {
-    public final FloatValue x = new FloatValue("x");
-    public final FloatValue y = new FloatValue("y");
-    public final FloatValue z = new FloatValue("z");
+    public final FloatValue x;
+    public final FloatValue y;
+    public final FloatValue z;
     private final VectorControllerFactory controllers = new VectorControllerFactory(this);
 
     public Vector3fValue(String id) {
-        this(id, null);
+        this(id, null, 0, 0, 0);
     }
 
-    protected Vector3fValue(String id, UUID uuid) {
+    public Vector3fValue(String id, float x, float y, float z) {
+        this(id, null, x, y, z);
+    }
+
+    protected Vector3fValue(String id, UUID uuid, float x, float y, float z) {
         super(id, uuid);
-        this.addChild("x", this.x);
-        this.addChild("y", this.y);
-        this.addChild("z", this.z);
+        this.addChild("x", this.x = new FloatValue("x", x));
+        this.addChild("y", this.y = new FloatValue("y", y));
+        this.addChild("z", this.z = new FloatValue("z", z));
         this.initChildren();
     }
 

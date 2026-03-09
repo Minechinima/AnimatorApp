@@ -12,7 +12,7 @@ public interface IUndoOperator<C extends IContext> extends IOperator<C> {
     IUndoOperatorCommand<C> getUndoCommand(C context);
 
     /**
-     * Separate command interface. Implement this in a separate class or static inner class. It is important
+     * Separate command interface. Implement this in a separate class or <b>static</b> inner class. It is important
      * that the original Operator instance is not referenced so it does not stay alive in the history stack.
      * @param <C>
      */

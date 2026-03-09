@@ -1,75 +1,82 @@
 package com.minechinima.operator;
 
-import com.minechinima.controller.IControllerCommand;
-import com.minechinima.input.keymap.events.KeyMapEvent;
 import com.minechinima.input.keymap.events.KeyMapMouseMoveEvent;
 import com.minechinima.model.app.object.BaseObject;
-import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.exceptions.UserException;
 import com.minechinima.model.values.vectors.Vector3fValue;
-import com.minechinima.operator.ot.commands.*;
-import com.minechinima.operator.ot.commands.flags.OPReturnValue;
-import com.minechinima.operator.ot.commands.flags.OpExecuteFlag;
-import com.minechinima.operator.ot.commands.flags.OpInvokeFlag;
-import com.minechinima.operator.ot.commands.flags.OpModalFlag;
-import com.minechinima.operator.properties.TranslateProps;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
+import com.minechinima.ui.utils.Area;
+import org.joml.*;
 
-public class RotateObject extends IAdjustableOperator<BBOperatorContext, RotateProps> implements IModalOperator<BBOperatorContext> {
-    private Vector3f startRotation;
+import java.lang.Math;
 
+public class RotateObject extends AbstractTransformOperator<RotateProps> {
+    private float angleSum;
     public RotateObject(RotateProps props) {
         super(props);
     }
 
     @Override
-    public OPReturnValue<OpExecuteFlag> adjust(BBOperatorContext context, BaseStructure prop) throws UserException {
-        return null;
+    protected Vector3fValue getTargetValue(BaseObject object) {
+        return object.rotation;
     }
 
     @Override
-    public OPReturnValue<OpExecuteFlag> onUIPropChange(BBOperatorContext context, BaseStructure changedProp) throws UserException {
-        return null;
-    }
-
-    @Override
-    public OPReturnValue<OpInvokeFlag> invoke(BBOperatorContext context) throws UserException {
-        if (context.bbContext().activeObject.get() == null) return new OPReturnValue<>(OpInvokeFlag.CANCELLED);
-        this.startRotation = context.bbContext().activeObject.get().translation.asVector3f();
-        return new OPReturnValue<>(OpInvokeFlag.MODAL_RUNNING);
-    }
-
-    @NotNull
-    @Override
-    public OPReturnValue<Modal> modal(BBOperatorContext context, KeyMapEvent event) throws UserException {
-        if (event instanceof KeyMapMouseMoveEvent moveEvent) {
-            this.props.value.x.set((float) (this.props.value.x.get() + moveEvent.dragX() * 0.5));
-            this.props.value.y.set((float) (this.props.value.y.get() - moveEvent.dragY() * 0.5));
+    protected void applyMouseInput(BBOperatorContext context, KeyMapMouseMoveEvent moveEvent) {
+        if (this.props.trackball.get()) {
+            this.props.value.x.set((float) (this.props.value.x.get() + moveEvent.dragY() * 0.5));
+            this.props.value.y.set((float) (this.props.value.y.get() + moveEvent.dragX() * 0.5));
+            return;
         }
+
+        if (this.viewport == null) return;
 
         BaseObject object = context.bbContext().activeObject.get();
-        Vector3fValue rotation = object.rotation;
-        Vector3f offset = this.props.value.asVector3f();
+        if (object == null) return;
 
-        if (this.props.transformOnAxis.get()) {
-            switch (this.props.axis.get()) {
-                case X -> {
-                    offset.y = 0;
-                    offset.z = 0;
-                }
-                case Y -> {
-                    offset.x = 0;
-                    offset.z = 0;
-                }
-                case Z -> {
-                    offset.x = 0;
-                    offset.y = 0;
-                }
-            }
-        }
+        // Project the object's world position onto the screen
+        Vector3f objectWorldPos = object.translation.asVector3f();
+        Vector3d camPos = new Vector3d(this.viewport.getPos());
 
-        IControllerCommand cmd = rotation.controller().set(offset.add(this.startRotation));
-        return new OPReturnValue<>(new Modal(OpModalFlag.MODAL_RUNNING), cmd);
+        Matrix4d viewMatrix = new Matrix4d()
+                .rotateX(Math.toRadians(-this.viewport.getPitch()))
+                .rotateY(Math.toRadians(-this.viewport.getYaw()))
+                .translate(-camPos.x, -camPos.y, -camPos.z);
+
+        Matrix4d vpMatrix = new Matrix4d(this.viewport.getProjection()).mul(viewMatrix);
+        Vector4d clip = vpMatrix.transform(new Vector4d(objectWorldPos.x, objectWorldPos.y, objectWorldPos.z, 1.0));
+
+        if (Math.abs(clip.w) < 1e-6) return;
+
+        double ndcX = clip.x / clip.w;
+        double ndcY = clip.y / clip.w;
+
+        Area contentArea = this.viewport.getArea();
+        double screenObjX = (ndcX + 1.0) / 2.0 * contentArea.getWidth() + contentArea.getX();
+        double screenObjY = (1.0 - ndcY) / 2.0 * contentArea.getHeight() + contentArea.getY();
+
+        // Vectors from projected object center to previous and current mouse positions
+        // Negate Y so that the math convention (Y up) matches the screen (Y down)
+        double prevDx = moveEvent.prevMouseX() - screenObjX;
+        double prevDy = -(moveEvent.prevMouseY() - screenObjY);
+        double currDx = moveEvent.mouseX() - screenObjX;
+        double currDy = -(moveEvent.mouseY() - screenObjY);
+
+        // Skip if mouse is too close to projected center (angle would be unstable)
+        double prevLenSq = prevDx * prevDx + prevDy * prevDy;
+        double currLenSq = currDx * currDx + currDy * currDy;
+        if (prevLenSq < 4.0 || currLenSq < 4.0) return;
+
+        // Signed angle between the two vectors (atan2 of 2D cross product and dot product)
+        double cross = prevDx * currDy - prevDy * currDx;
+        double dot = prevDx * currDx + prevDy * currDy;
+        float deltaAngle = (float) Math.toDegrees(Math.atan2(cross, dot));
+        this.angleSum -= deltaAngle;
+        // Apply the angle as rotation around the viewport's view vector axis
+        Vector3d viewVector = this.viewport.getViewVector();
+        Matrix3d rot = new Matrix3d().rotate((float) Math.toRadians(this.angleSum), viewVector);
+        Vector3d angles = new Vector3d();
+        rot.getEulerAnglesXYZ(angles);
+        this.props.value.x.set((float) (Math.toDegrees(angles.x)));
+        this.props.value.y.set((float) (Math.toDegrees(angles.y)));
+        this.props.value.z.set((float) (Math.toDegrees(angles.z)));
     }
 }

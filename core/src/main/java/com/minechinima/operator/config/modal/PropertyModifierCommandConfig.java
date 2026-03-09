@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
  * Higher flexibility with hotkey configuration.
  * @param <P>
  */
-public abstract class PropertyModifierConfig<P extends OperatorProperties> extends ValueGroup implements ILangKeyProvider {
+public abstract class PropertyModifierCommandConfig<P extends OperatorProperties> extends ValueGroup implements ILangKeyProvider {
     private final String title;
     private final String description;
 
-    public PropertyModifierConfig(String title, String description) {
+    public PropertyModifierCommandConfig(String title, String description) {
         super("");
         this.title = title;
         this.description = description;

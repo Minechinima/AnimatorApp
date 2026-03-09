@@ -2,9 +2,7 @@ package com.minechinima.operator.modal;
 
 import com.minechinima.controller.IControllerCommand;
 import com.minechinima.operator.OperatorProperties;
-import com.minechinima.operator.config.modal.PropertyModifierReleaseableConfig;
-
-import java.util.Queue;
+import com.minechinima.operator.config.modal.PropertyModifierReleasableCommandConfig;
 
 /**
  * Command that modifies the properties of an Operator while it is running in modal mode to influence its execution logic.
@@ -15,14 +13,15 @@ import java.util.Queue;
  * @param <P>
  * @param <C> the config that spawned this command.
  */
-public abstract class IPropertyModifierReleasableCommand<P extends OperatorProperties, C extends PropertyModifierReleaseableConfig<P>> extends IPropertyModifierCommand<P, C> {
+public abstract class IPropertyModifierReleasableCommand<P extends OperatorProperties, C extends PropertyModifierReleasableCommandConfig<P>> extends IPropertyModifierCommand<P, C> {
     public IPropertyModifierReleasableCommand(C modifierConfig) {
         super(modifierConfig);
     }
 
     /**
+     * Is only called when {@link PropertyModifierReleasableCommandConfig#useReleaseEvent()} is true.
      * @param props
-     * @implNote Is executed on the same instance -> cached attributes can be used for persistent storage till this event is fired.
+     * @implNote Is executed on the same instance -> cached attributes can be used for persistent storage as a state machine utill this event is fired.
      */
     public abstract IControllerCommand onReleaseEvent(P props);
 }

@@ -9,7 +9,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 
+/**
+ * The execution logic of one user action.
+ * The command instance is stored during its lifetime, it can be used as a state machine.
+ * @param <C>
+ */
 public interface IOperator<C extends IContext> extends Closeable {
+    @NotNull
     default OPReturnValue<OpExecuteFlag> execute(C context) throws UserException {
         throw new UnsupportedOperationException("Method execute() not implemented.");
     }
@@ -33,4 +39,5 @@ public interface IOperator<C extends IContext> extends Closeable {
 
     @NotNull
     OPReturnValue<OpInvokeFlag> invoke(C context) throws UserException;
+    // TODO we need invoke for keymap events too? RND BLender
 }
