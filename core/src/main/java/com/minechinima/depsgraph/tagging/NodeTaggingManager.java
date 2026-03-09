@@ -79,9 +79,7 @@ public class NodeTaggingManager {
     }
 
     /**
-     * Unsubscribe all listeners for a specific node and clear its tags.
-     * Should be called when a node is removed from the dependency graph
-     * to prevent stale references keeping the node alive.
+     * Unsubscribe all listeners for a specific node.
      *
      * @param node the node to unregister
      */
@@ -92,7 +90,6 @@ public class NodeTaggingManager {
                 record.bus.unsubscribe(record.subscription);
             }
         }
-        this.graph.clearTags(node);
     }
 
     /**

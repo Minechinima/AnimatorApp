@@ -2,6 +2,7 @@ package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.ComponentNode;
 import com.minechinima.depsgraph.ComponentTypes;
+import com.minechinima.depsgraph.DataNode;
 import com.minechinima.depsgraph.DataScope;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.base.BaseStructure;
@@ -35,8 +36,8 @@ public class DepsGraphBuilderRegistry {
     private final HashMap<ComponentNode.ComponentType, BuilderTypeEntry<?, ?>> builderTypes = new HashMap<>();
 
     public DepsGraphBuilderRegistry() {
-        this.registerComponentBuilderType(GENERICDATAENTRY, BaseStructure.class);
-        this.registerComponentBuilderType(GENERICDATAEXIT, BaseStructure.class);
+        this.registerComponentBuilderType(GENERICDATAENTRY, IData.class);
+        this.registerComponentBuilderType(GENERICDATAEXIT, IData.class);
     }
 
     /**
@@ -45,7 +46,7 @@ public class DepsGraphBuilderRegistry {
      * @param clazz The data class this component builder can build for.
      * @param <T>
      */
-    public <DATA extends T, T extends IData> void registerComponentBuilderType(ComponentBuilder<DATA, ?, T> builder, Class<?> clazz) {
+    public <DATA extends T, T extends IData> void registerComponentBuilderType(ComponentBuilder<DATA, ?, T> builder, Class<DATA> clazz) {
         if (this.builderTypes.containsKey(builder.getType())) {
             throw new IllegalArgumentException("Builder for component type " + builder.getType() + " already registered.");
         }
@@ -123,8 +124,8 @@ public class DepsGraphBuilderRegistry {
 
 
     protected record BuilderEntry(ComponentNode.ComponentType entryBuilder,
-                                                           ComponentNode.ComponentType exitBuilder,
-                                                           Set<ComponentNode.ComponentType> builders) {
+                                  ComponentNode.ComponentType exitBuilder,
+                                  Set<ComponentNode.ComponentType> builders) {
         public BuilderEntry(ComponentNode.ComponentType entryBuilder, ComponentNode.ComponentType exitBuilder) {
             this(entryBuilder, exitBuilder, new HashSet<>());
         }

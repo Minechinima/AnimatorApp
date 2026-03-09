@@ -20,7 +20,8 @@ import java.util.*;
  *   <li>{@link #forEventConstraints} – adds event-type and constraint filters</li>
  *   <li>{@link #custom} – fully custom listener</li>
  * </ol>
- *
+ * The tagging functions are executed within the context of a node. Meaning the objects created here
+ * need to be mapped at some point to a node to work properly. See public API of {@link NodeTaggingStrategy}
  * @param <T> the type of dependency-graph node this config applies to
  */
 public class NodeTaggingCreator<T extends Node> {
@@ -86,7 +87,7 @@ public class NodeTaggingCreator<T extends Node> {
                 ? new SubscribeEvent.Type[]{constraint}
                 : new SubscribeEvent.Type[]{SubscribeEvent.Type.ALL};
 
-        NodeTaggingListener<T> defaultListener = (graph, event, source, node) -> graph.tag(node, tag);
+        NodeTaggingStrategy<T> defaultListener = (graph, event, source, node) -> graph.tag(node, tag);
         return custom(defaultListener, eventType, constraints, scope.getAllData());
     }
 
@@ -111,7 +112,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @return a config with one entry
      */
     public static <T extends Node> NodeTaggingCreator<T> custom(
-            NodeTaggingListener<T> listener,
+            NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
             Set<IData> watchedData) {
@@ -126,7 +127,7 @@ public class NodeTaggingCreator<T extends Node> {
      * Convenience overload accepting varargs data instead of a set.
      */
     public static <T extends Node> NodeTaggingCreator<T> custom(
-            NodeTaggingListener<T> listener,
+            NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
             IData... watchedData) {
@@ -156,7 +157,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @param <T> the node type
      */
     public record TaggingEntry<T extends Node>(
-            NodeTaggingListener<T> listener,
+            NodeTaggingStrategy<T> listener,
             Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
             Set<IData> watchedData

@@ -108,25 +108,6 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
     public abstract void addEntryExitOperation(ComponentNode<DATA, EVAL, T> component);
 
     /**
-     * Function to add the operation nodes to the component.
-     * Called after entry and exit have been added, so internal operations can be built with relations to them.
-     */
-    @FunctionalInterface
-    public interface OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IData> {
-        /**
-         * Is called after entry and exit have been built so internal operations can be built with relations to them.
-         * Adds operation nodes to the component.
-         * <br><br>
-         * Internal relations can be built here, e.g. from entry to the first internal operation, between internal operations and from the last internal operation to the exit.
-         * For relations to any other nodes, even nodes in the same data node, the external {@link RelationBuilder} should be used,
-         * because the other nodes might not be built yet when this method is called.
-         * @param data the original database value
-         */
-        @Nullable
-        void addOperationNodes(DATA data, ComponentBuilder<DATA, EVAL, T>.OperationNodesBuilderHelper helper);
-    }
-
-    /**
      * Utility class to bind the node to the relation builder callback, so
      * that it does not need to be passed as parameter later on again.
      * @param <T>
@@ -161,7 +142,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * of the dependency graph node classes.
      * Might be useful if we want to wrap exceptions of the internal api and log them instead of crashing.
      */
-    public class OperationNodesBuilderHelper {
+    //TODO extract from component builder
+    public static class OperationNodesBuilderHelper<DATA extends T, EVAL extends T, T extends IData> {
         private final Set<RelationBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
         private final Set<TaggingConfigCallback<OperationNode<EVAL>>> taggingConfigBuffer = new HashSet<>();
         private final ComponentNode<DATA, EVAL, T> componentNode;
@@ -174,8 +156,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
             }
 
             this.componentNode = componentNode;
-
-            consecutiveChain.add(componentNode.getEntry());
+            this.consecutiveChain.add(componentNode.getEntry());
         }
 
         public ComponentNode<DATA, EVAL, T> getComponent() {
@@ -286,8 +267,9 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
         }
 
         /**
-         * Helper for creating relations. Wraps the internal API for easier access
-         * and error handling perhaps.
+         * Helper for creating relations for operation nodes.
+         * Has utility functions to easily create a chain of operations.
+         * Wraps the internal API for easier access and error handling perhaps.
          */
         public class RelationBuilderHelper {
             private final OperationNode<EVAL> added;
@@ -360,6 +342,13 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
         }
     }
 
+    /**
+     * Callback to create the tagging listeners for the component node.
+     * Necessary to accept the database value as parameter.
+     * @param <DATA>
+     * @param <EVAL>
+     * @param <T>
+     */
     @FunctionalInterface
     public interface ComponentTaggingCallback<DATA extends T, EVAL extends T, T extends IData> {
         NodeTaggingCreator<ComponentNode<DATA, EVAL, T>> createTagConfig(DATA data);

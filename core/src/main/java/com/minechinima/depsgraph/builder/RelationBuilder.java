@@ -18,5 +18,10 @@ import java.util.LinkedList;
  */
 @FunctionalInterface
 public interface RelationBuilder<T extends Node> {
+    //TODO add a helper here to allow creating tagging listeners with relations.
+    // TODO remove graph from API, only helper with delegation methods -> restrict access so relation builders cannot be
+    //  abused to remove nodes from depsgraph.
+    // TODO allow creating a tagging listener for a specific node context. The buildRelations method could be used to
+    //  build relations between arbitrary nodes.
     void buildRelations(DepsGraph grap, T node);
 }

@@ -27,6 +27,7 @@ import com.minechinima.model.BBDataTreeManager;
 import com.minechinima.model.BBNameSpace;
 import com.minechinima.model.app.BBDatabase;
 import com.minechinima.model.app.object.BaseObject;
+import com.minechinima.model.app.object.IConstraintsComponent;
 import com.minechinima.model.app.object.ITransformationComponent;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.events.EventTypeRegistry;
@@ -318,7 +319,7 @@ public class Application {
         DepsGraphBuilderRegistry registry = new DepsGraphBuilderRegistry();
 
         registry.registerComponentBuilderType(new TransformComponentBuilder<>(), ITransformationComponent.class);
-        registry.registerComponentBuilderType(new ConstraintsComponentBuilder<>(CONSTRAINT_EVAL_REGISTRY), ITransformationComponent.class);
+        registry.registerComponentBuilderType(new ConstraintsComponentBuilder<>(CONSTRAINT_EVAL_REGISTRY), IConstraintsComponent.class);
 
         registry.registerDataClass(BaseObject.class).registerBuilders(ComponentTypes.TRANSFORM, ComponentTypes.CONSTRAINTS);
     }

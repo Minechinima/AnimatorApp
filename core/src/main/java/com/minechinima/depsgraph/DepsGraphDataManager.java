@@ -1,24 +1,31 @@
 package com.minechinima.depsgraph;
 
+import com.minechinima.depsgraph.builder.DepsGraphBuilderRegistry;
 import com.minechinima.depsgraph.tagging.NodeTaggingManager;
 import com.minechinima.depsgraph.tagging.NodeTaggingManager.TaggingConfigCallback;
+import com.minechinima.model.api.IData;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
 /**
- * Manages one dependency graph and updates it when data changes.
+ * Manages the dependency graph. Dependeny Graph on its own is stupid, it is only a datastructure with public API to modify it
+ * and memory management.
+ * This manager object encapsuates different managers, ensures graph stays consistent and is updated on data changes or tagging.
  */
 public class DepsGraphDataManager {
     //manage depsgraph
     //manage depsgraph scheduler and updating graph and scheduler when topology changes
     //manage registry and automatically updating graph and tagging
 
-    private final DepsGraph graph;
-    private NodeTaggingManager taggingManager;
+    protected final DepsGraph graph;
+    protected NodeTaggingManager taggingManager;
+    protected final DepsGraphBuilderRegistry builderRegistry;
 
-    public DepsGraphDataManager(DepsGraph graph) {
+    public DepsGraphDataManager(DepsGraph graph, DepsGraphBuilderRegistry builderRegistry) {
         this.graph = graph;
         this.taggingManager = new NodeTaggingManager(graph);
+        this.builderRegistry = builderRegistry;
     }
 
     /**
@@ -27,7 +34,7 @@ public class DepsGraphDataManager {
      *
      * @param callbacks the callbacks binding nodes to their tagging configs
      */
-    public void registerTaggingConfigs(Collection<TaggingConfigCallback<?>> callbacks) {
+    public void registerTaggingStrategies(Collection<TaggingConfigCallback<?>> callbacks) {
         this.taggingManager.registerAll(callbacks);
     }
 
@@ -38,6 +45,7 @@ public class DepsGraphDataManager {
     public void resetTagging() {
         this.taggingManager.unsubscribeAll();
         this.taggingManager = new NodeTaggingManager(this.graph);
+        this.graph.clearAllTags();
     }
 
     /**
@@ -45,15 +53,13 @@ public class DepsGraphDataManager {
      *
      * @param node the node to unregister
      */
-    public void removeNode(Node node) {
+    protected void removeNode(DataNode node) {
         this.taggingManager.unregister(node);
+        this.graph.removeDataNode(node);
     }
 
-    public DepsGraph getGraph() {
-        return this.graph;
-    }
-
-    public NodeTaggingManager getTaggingManager() {
-        return this.taggingManager;
+    @Nullable
+    public <DATA extends T, T extends IData> T getEvaluatedData(DATA data, Class<T> superType) {
+        return this.graph.getEvaluatedData(data, superType);
     }
 }

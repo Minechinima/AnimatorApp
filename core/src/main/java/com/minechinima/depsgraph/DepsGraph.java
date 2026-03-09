@@ -17,21 +17,26 @@ import java.util.Set;
 public class DepsGraph {
     private final Map<IData, DataNode> dataNodes = new HashMap<>();
     private final Set<OperationNode> operationNodes = new HashSet<>();
+    /**
+     * External storage of tagged nodes, to allow for efficient lookup and keeping tagging logic decoupled from the graph topology.
+     */
     private final NodeTagStore tagStore = new NodeTagStore();
 
     private final HashMap<Class<? extends IData>, Set<DataNode<?, ?, ?>>> dataNodesByClass = new HashMap<>();
     //TODO mappings for datascopes and components in efficient way for lookup
+    // TODO investigate whether 1-1 mapping for data is really necessary. Blender uses this, but blender is very explicit with declarations and logic
+    //  blender uses it to get targets for animation data to tell the system: when the property is animated - also update the other components
 
     public void addDataNode(DataNode<?, ?, ?> node) {
         //TODO test datascopes for uniqueness
     }
 
-    public void removeDataNode(DataNode node) {
+    public void removeDataNode(DataNode<?, ?, ?> node) {
         // Collect every node managed by this DataNode (bottom-up: operations → components → datanode)
         Set<Node> allNodes = new HashSet<>();
 
         for (ComponentNode<?, ?, ?> component : node.getComponents()) {
-            for (OperationNode<?> opNode : component.getOperations().values()) {
+            for (OperationNode opNode : component.getOperations().values()) {
                 allNodes.add(opNode);
             }
             allNodes.add(component);
@@ -118,6 +123,8 @@ public class DepsGraph {
      * Tag a node with the given tag.
      */
     public void tag(Node node, INodeTag tag) {
+        //TODO check if the node is in this depsgraph.
+        // cache all nodes. Useful for removal later too
         this.tagStore.tag(node, tag);
     }
 
@@ -150,7 +157,7 @@ public class DepsGraph {
     }
 
     /**
-     * Remove all tags from a specific node.
+     * Remove the tags from the node.
      *
      * @param node the node to clear all tags from
      */

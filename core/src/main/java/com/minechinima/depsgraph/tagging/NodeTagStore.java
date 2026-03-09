@@ -7,19 +7,16 @@ import java.util.*;
 
 /**
  * Single-threaded storage for {@link INodeTag} labels attached to {@link Node}s.
- * <br><br>
- * Tags are stored externally from the node instances to decouple tagging concerns from the
- * node data model. The {@link DepsGraph} owns one instance and exposes delegating methods.
  */
 public class NodeTagStore {
     /**
      * Identity-based map so that the same node instance is always resolved correctly,
      * regardless of equals/hashCode overrides.
      */
-    private final IdentityHashMap<Node, Set<INodeTag>> tags = new IdentityHashMap<>();
+    private final Map<Node, Set<INodeTag>> tags = new IdentityHashMap<>();
 
     /**
-     * Tag a node with the given tag. If the node is already tagged with this tag, this is a no-op.
+     * Tag a node with the given tag.
      *
      * @param node the node to tag
      * @param tag  the tag to apply
@@ -29,7 +26,7 @@ public class NodeTagStore {
     }
 
     /**
-     * Remove a specific tag from a node. If the node does not have this tag, this is a no-op.
+     * Remove a specific tag from a node.
      *
      * @param node the node to untag
      * @param tag  the tag to remove
@@ -79,6 +76,7 @@ public class NodeTagStore {
 
     /**
      * Remove all tags from a specific node.
+     * Also removes the node from internal storage.
      *
      * @param node the node to clear
      */
