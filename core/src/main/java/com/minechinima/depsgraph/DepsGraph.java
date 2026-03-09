@@ -1,6 +1,7 @@
 package com.minechinima.depsgraph;
 
-import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.api.IData;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,13 +13,63 @@ import java.util.Set;
  * Is decoupled from database.
  */
 public class DepsGraph {
-    private final Map<BaseStructure, DataNode> dataNodes = new HashMap<>();
+    private final Map<IData, DataNode> dataNodes = new HashMap<>();
     private final Set<OperationNode> operationNodes = new HashSet<>();
 
-    private final HashMap<Class<? extends BaseStructure>, Set<DataNode<? extends BaseStructure>>> dataNodesByClass = new HashMap<>();
+    private final HashMap<Class<? extends IData>, Set<DataNode<?, ?, ?>>> dataNodesByClass = new HashMap<>();
+    //TODO mappings for datascopes and components in efficient way for lookup
 
+    public void addDataNode(DataNode<?, ?, ?> node) {
+        //TODO test datascopes for uniqueness
+    }
 
-    public void addDataNode(DataNode<?> node) {
+    /**
+     * Get the data node for the given data and supertype. Checks if the datanode supertype is assignable to the given supertype.
+     * This helps with type safety so the caller can infer the types.
+     * @param data
+     * @param superType
+     * @return
+     * @param <DATA>
+     * @param <T>
+     */
+    @Nullable
+    public <DATA extends T, T extends IData> DataNode<DATA, ?, T> getDataNodeForData(DATA data, Class<T> superType) {
+        //TODO lookup via datascopes
+        return null;
+    }
 
+    /**
+     * Get the data node for the given data. The supertype is unknown here.
+     * @param data
+     * @return
+     * @param <DATA>
+     * @param <T>
+     */
+    @Nullable
+    public <DATA extends T, T extends Object & IData> DataNode<DATA, ?, T> getDataNodeForData(DATA data) {
+        //TODO lookup via datascopes
+        return null;
+    }
+
+    /**
+     * Returns any kind of node that is the lowest level node containing the data in its
+     * data scope.
+     * This can be used to build relations between nodes for data updates.
+     * @param data
+     * @return
+     */
+    @Nullable
+    public Node getNodeForDataTarget(IData data) {
+        return null;
+    }
+
+    @Nullable
+    public <DATA extends T, T extends IData> T getEvaluatedData(DATA data, Class<T> superType) {
+        // TODO search for the datanode and check if the type is assignable to the supertype.
+        return null;
+    }
+
+    public Set<OperationNode> getOperationNodes() {
+        return new HashSet<>(this.operationNodes);
     }
 }

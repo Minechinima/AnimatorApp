@@ -1,28 +1,27 @@
 package com.minechinima.depsgraph;
 
-import com.minechinima.depsgraph.builder.RelationBuilder;
-import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Set;
 
 /**
  * Node represents one logical operation on the data, e.g. a transform operation, a constraint operation, etc.
  * <br><br>
  * The logic of the operation is defined in the functional interface {@link EvalFunction} (functional paradigm)
- * @param <T>
+ * @param <EVAL>>
  */
-public class OperationNode<T extends BaseStructure> extends Node {
-    private final ComponentNode<T> owner;
+public class OperationNode<EVAL extends IData> extends Node {
+    private final ComponentNode<?, ?, ?> owner;
     /**
      * Functional programming used here. The only thing that changes
      * is the operation logic, no need for subclasses.
      * <br><br>
      * Can be null if this node is only there for structural reasons.
+     * @implNote accept super type of eval to allow more flexibility, pass functions that
+     * can take EVAL type but be reused for many other types.
      */
     @Nullable
-    private final EvalFunction<T> func;
+    private final EvalFunction<? super EVAL> func;
     private final OperationCode code;
     /**
      * Name of this operation to differentiate between operations with the same code,
@@ -30,20 +29,13 @@ public class OperationNode<T extends BaseStructure> extends Node {
      * the name or index of the operation. Can be empty if not needed;
      */
     private final String name;
-
-    /**
-     * For scheduling the execution of the operations.
-     * Only executes when all incoming relations are fulfilled.
-     */
-    private int linksPending = 0;
-    private boolean scheduled;
     /**
      * @implNote final to ensure data has 1-1 mapping with nodes.
      */
     @Nullable
     private final DataScope scope;
 
-    public OperationNode(ComponentNode<T> owner, EvalFunction<T> func, OperationCode code, @Nullable String name, @Nullable DataScope scope) {
+    public OperationNode(ComponentNode<?, ?, ?> owner, EvalFunction<? super EVAL> func, OperationCode code, @Nullable String name, @Nullable DataScope scope) {
         this.owner = owner;
         this.func = func;
         this.code = code;
@@ -51,31 +43,31 @@ public class OperationNode<T extends BaseStructure> extends Node {
         this.scope = scope;
     }
 
-    public OperationNode(ComponentNode<T> owner, EvalFunction<T> func, OperationCode code, @Nullable String name) {
+    public OperationNode(ComponentNode<?, ?, ?> owner, EvalFunction<? super EVAL> func, OperationCode code, @Nullable String name) {
         this(owner, func, code, "", null);
     }
 
-    public OperationNode(ComponentNode<T> owner, EvalFunction<T> func, OperationCode code) {
+    public OperationNode(ComponentNode<?, ?, ?> owner, EvalFunction<? super EVAL> func, OperationCode code) {
         this(owner, func, code, "");
     }
 
-    public OperationNode(ComponentNode<T> owner, OperationCode code, String name) {
+    public OperationNode(ComponentNode<?, ?, ?> owner, OperationCode code, String name) {
         this(owner, null, code, name);
     }
 
-    public OperationNode(ComponentNode<T> owner, OperationCode code) {
+    public OperationNode(ComponentNode<?, ?, ?> owner, OperationCode code) {
         this(owner, null, code, "");
     }
 
-    public ComponentNode<T> getComponent() {
+    public ComponentNode<?, ?, ?> getComponent() {
         return owner;
     }
 
-    public DataNode<T> getOwnerDataNode() {
+    public DataNode<?, ?, ?> getOwnerDataNode() {
         return this.owner.getOwner();
     }
 
-    public EvalFunction<T> getFunc() {
+    public EvalFunction<? super EVAL> getFunc() {
         return func;
     }
 
@@ -116,13 +108,33 @@ public class OperationNode<T extends BaseStructure> extends Node {
     }
 
     /**
+     * Override so relations can be mapped directly to specific operation nodes.
+     * @return
+     */
+    @Override
+    @NotNull
+    protected OperationNode<?> getOpNodeForInlink() {
+        return this;
+    }
+
+    /**
+     * Override so relations can be mapped directly to specific operation nodes.
+     * @return
+     */
+    @Override
+    @NotNull
+    protected OperationNode<?> getOpNodeForOutlink() {
+        return this;
+    }
+
+    /**
      * The logic of the operation. Evaluates the original data structure and writes the result to the evaluated data structure.
      * Allows to use static functions, decouple logic fully from runtime data structures.
      * @param <T>
      */
     @FunctionalInterface
-    public interface EvalFunction<T extends BaseStructure> {
-        void eval(final DepsGraph depsGraph, final T original, final T evaluated);
+    public interface EvalFunction<T extends IData> {
+        void eval(final DepsGraph depsGraph, final T copy);
     }
 
     /**

@@ -27,6 +27,22 @@ public abstract class Node {
         relation.getTo().addInRelation(relation);
     }
 
+    /**
+     * Creates a relation from this node to the given node.
+     * The relations are mapped in the following way: this Exit operation -> to Entry operation.
+     * If this or the other nodes are already operation nodes, the mapping will be directly between the operation nodes,
+     * which allows to have relations between individual operations instead of just between the entry and exit of the nodes.
+     * <br><br>
+     * Assigns a default name that uses the node identifier.
+     * @param to
+     */
+    public void addFromRelationTo(Node to) {
+        //TODO interface for node to provide identifier
+        Relation relation = this.createRelation(this, to, "relationName");
+        relation.getFrom().addOutRelation(relation);
+        relation.getTo().addInRelation(relation);
+    }
+
     private Relation createRelation(Node from, Node to, String name) {
         OperationNode<?> toEntry = to.getOpNodeForInlink();
         OperationNode<?> fromExit = from.getOpNodeForOutlink();
@@ -95,4 +111,12 @@ public abstract class Node {
      */
     @NotNull
     public abstract OperationNode<?> getExit();
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "inlinks=" + inlinks +
+                ", outlinks=" + outlinks +
+                '}';
+    }
 }

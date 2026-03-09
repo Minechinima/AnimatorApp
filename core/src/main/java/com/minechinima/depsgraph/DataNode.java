@@ -1,7 +1,6 @@
 package com.minechinima.depsgraph;
 
-import com.minechinima.model.base.BaseStructure;
-import com.minechinima.model.base.BaseValueHierarchy;
+import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,55 +13,64 @@ import java.util.Set;
  * One node represents one datastructure to update. A data node is further structured into
  * sub components for different aspects of the data, see {@link ComponentNode}.
  *
- * @param <T>
+ * @param <DATA> type of the original database value this node handles.
+ * @param <EVAL> type of the copy of the original data, which is used for evaluation and update operations.
+ *                   This allows to have a different type for the copy, e.g. a wrapper around the original data with additional information.
+ * @param <T> the super type of both EVAL and DATA so the UI can either use database or evaluated copy interchangeably.
  */
-public class DataNode<T extends BaseStructure> extends Node {
-    private final T originalData;
-    private T copy;
-    private final Map<ComponentNode.ComponentType, ComponentNode<T>> components = new HashMap<>();
+public class DataNode<DATA extends T, EVAL extends T, T extends IData> extends Node {
+    private final DATA originalData;
+    // TODO copy-on-write system
+    //  the copy system should be another component (just like in blender) with relations to all other components of the node
+    //  idea: copy operation node for every operation node so it can watch the data of the specific operation node.
+    //  problem: copy operation node needs to tag itself for reevaluation when the data changes. Currently we only have 1-1 mapping of data to operation nodes,
+    //  copy-operation node would require a 1-n mapping of data to nodes at least for update tagging.
+    // TODO: more generic updating system: one where you can register custom event listeners or just provide data.
+    private EVAL copy;
+    private final Map<ComponentNode.ComponentType, ComponentNode<DATA, EVAL, T>> components = new HashMap<>();
     /**
      * Allows a global entry component executed always at the beginning of all
      * other operations
      */
-    private ComponentNode<T> entryComponent;
+    private ComponentNode<DATA, EVAL, T> entryComponent;
     /**
      * Allows a global exit component executed always at the end of all
      * other operations
      */
-    private ComponentNode<T> exitComponent;
+    private ComponentNode<DATA, EVAL, T> exitComponent;
 
-    public DataNode(T originalData) {
+    public DataNode(DATA originalData) {
         this.originalData = originalData;
     }
 
-    public T getOriginalData() {
+    public DATA getOriginalData() {
         return originalData;
     }
 
-    public T getCopy() {
+    public EVAL getCopy() {
         return copy;
     }
 
     @Nullable
-    public ComponentNode<T> getComponent(ComponentNode.ComponentType type) {
+    public ComponentNode<DATA, EVAL, T> getComponent(ComponentNode.ComponentType type) {
         return this.components.get(type);
     }
 
-    public Set<ComponentNode<T>> getComponents() {
+    public Set<ComponentNode<DATA, EVAL, T>> getComponents() {
         return Set.copyOf(this.components.values());
     }
 
     @Override
-    public @NotNull OperationNode<T> getEntry() {
+    public @NotNull OperationNode<EVAL> getEntry() {
         return this.entryComponent.getEntry();
     }
 
     @Override
-    public @NotNull OperationNode<T> getExit() {
+    public @NotNull OperationNode<EVAL> getExit() {
         return this.exitComponent.getExit();
     }
 
-    public void addComponent(ComponentNode<T> componentNode) {
+    public void addComponent(ComponentNode<DATA, EVAL, T> componentNode) {
         if (this.components.containsValue(componentNode) || this.components.containsKey(componentNode.getType())) {
             throw new IllegalArgumentException("Component already present in data node.");
         }
@@ -73,7 +81,7 @@ public class DataNode<T extends BaseStructure> extends Node {
 
         DataScope nodeScope;
         if ((nodeScope = componentNode.getMergedScope()) != null) {
-            for (ComponentNode<T> otherNode : this.components.values()) {
+            for (ComponentNode<DATA, EVAL, T> otherNode : this.components.values()) {
                 DataScope otherNodeScope = otherNode.getMergedScope();
                 if (otherNodeScope != null && otherNodeScope.intersects(nodeScope)) {
                     throw new IllegalArgumentException("ComponentNode data scope intersects with scope of already present component node " + otherNode.getType());
@@ -90,7 +98,7 @@ public class DataNode<T extends BaseStructure> extends Node {
         return this.components.containsValue(node);
     }
 
-    public void setEntry(@NotNull ComponentNode<T> entry) {
+    public void setEntry(@NotNull ComponentNode<DATA, EVAL, T> entry) {
         Objects.requireNonNull(entry);
         if (this.entryComponent != null) {
             throw new IllegalStateException("Entry component already set.");
@@ -107,7 +115,7 @@ public class DataNode<T extends BaseStructure> extends Node {
         this.entryComponent = entry;
     }
 
-    public void setExit(@NotNull ComponentNode<T> exit) {
+    public void setExit(@NotNull ComponentNode<DATA, EVAL, T> exit) {
         Objects.requireNonNull(exit);
         if (this.exitComponent != null) {
             throw new IllegalStateException("Entry component already set.");

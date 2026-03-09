@@ -2,6 +2,10 @@ package com.minechinima.depsgraph;
 
 import java.util.Objects;
 
+//TODO this might be good place for the strategy when to mark a node for update -> e.g. what data has to change so the topology changes.
+// maybe store an optional datascope here -> every data gets a change event listener that will mark the relation to be rebuilt
+// for every node that gets added the depsgraph manager creates a listener. When change event is fired, relation is marked
+// for the next update cycle to be rebuilt. both dataNodes are removed and all relations to it.
 public class Relation {
     private final Node from;
     private final Node to;
@@ -38,5 +42,14 @@ public class Relation {
     @Override
     public final int hashCode() {
         return Objects.hash(from, to);
+    }
+
+    @Override
+    public String toString() {
+        return "Relation{" +
+                "from=" + from +
+                ", to=" + to +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

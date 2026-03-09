@@ -1,13 +1,14 @@
 package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.*;
+import com.minechinima.model.api.IData;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.utils.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
-public abstract class GenericComponentBuilder<T extends BaseStructure> extends ComponentBuilder<T> {
+public abstract class GenericComponentBuilder<DATA extends T, EVAL extends T, T extends IData> extends ComponentBuilder<DATA, EVAL, T> {
     private final OperationCodes entryCode;
     private final OperationCodes exitCode;
 
@@ -22,7 +23,7 @@ public abstract class GenericComponentBuilder<T extends BaseStructure> extends C
     }
 
     @Override
-    public void addEntryExitOperation(ComponentNode<T> component) {
+    public void addEntryExitOperation(ComponentNode<DATA, EVAL, T> component) {
         component.setEntry(component.addOperation(null, this.entryCode));
         component.setExit(component.addOperation(null, this.exitCode));
     }

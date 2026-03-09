@@ -1,6 +1,6 @@
 package com.minechinima.depsgraph;
 
-import com.minechinima.model.base.BaseStructure;
+import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,14 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class ComponentNode<T extends BaseStructure> extends Node {
-    private final DataNode<T> owner;
+public class ComponentNode<DATA extends T, EVAL extends T, T extends IData> extends Node {
+    private final DataNode<DATA, EVAL, T> owner;
 
-    private OperationNode<T> entry;
-    private OperationNode<T> exit;
+    private OperationNode<EVAL> entry;
+    private OperationNode<EVAL> exit;
 
     private final ComponentType type;
-    private final Map<OperationKey, OperationNode<T>> operations = new HashMap<>();
+    private final Map<OperationKey, OperationNode<EVAL>> operations = new HashMap<>();
     /**
      * Scope which data is managed by this. Used for targeting nodes based on data attributes.
      * This is the scope only for the component, it can be different from the operation nodes, they need to be merged
@@ -25,25 +25,25 @@ public class ComponentNode<T extends BaseStructure> extends Node {
     @Nullable
     private final DataScope scopeOfComponent;
 
-    public ComponentNode(DataNode<T> owner, ComponentType key, @Nullable DataScope scope) {
+    public ComponentNode(DataNode<DATA, EVAL, T> owner, ComponentType key, @Nullable DataScope scope) {
         this.type = key;
         this.owner = owner;
         this.scopeOfComponent = scope;
     }
 
-    public ComponentNode(DataNode<T> owner, ComponentType key) {
+    public ComponentNode(DataNode<DATA, EVAL, T> owner, ComponentType key) {
         this(owner, key, null);
     }
 
-    public DataNode<T> getOwner() {
+    public DataNode<DATA, EVAL, T> getOwner() {
         return owner;
     }
 
-    public @NotNull OperationNode<T> getEntry() {
+    public @NotNull OperationNode<EVAL> getEntry() {
         return entry;
     }
 
-    public @NotNull OperationNode<T> getExit() {
+    public @NotNull OperationNode<EVAL> getExit() {
         return exit;
     }
 
@@ -55,7 +55,7 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         return this.scopeOfComponent;
     }
 
-    public Map<OperationKey, OperationNode<T>> getOperations() {
+    public Map<OperationKey, OperationNode<EVAL>> getOperations() {
         return new HashMap<>(this.operations);
     }
 
@@ -66,7 +66,7 @@ public class ComponentNode<T extends BaseStructure> extends Node {
     public DataScope getMergedScope() {
         DataScope mergedScope = this.scopeOfComponent;
 
-        for (OperationNode<T> node : this.operations.values()) {
+        for (OperationNode<EVAL> node : this.operations.values()) {
             DataScope nodeScope = node.getScope();
             if (nodeScope != null) {
                 if (mergedScope == null) {
@@ -80,7 +80,7 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         return mergedScope;
     }
 
-    public void setEntry(@NotNull OperationNode<T> entry) {
+    public void setEntry(@NotNull OperationNode<EVAL> entry) {
         Objects.requireNonNull(entry);
         /* changing the entry operation might cause unwanted relations/behaviour when other nodes are already connected to this entry */
         if (this.entry != null) throw new UnsupportedOperationException("Cannot set entry operation if it is already present.");
@@ -92,7 +92,7 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         this.entry = entry;
     }
 
-    public void setExit(@NotNull OperationNode<T> exit) {
+    public void setExit(@NotNull OperationNode<EVAL> exit) {
         Objects.requireNonNull(exit);
         /* changing the exit operation might cause unwanted relations/behaviour when other nodes are already connected to this entry */
         if (this.exit != null) throw new UnsupportedOperationException("Cannot set entry operation if it is already present.");
@@ -112,24 +112,24 @@ public class ComponentNode<T extends BaseStructure> extends Node {
         return this.operations.containsValue(operation);
     }
 
-    public OperationNode<T> findOperation(OperationNode.OperationCode key, String name) {
+    public OperationNode<EVAL> findOperation(OperationNode.OperationCode key, String name) {
         return this.operations.get(new OperationKey(key, name));
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
-                                         OperationNode.OperationCode code) {
+    public OperationNode<EVAL> addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                            OperationNode.OperationCode code) {
         return this.addOperation(func, code, null, null);
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
-                                         OperationNode.OperationCode code,
-                                         @Nullable final String name) {
+    public OperationNode<EVAL> addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                            OperationNode.OperationCode code,
+                                            @Nullable final String name) {
         return this.addOperation(func, code, name, null);
     }
 
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
-                                         OperationNode.OperationCode code,
-                                         @Nullable DataScope scope) {
+    public OperationNode<EVAL> addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                            OperationNode.OperationCode code,
+                                            @Nullable DataScope scope) {
         return this.addOperation(func, code, null, scope);
     }
 
@@ -141,26 +141,26 @@ public class ComponentNode<T extends BaseStructure> extends Node {
      * @param scope datastructures that are managed by the operation node. Used for animation targetting.
      * @return
      */
-    public OperationNode<T> addOperation(OperationNode.EvalFunction<T> func,
-                                         OperationNode.OperationCode code,
-                                         @Nullable final String name,
-                                         @Nullable DataScope scope) {
+    public OperationNode<EVAL> addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                            OperationNode.OperationCode code,
+                                            @Nullable final String name,
+                                            @Nullable DataScope scope) {
         if (this.findOperation(code, name) != null) {
             throw new IllegalArgumentException("Operation with code " + code.getName() + " and name " + name + " already exists in component " + this.type.getName());
         }
 
-        OperationNode<T> node = new OperationNode<>(this, func, code, name, scope);
+        OperationNode<EVAL> node = new OperationNode<>(this, func, code, name, scope);
         this.addOperationNode(node);
         return node;
     }
 
-    private void addOperationNode(OperationNode<T> node) {
+    private void addOperationNode(OperationNode<EVAL> node) {
         if (node.getComponent() != this) throw new IllegalArgumentException("Owner component of operation node does not this.");
 
         /* check if the datascope intersects with another operation node */
         DataScope nodeScope;
         if ((nodeScope = node.getScope()) != null) {
-            for (OperationNode<T> otherNode : this.operations.values()) {
+            for (OperationNode<EVAL> otherNode : this.operations.values()) {
                 DataScope otherNodeScope = otherNode.getScope();
                 if (otherNodeScope != null && otherNodeScope.intersects(nodeScope)) {
                     throw new IllegalArgumentException("OperationNode data scope intersects with scope of already present operation node "

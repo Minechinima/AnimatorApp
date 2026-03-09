@@ -1,6 +1,7 @@
 package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.*;
+import com.minechinima.model.api.IData;
 import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,9 +13,10 @@ import java.util.*;
  * <br><br>
  * Relations to other nodes should be built in {@link RelationBuilder}. Important when the dependeny graph is not finished
  * yet and the other nodes are not available. Therefore this builder gets no access to dependency graph.
- * @param <T>
+ * @param <DATA> type of the database value
+ * @param <EVAL> type of the copy of the original data, which is used for evaluation and update operations.
  */
-public abstract class ComponentBuilder<T extends BaseStructure> {
+public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends IData> {
     /**
      * The key of the component. Stored here as final to enforce
      * singletons for keys, so that we can safely use the key for hashmap lookups in the component nodes and avoid unnecessary
@@ -24,37 +26,42 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
     /**
      * Builders for the internal operation nodes, except entry and exit, which are built separately.
      */
-    private final List<OperationNodesBuilder<T>> operationNodesBuilders = new LinkedList<>();
+    private final List<OperationNodesBuilder<DATA, EVAL, T>> operationNodesBuilders = new LinkedList<>();
     /**
      * A set of relation builders for the entire component.
      */
-    private final List<RelationBuilder<ComponentNode<T>>> relationBuilders = new LinkedList<>();
+    private final List<RelationBuilder<ComponentNode<DATA, EVAL, T>>> relationBuilders = new LinkedList<>();
 
     public ComponentBuilder(ComponentNode.ComponentType key) {
         this.key = key;
     }
 
-    public void addOperationNodeBuilder(OperationNodesBuilder<T> builder) {
+    public final ComponentNode.ComponentType getType() {
+        return key;
+    }
+
+    public void addOperationNodeBuilder(OperationNodesBuilder<DATA, EVAL, T> builder) {
         if (this.operationNodesBuilders.contains(builder)) return;
         this.operationNodesBuilders.add(builder);
     }
 
-    public void addRelationBuilder(RelationBuilder<ComponentNode<T>> builder) {
+    public void addComponentRelationBuilder(RelationBuilder<ComponentNode<DATA, EVAL, T>> builder) {
         if (this.relationBuilders.contains(builder)) return;
         this.relationBuilders.add(builder);
     }
 
-    public BuildResult<T> buildComponent(final DataNode<T> owner) {
-        final T dataBase = owner.getOriginalData();
-        ComponentNode<T> component = new ComponentNode<>(owner, this.key, this.getDataScope(owner.getOriginalData()));
+    public BuildResult<DATA, EVAL, T> buildComponent(final DataNode<DATA, EVAL, T> owner) {
+        final DATA dataBase = owner.getOriginalData();
+        ComponentNode<DATA, EVAL, T> component = new ComponentNode<>(owner, this.key, this.getDataScope(dataBase));
         this.addEntryExitOperation(component);
         if (component.getEntry() == null || component.getExit() == null) {
             throw new IllegalStateException("Entry and exit operation must be set in addEntryExitOperation.");
         }
 
-        Set<OpNodeRelationBuilder<?, T>> operationRelationBuilders = new HashSet<>();
+        Set<RelationBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders = new HashSet<>();
+        Set<RelationBuilderCallback<ComponentNode<DATA, EVAL, T>>> relationBuilders = new HashSet<>();
 
-        for (OperationNodesBuilder<T> builder : this.operationNodesBuilders) {
+        for (OperationNodesBuilder<DATA, EVAL, T> builder : this.operationNodesBuilders) {
             /*
              * Create a helper for every builder separately. This allows to create separate consecutive chains for every builder,
              * which could improve parallelity and multithreading.
@@ -65,24 +72,27 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
             operationRelationBuilders.addAll(helper.relationBuilderBuffer);
         }
 
-        return new BuildResult<>(component, operationRelationBuilders);
+        for (RelationBuilder<ComponentNode<DATA, EVAL, T>> relationBuilder : this.relationBuilders) {
+            relationBuilders.add(new RelationBuilderCallback<>(component, relationBuilder));
+        }
+
+        return new BuildResult<>(component, operationRelationBuilders, relationBuilders);
     }
 
     /**
      * @return The attributes that belong to this component, e.g. for a transform component it would be the location, rotation and scale attributes.
      */
     @Nullable
-    public abstract DataScope getDataScope(T data);
+    public abstract DataScope getDataScope(DATA data);
 
-    public abstract void addEntryExitOperation(ComponentNode<T> component);
+    public abstract void addEntryExitOperation(ComponentNode<DATA, EVAL, T> component);
 
     /**
      * Function to add the operation nodes to the component.
      * Called after entry and exit have been added, so internal operations can be built with relations to them.
-     * @param <T>
      */
     @FunctionalInterface
-    public interface OperationNodesBuilder<T extends BaseStructure> {
+    public interface OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IData> {
         /**
          * Is called after entry and exit have been built so internal operations can be built with relations to them.
          * Adds operation nodes to the component.
@@ -93,22 +103,35 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
          * @param data the original database value
          */
         @Nullable
-        void addOperationNodes(T data, ComponentBuilder<T>.OperationNodesBuilderHelper helper);
+        void addOperationNodes(DATA data, ComponentBuilder<DATA, EVAL, T>.OperationNodesBuilderHelper helper);
     }
 
     /**
-     * Utility data class to store operation node and its relation builder callback.
+     * Utility class to bind the node to the relation builder callback, so
+     * that it does not need to be passed as parameter later on again.
+     * @param <T>
      */
-    public record OpNodeRelationBuilder<OP extends OperationNode<T>, T extends BaseStructure>(OP operationNode,
-                                                                                              RelationBuilder<OP> relationBuilder) {
+    public static class RelationBuilderCallback<T extends Node> {
+        private final T node;
+        private final RelationBuilder<T> relationBuilder;
 
+        public RelationBuilderCallback(T node, RelationBuilder<T> relationBuilder) {
+            this.node = node;
+            this.relationBuilder = relationBuilder;
+        }
+
+        public void build(DepsGraph graph) {
+            this.relationBuilder.buildRelations(graph, this.node);
+        }
     }
 
     /**
      * Return type of the build method.
      */
-    public record BuildResult<T extends BaseStructure>(ComponentNode<T> component,
-                                                       Set<OpNodeRelationBuilder<?, T>> operationRelationBuilders) {
+    public record BuildResult<DATA extends T, EVAL extends T, T extends IData>
+            (ComponentNode<DATA, EVAL, T> component,
+             Set<RelationBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders,
+             Set<RelationBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders) {
 
     }
 
@@ -118,12 +141,12 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
      * Might be useful if we want to wrap exceptions of the internal api and log them instead of crashing.
      */
     public class OperationNodesBuilderHelper {
-        private final Set<OpNodeRelationBuilder<?, T>> relationBuilderBuffer = new HashSet<>();
-        private final ComponentNode<T> componentNode;
+        private final Set<RelationBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
+        private final ComponentNode<DATA, EVAL, T> componentNode;
 
-        private Stack<OperationNode<T>> consecutiveChain = new Stack<>();
+        private Stack<OperationNode<EVAL>> consecutiveChain = new Stack<>();
 
-        public OperationNodesBuilderHelper(ComponentNode<T> componentNode) {
+        public OperationNodesBuilderHelper(ComponentNode<DATA, EVAL, T> componentNode) {
             if (componentNode.getExit() == null || componentNode.getEntry() == null) {
                 throw new IllegalArgumentException("Component node must have entry and exit operations before creating OperationNodesAssembler.");
             }
@@ -133,60 +156,85 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
             consecutiveChain.add(componentNode.getEntry());
         }
 
-        public OperationNode<T> getExit() {
+        public ComponentNode<DATA, EVAL, T> getComponent() {
+            return this.componentNode;
+        }
+
+        public OperationNode<EVAL> getExit() {
             return componentNode.getExit();
         }
 
-        public OperationNode<T> getEntry() {
+        public OperationNode<EVAL> getEntry() {
             return componentNode.getEntry();
         }
 
         /*
          * Methods for adding an operation node to the component
          */
+        //TODO add simpler methods for datascope that just take IData...
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope,
-                                                  @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
-            OperationNode<T> node = componentNode.addOperation(func, code, name, scope);
+                                                  @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
+            OperationNode<EVAL> node = componentNode.addOperation(func, code, name, scope);
             if (operationNodeRelationBuilder != null) {
-                this.relationBuilderBuffer.add(new OpNodeRelationBuilder<OperationNode<T>, T>(node, operationNodeRelationBuilder));
+                this.relationBuilderBuffer.add(new RelationBuilderCallback<>(node, operationNodeRelationBuilder));
             }
 
             return new RelationBuilderHelper(node);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable final String name,
+                                                  @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
+            return this.addOperation(func, code, name, null, operationNodeRelationBuilder);
+        }
+
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope) {
             return this.addOperation(func, code, name, scope, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope) {
             return this.addOperation(func, code, null, scope, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope,
-                                                  @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
+                                                  @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
             return this.addOperation(func, code, null, scope, operationNodeRelationBuilder);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code) {
             return this.addOperation(func, code, null, null, null);
         }
 
-        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<T> func,
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
-                                                  @Nullable RelationBuilder<OperationNode<T>> operationNodeRelationBuilder) {
+                                                  @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
             return this.addOperation(func, code, null, null, operationNodeRelationBuilder);
+        }
+
+        /**
+         * Build a relation from the last chained operation node to the exit operation
+         * of the component, only if the last chained operation node is not the entry of the component.
+         */
+        public void chainToExit() {
+            OperationNode<EVAL> last = this.consecutiveChain.peek();
+            if (last == this.getEntry() || last == this.getExit()) {
+                return;
+            }
+            RelationBuilderHelper helper = new RelationBuilderHelper(last);
+            helper.relationFromThisToExit();
         }
 
         /**
@@ -194,13 +242,13 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
          * and error handling perhaps.
          */
         public class RelationBuilderHelper {
-            private final OperationNode<T> added;
+            private final OperationNode<EVAL> added;
 
-            protected RelationBuilderHelper(OperationNode<T> added) {
+            protected RelationBuilderHelper(OperationNode<EVAL> added) {
                 this.added = added;
             }
 
-            public OperationNode<T> get() {
+            public OperationNode<EVAL> get() {
                 return added;
             }
 
@@ -210,7 +258,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
              * Only adds to consecutive chain, meaning nodes that were not added to the chain are ignored.
              */
             public RelationBuilderHelper addToChain() {
-                OperationNode<T> last = OperationNodesBuilderHelper.this.consecutiveChain.peek();
+                OperationNode<EVAL> last = OperationNodesBuilderHelper.this.consecutiveChain.peek();
                 this.addToChain(last.getIdentifier() + " -> " + this.added.getIdentifier());
                 return this;
             }
@@ -222,8 +270,8 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
              * @param name custom name for the relation.
              */
             public RelationBuilderHelper addToChain(String name) {
-                Stack<OperationNode<T>> chain = OperationNodesBuilderHelper.this.consecutiveChain;
-                OperationNode<T> last = chain.peek();
+                Stack<OperationNode<EVAL>> chain = OperationNodesBuilderHelper.this.consecutiveChain;
+                OperationNode<EVAL> last = chain.peek();
 
                 last.addFromRelationTo(this.added, name);
                 OperationNodesBuilderHelper.this.consecutiveChain.push(this.added);
@@ -241,6 +289,7 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
             }
 
             public RelationBuilderHelper relationFromThisToExit() {
+                //TODO move name creation of relation to Node
                 this.relationFromThisToExit( this.added.getIdentifier() + " -> " + OperationNodesBuilderHelper.this.getExit().getIdentifier());
                 return this;
             }
@@ -251,12 +300,12 @@ public abstract class ComponentBuilder<T extends BaseStructure> {
                 return this;
             }
 
-            public RelationBuilderHelper relationTo(OperationNode<T> to) {
+            public RelationBuilderHelper relationTo(OperationNode<EVAL> to) {
                 this.added.addFromRelationTo(to, this.added.getIdentifier() + " -> " + to.getIdentifier());
                 return this;
             }
 
-            public RelationBuilderHelper relationTo(OperationNode<T> to, String name) {
+            public RelationBuilderHelper relationTo(OperationNode<EVAL> to, String name) {
                 this.added.addFromRelationTo(to, name);
                 return this;
             }

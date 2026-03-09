@@ -1,5 +1,7 @@
 package com.minechinima.depsgraph;
 
+import com.minechinima.model.api.IData;
+import com.minechinima.model.api.IDataTree;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import org.jetbrains.annotations.Contract;
@@ -15,23 +17,28 @@ public class DataScope {
      * Overrides datatrees. Does not contain data trees.
      * @implNote should be final - adding later on could break uniqueness of mapping.
      */
-    private final Set<BaseStructure> specialAttributes = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<IData> specialAttributes = Collections.newSetFromMap(new IdentityHashMap<>());
     /**
      * Scope for an entire data tree and its children - adding later on could break uniqueness of mapping.
      */
-    private final Set<BaseValueHierarchy> dataTrees = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<IDataTree> dataTrees = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    public DataScope(Set<BaseStructure> attribtues, Set<BaseValueHierarchy> tree) {
+    public DataScope(Set<IData> attribtues, Set<IDataTree> tree) {
         this.specialAttributes.addAll(attribtues);
         this.dataTrees.addAll(tree);
         this.clean(this.specialAttributes, this.dataTrees);
     }
 
-    public Set<BaseStructure> getSpecialAttributes() {
+    public DataScope(IData... data) {
+        this.specialAttributes.addAll(List.of(data));
+        this.clean(this.specialAttributes, this.dataTrees);
+    }
+
+    public Set<IData> getSpecialAttributes() {
         return new HashSet<>(specialAttributes);
     }
 
-    public Set<BaseValueHierarchy> getDataTrees() {
+    public Set<IDataTree> getDataTrees() {
         return new HashSet<>(dataTrees);
     }
 
@@ -39,10 +46,10 @@ public class DataScope {
      * @param data
      * @return true if the given data is in the scope of this data.
      */
-    public boolean isInScope(BaseStructure data) {
+    public boolean isInScope(IData data) {
         if (this.specialAttributes.contains(data)) return true;
 
-        for (BaseValueHierarchy tree : this.dataTrees) {
+        for (IDataTree tree : this.dataTrees) {
             if (data == tree || data.isChildOf(tree)) return true;
         }
 
@@ -50,23 +57,23 @@ public class DataScope {
     }
 
     public boolean intersects(DataScope other) {
-        Set<BaseStructure> unionThis = new HashSet<>();
+        Set<IData> unionThis = new HashSet<>();
         unionThis.addAll(this.specialAttributes);
         unionThis.addAll(this.dataTrees);
 
         /* first check if one of our attributes is in scope of the other
         * -> means one of our attributes is a child of the other data.
         * Does not cover the case when the other has an attribute that is a child of our scope */
-        for (BaseStructure thisData : unionThis) {
+        for (IData thisData : unionThis) {
             if (other.isInScope(thisData)) return true;
         }
 
-        Set<BaseStructure> unionOther = new HashSet<>();
+        Set<IData> unionOther = new HashSet<>();
         unionOther.addAll(other.specialAttributes);
         unionOther.addAll(other.dataTrees);
 
         /* check if one of the other attributes is in our scope */
-        for (BaseStructure otherData : unionOther) {
+        for (IData otherData : unionOther) {
             if (this.isInScope(otherData)) return true;
         }
 
@@ -79,44 +86,55 @@ public class DataScope {
      */
     @Contract(pure = true)
     public DataScope merge(DataScope other) {
-        Set<BaseStructure> attribtuesMerged = new HashSet<>();
+        Set<IData> attribtuesMerged = new HashSet<>();
         attribtuesMerged.addAll(this.specialAttributes);
         attribtuesMerged.addAll(other.specialAttributes);
 
-        Set<BaseValueHierarchy> dataTrees = new HashSet<>();
+        Set<IDataTree> dataTrees = new HashSet<>();
         dataTrees.addAll(this.dataTrees);
         dataTrees.addAll(other.dataTrees);
 
         return new DataScope(attribtuesMerged, dataTrees);
     }
 
-    private void clean(Set<BaseStructure> attribtues, Set<BaseValueHierarchy> trees) {
-        Iterator<BaseStructure> it = attribtues.iterator();
+    private void clean(Set<IData> attribtues, Set<IDataTree> trees) {
+        /*
+         * First move all attributes that are trees to the tree set
+         * do this first to ensure that we can check if other attributes are children of the trees in the next step.
+         * Possible case: a tree is at the end of the attribute set that is parent of attributes.
+         */
+        Iterator<IData> it = attribtues.iterator();
         while (it.hasNext()) {
-            /* move data nodes that are trees to the tree set */
-            BaseStructure attribute = it.next();
-            if (attribute instanceof BaseValueHierarchy<?> hierarchy) {
+            IData attribute = it.next();
+            if (attribute instanceof IDataTree hierarchy) {
                 it.remove();
                 trees.add(hierarchy);
-                continue;
             }
+        }
 
-            /* remove attributes that are children of other trees - unnecessary to store them separately */
-            for (BaseValueHierarchy<?> tree : trees) {
-                if (attribute.isChildOf(tree)) {
-                    it.remove();
+        /* second pass: remove datatrees that are child of other data trees
+         * This can reduce the size of the data tree and improve performance of the next phase */
+        Iterator<IDataTree> it2 = trees.iterator();
+        while (it2.hasNext()) {
+            IDataTree tree = it2.next();
+            for (IDataTree otherTree : trees) {
+                /* we iterate through the same set - skip the equal instance */
+                if (otherTree == tree) continue;
+                if (tree.isChildOf(otherTree)) {
+                    it2.remove();
                     break;
                 }
             }
         }
 
-        Iterator<BaseValueHierarchy> it2 = trees.iterator();
-        while (it2.hasNext()) {
-            BaseValueHierarchy tree = it2.next();
-            /* remove trees that are children of other trees - unecessary to store them separately */
-            for (BaseValueHierarchy<?> otherTree : trees) {
-                if (tree.isChildOf(otherTree)) {
-                    it2.remove();
+        /* remove attributes that are children of stored trees - unnecessary to store them separately */
+        it = attribtues.iterator();
+        while (it.hasNext()) {
+            IData attribute = it.next();
+            /* check for every tree if attribute is child */
+            for (IDataTree tree : trees) {
+                if (attribute.isChildOf(tree)) {
+                    it.remove();
                     break;
                 }
             }

@@ -1,0 +1,14 @@
+package com.minechinima.depsgraph;
+
+public enum OperationCodes implements OperationNode.OperationCode {
+    TRANSFORM_ENTRY,
+    TRANSFORM_LOCAL,
+    TRANSFORM_PARENT,
+    TRANSFORM_EXIT,
+    CONSTRAINTS;
+
+    @Override
+    public String getName() {
+        return this.name();
+    }
+}
