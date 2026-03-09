@@ -1,8 +1,9 @@
 package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.*;
+import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
+import com.minechinima.depsgraph.tagging.NodeTaggingManager.TaggingConfigCallback;
 import com.minechinima.model.api.IData;
-import com.minechinima.model.base.BaseStructure;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -31,6 +32,10 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * A set of relation builders for the entire component.
      */
     private final List<RelationBuilder<ComponentNode<DATA, EVAL, T>>> relationBuilders = new LinkedList<>();
+    /**
+     * Tagging configurations for the component node itself.
+     */
+    private final List<ComponentTaggingCallback<DATA, EVAL, T>> componentTaggingConfigs = new LinkedList<>();
 
     public ComponentBuilder(ComponentNode.ComponentType key) {
         this.key = key;
@@ -50,6 +55,14 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
         this.relationBuilders.add(builder);
     }
 
+    /**
+     * Add a tagging configuration for the component node itself.
+     * The tagging will be registered after the graph is fully built.
+     */
+    public void addComponentTaggingConfig(ComponentTaggingCallback<DATA, EVAL, T> config) {
+        this.componentTaggingConfigs.add(config);
+    }
+
     public BuildResult<DATA, EVAL, T> buildComponent(final DataNode<DATA, EVAL, T> owner) {
         final DATA dataBase = owner.getOriginalData();
         ComponentNode<DATA, EVAL, T> component = new ComponentNode<>(owner, this.key, this.getDataScope(dataBase));
@@ -60,6 +73,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
 
         Set<RelationBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders = new HashSet<>();
         Set<RelationBuilderCallback<ComponentNode<DATA, EVAL, T>>> relationBuilders = new HashSet<>();
+        Set<TaggingConfigCallback<?>> taggingConfigCallbacks = new HashSet<>();
 
         for (OperationNodesBuilder<DATA, EVAL, T> builder : this.operationNodesBuilders) {
             /*
@@ -70,13 +84,19 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
             OperationNodesBuilderHelper helper = new OperationNodesBuilderHelper(component);
             builder.addOperationNodes(dataBase, helper);
             operationRelationBuilders.addAll(helper.relationBuilderBuffer);
+            taggingConfigCallbacks.addAll(helper.taggingConfigBuffer);
         }
 
         for (RelationBuilder<ComponentNode<DATA, EVAL, T>> relationBuilder : this.relationBuilders) {
             relationBuilders.add(new RelationBuilderCallback<>(component, relationBuilder));
         }
 
-        return new BuildResult<>(component, operationRelationBuilders, relationBuilders);
+        /* component-level tagging configs */
+        for (ComponentTaggingCallback<DATA, EVAL, T> callback : this.componentTaggingConfigs) {
+            taggingConfigCallbacks.add(new TaggingConfigCallback<>(component, callback.createTagConfig(dataBase)));
+        }
+
+        return new BuildResult<>(component, operationRelationBuilders, relationBuilders, taggingConfigCallbacks);
     }
 
     /**
@@ -131,7 +151,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
     public record BuildResult<DATA extends T, EVAL extends T, T extends IData>
             (ComponentNode<DATA, EVAL, T> component,
              Set<RelationBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders,
-             Set<RelationBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders) {
+             Set<RelationBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders,
+             Set<TaggingConfigCallback<?>> taggingConfigCallbacks) {
 
     }
 
@@ -142,6 +163,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      */
     public class OperationNodesBuilderHelper {
         private final Set<RelationBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
+        private final Set<TaggingConfigCallback<OperationNode<EVAL>>> taggingConfigBuffer = new HashSet<>();
         private final ComponentNode<DATA, EVAL, T> componentNode;
 
         private Stack<OperationNode<EVAL>> consecutiveChain = new Stack<>();
@@ -178,9 +200,24 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope,
                                                   @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
+            return this.addOperation(func, code, name, scope, operationNodeRelationBuilder, null);
+        }
+
+        /**
+         * Full-signature method for adding an operation node with all options including tagging.
+         */
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable final String name,
+                                                  @Nullable DataScope scope,
+                                                  @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder,
+                                                  @Nullable NodeTaggingCreator<OperationNode<EVAL>> taggingConfig) {
             OperationNode<EVAL> node = componentNode.addOperation(func, code, name, scope);
             if (operationNodeRelationBuilder != null) {
                 this.relationBuilderBuffer.add(new RelationBuilderCallback<>(node, operationNodeRelationBuilder));
+            }
+            if (taggingConfig != null) {
+                this.taggingConfigBuffer.add(new TaggingConfigCallback<>(node, taggingConfig));
             }
 
             return new RelationBuilderHelper(node);
@@ -190,38 +227,49 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
-            return this.addOperation(func, code, name, null, operationNodeRelationBuilder);
+            return this.addOperation(func, code, name, null, operationNodeRelationBuilder, null);
         }
 
         public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable final String name,
                                                   @Nullable DataScope scope) {
-            return this.addOperation(func, code, name, scope, null);
+            return this.addOperation(func, code, name, scope, null, null);
         }
 
         public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope) {
-            return this.addOperation(func, code, null, scope, null);
+            return this.addOperation(func, code, null, scope, null, null);
         }
 
         public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable DataScope scope,
                                                   @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
-            return this.addOperation(func, code, null, scope, operationNodeRelationBuilder);
+            return this.addOperation(func, code, null, scope, operationNodeRelationBuilder, null);
         }
 
         public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code) {
-            return this.addOperation(func, code, null, null, null);
+            return this.addOperation(func, code, null, null, null, null);
         }
 
         public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
                                                   OperationNode.OperationCode code,
                                                   @Nullable RelationBuilder<OperationNode<EVAL>> operationNodeRelationBuilder) {
-            return this.addOperation(func, code, null, null, operationNodeRelationBuilder);
+            return this.addOperation(func, code, null, null, operationNodeRelationBuilder, null);
+        }
+
+        /**
+         * Add an operation with a tagging config but no relation builder.
+         */
+        public RelationBuilderHelper addOperation(OperationNode.EvalFunction<? super EVAL> func,
+                                                  OperationNode.OperationCode code,
+                                                  @Nullable final String name,
+                                                  @Nullable DataScope scope,
+                                                  @Nullable NodeTaggingCreator<OperationNode<EVAL>> taggingConfig) {
+            return this.addOperation(func, code, name, scope, null, taggingConfig);
         }
 
         /**
@@ -310,5 +358,10 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
                 return this;
             }
         }
+    }
+
+    @FunctionalInterface
+    public interface ComponentTaggingCallback<DATA extends T, EVAL extends T, T extends IData> {
+        NodeTaggingCreator<ComponentNode<DATA, EVAL, T>> createTagConfig(DATA data);
     }
 }

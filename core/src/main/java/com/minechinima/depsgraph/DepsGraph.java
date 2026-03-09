@@ -1,5 +1,7 @@
 package com.minechinima.depsgraph;
 
+import com.minechinima.depsgraph.tagging.INodeTag;
+import com.minechinima.depsgraph.tagging.NodeTagStore;
 import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +17,7 @@ import java.util.Set;
 public class DepsGraph {
     private final Map<IData, DataNode> dataNodes = new HashMap<>();
     private final Set<OperationNode> operationNodes = new HashSet<>();
+    private final NodeTagStore tagStore = new NodeTagStore();
 
     private final HashMap<Class<? extends IData>, Set<DataNode<?, ?, ?>>> dataNodesByClass = new HashMap<>();
     //TODO mappings for datascopes and components in efficient way for lookup
@@ -71,5 +74,42 @@ public class DepsGraph {
 
     public Set<OperationNode> getOperationNodes() {
         return new HashSet<>(this.operationNodes);
+    }
+
+    // ---- Tag delegation ----
+
+    /**
+     * Tag a node with the given tag.
+     */
+    public void tag(Node node, INodeTag tag) {
+        this.tagStore.tag(node, tag);
+    }
+
+    /**
+     * Remove a specific tag from a node.
+     */
+    public void untag(Node node, INodeTag tag) {
+        this.tagStore.untag(node, tag);
+    }
+
+    /**
+     * @return true if the node currently carries the given tag
+     */
+    public boolean isTagged(Node node, INodeTag tag) {
+        return this.tagStore.isTagged(node, tag);
+    }
+
+    /**
+     * @return all nodes that currently carry the given tag
+     */
+    public Set<Node> getTaggedNodes(INodeTag tag) {
+        return this.tagStore.getTaggedNodes(tag);
+    }
+
+    /**
+     * Remove all tags from all nodes.
+     */
+    public void clearAllTags() {
+        this.tagStore.clearAll();
     }
 }

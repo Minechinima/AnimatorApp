@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * General-purpose abstract event bus that handles annotation-based subscriber registration and
@@ -68,6 +69,11 @@ public abstract class AbstractConstrainedEventBus<E, C extends IEventContext, A 
     private final Set<Class<? extends IEventConstraint<C>>> constraints = new HashSet<>();
 
     /**
+     * Programmatic (functional) subscribers with constraints, keyed by their {@link Subscription} token.
+     */
+    private final Map<Subscription, ConstrainedFunctionalHandler> constrainedFunctionalSubscribers = new IdentityHashMap<>();
+
+    /**
      * @param baseEventType  the class object for the base event type E; used to validate that
      *                       listener method parameters are compatible
      * @param annotationType the class object for the listener annotation A; used to look up
@@ -76,6 +82,37 @@ public abstract class AbstractConstrainedEventBus<E, C extends IEventContext, A 
     protected AbstractConstrainedEventBus(Class<E> baseEventType, Class<A> annotationType, Class<? extends IEventConstraint<C>>... constraints) {
         super(baseEventType, annotationType);
         this.constraints.addAll(List.of(constraints));
+    }
+
+    /**
+     * Programmatically subscribe a functional listener for a specific event type with constraints.
+     * The listener will only be invoked when all supplied constraints match the dispatch context.
+     *
+     * @param listener    the consumer that will receive events
+     * @param eventType   the concrete event class to listen for (must be a subtype of E)
+     * @param constraints the constraints that must all match for the listener to be invoked
+     * @return a {@link Subscription} token for later unsubscription
+     * @throws IllegalArgumentException if eventType is not a subtype of E
+     */
+    @SafeVarargs
+    public final <T extends E> Subscription subscribe(Consumer<T> listener, Class<T> eventType, IEventConstraint<C>... constraints) {
+        if (!this.baseEventType.isAssignableFrom(eventType)) {
+            throw new IllegalArgumentException("Event type " + eventType.getSimpleName()
+                    + " is not a subtype of " + this.baseEventType.getSimpleName() + ".");
+        }
+
+        @SuppressWarnings("unchecked")
+        ConstrainedFunctionalHandler handler = new ConstrainedFunctionalHandler(
+                (Consumer<E>) listener, eventType, List.of(constraints));
+        Subscription subscription = new Subscription();
+        this.constrainedFunctionalSubscribers.put(subscription, handler);
+        return subscription;
+    }
+
+    @Override
+    public void unsubscribe(Subscription subscription) {
+        super.unsubscribe(subscription);
+        this.constrainedFunctionalSubscribers.remove(subscription);
     }
 
     /**
@@ -99,6 +136,12 @@ public abstract class AbstractConstrainedEventBus<E, C extends IEventContext, A 
                 if (!evaluateConstraints(handler.annotation, constraintContext)) return;
                 handler.handle(subscriber, event);
             });
+        });
+        this.functionalSubscribers.forEach((subscription, handler) -> handler.handle(event));
+        this.constrainedFunctionalSubscribers.forEach((subscription, handler) -> {
+            if (handler.matchesConstraints(constraintContext)) {
+                handler.handle(event);
+            }
         });
     }
 
@@ -161,5 +204,25 @@ public abstract class AbstractConstrainedEventBus<E, C extends IEventContext, A 
             if (c.isAssignableFrom(constraintClass)) return true;
         }
         return false;
+    }
+
+    /**
+     * Descriptor for a programmatic (functional) listener with constraints.
+     * Extends the base {@link FunctionalHandler} with constraint evaluation at dispatch time.
+     */
+    protected class ConstrainedFunctionalHandler extends FunctionalHandler {
+        private final List<IEventConstraint<C>> constraints;
+
+        private ConstrainedFunctionalHandler(Consumer<E> listener, Class<? extends E> eventType, List<IEventConstraint<C>> constraints) {
+            super(listener, eventType);
+            this.constraints = constraints;
+        }
+
+        public boolean matchesConstraints(C constraintContext) {
+            for (IEventConstraint<C> constraint : this.constraints) {
+                if (!constraint.matches(constraintContext)) return false;
+            }
+            return true;
+        }
     }
 }

@@ -43,6 +43,18 @@ public class DataScope {
     }
 
     /**
+     * Returns all {@link IData} instances managed by this scope as a single combined set.
+     * This merges {@link #getSpecialAttributes()} and {@link #getDataTrees()} (since {@link IDataTree} extends {@link IData}).
+     *
+     * @return a new set containing all data instances in this scope
+     */
+    public Set<IData> getAllData() {
+        Set<IData> all = new HashSet<>(specialAttributes);
+        all.addAll(dataTrees);
+        return all;
+    }
+
+    /**
      * @param data
      * @return true if the given data is in the scope of this data.
      */

@@ -41,7 +41,11 @@ public class Constraints {
 
             RelationBuilder<OperationNode<EVAL>> relationBuilder = relationBuilderGenericHelper(evalRegistry, constraint, helper);
 
-            helper.addOperation(evalFunc, OperationCodes.CONSTRAINTS, String.valueOf(i), new DataScope(constraint), relationBuilder).addToChain();
+            helper.addOperation(evalFunc,
+                    OperationCodes.CONSTRAINTS,
+                    String.valueOf(i),
+                    new DataScope(constraint),
+                    relationBuilder).addToChain();
         }
 
         helper.chainToExit();
