@@ -56,6 +56,9 @@ public class DataNode<DATA extends T, EVAL extends T, T extends IData> extends N
         return this.components.get(type);
     }
 
+    /**
+     * @return all components managed by this data node, including entry and exit. Set is immutable.
+     */
     public Set<ComponentNode<DATA, EVAL, T>> getComponents() {
         return Set.copyOf(this.components.values());
     }

@@ -55,6 +55,9 @@ public class ComponentNode<DATA extends T, EVAL extends T, T extends IData> exte
         return this.scopeOfComponent;
     }
 
+    /**
+     * @return all operation nodes managed by this component node, including entry and exit. HashMap is a copy.
+     */
     public Map<OperationKey, OperationNode<EVAL>> getOperations() {
         return new HashMap<>(this.operations);
     }

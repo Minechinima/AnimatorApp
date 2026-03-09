@@ -20,7 +20,6 @@ import java.util.*;
  *   <li>{@link #forEventConstraints} – adds event-type and constraint filters</li>
  *   <li>{@link #custom} – fully custom listener</li>
  * </ol>
- * Levels 1 and 2 delegate to level 3 internally (DRY).
  *
  * @param <T> the type of dependency-graph node this config applies to
  */

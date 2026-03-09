@@ -28,6 +28,36 @@ public abstract class Node {
     }
 
     /**
+     * @param to
+     * @implNote package-private because tree rebuilding needs to be managed by the engine
+     */
+    void removeRelationTo(Node to) {
+        Relation relation = this.createRelation(this, to, "");
+        this.outlinks.remove(relation);
+        to.inlinks.remove(relation);
+    }
+
+    /**
+     * Removes all ingoing and outgoing relations of this node and cleans up the opposite side
+     * of each relation so no stale references remain.
+     *
+     * @implNote Intended for node removal / graph teardown. Iterates over copies of the
+     *           link sets to avoid {@link java.util.ConcurrentModificationException}.
+     *           Package-private because relation management must be controlled by the engine.
+     */
+    void removeAllRelations() {
+        for (Relation relation : Set.copyOf(this.outlinks)) {
+            relation.getTo().inlinks.remove(relation);
+        }
+        this.outlinks.clear();
+
+        for (Relation relation : Set.copyOf(this.inlinks)) {
+            relation.getFrom().outlinks.remove(relation);
+        }
+        this.inlinks.clear();
+    }
+
+    /**
      * Creates a relation from this node to the given node.
      * The relations are mapped in the following way: this Exit operation -> to Entry operation.
      * If this or the other nodes are already operation nodes, the mapping will be directly between the operation nodes,

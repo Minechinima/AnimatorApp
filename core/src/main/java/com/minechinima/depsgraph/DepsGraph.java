@@ -26,6 +26,42 @@ public class DepsGraph {
         //TODO test datascopes for uniqueness
     }
 
+    public void removeDataNode(DataNode node) {
+        // Collect every node managed by this DataNode (bottom-up: operations → components → datanode)
+        Set<Node> allNodes = new HashSet<>();
+
+        for (ComponentNode<?, ?, ?> component : node.getComponents()) {
+            for (OperationNode<?> opNode : component.getOperations().values()) {
+                allNodes.add(opNode);
+            }
+            allNodes.add(component);
+        }
+        allNodes.add(node);
+
+        // Clear tags and remove all relations for every managed node
+        for (Node n : allNodes) {
+            this.tagStore.clearNode(n);
+            n.removeAllRelations();
+        }
+
+        // Remove from internal collections
+        this.dataNodes.remove(node.getOriginalData());
+
+        Set<DataNode<?, ?, ?>> classSet = this.dataNodesByClass.get(node.getOriginalData().getClass());
+        if (classSet != null) {
+            classSet.remove(node);
+            if (classSet.isEmpty()) {
+                this.dataNodesByClass.remove(node.getOriginalData().getClass());
+            }
+        }
+
+        for (ComponentNode<?, ?, ?> component : node.getComponents()) {
+            for (OperationNode<?> opNode : component.getOperations().values()) {
+                this.operationNodes.remove(opNode);
+            }
+        }
+    }
+
     /**
      * Get the data node for the given data and supertype. Checks if the datanode supertype is assignable to the given supertype.
      * This helps with type safety so the caller can infer the types.
