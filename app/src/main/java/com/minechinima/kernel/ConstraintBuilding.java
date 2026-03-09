@@ -23,17 +23,11 @@ public class ConstraintBuilding {
      */
     public static <DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation>
     void buildConstraints(DATA data, ConstraintEvalRegistry evalRegistry, ComponentBuilder<DATA, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper) {
-        // TODO new update graph topology use case: List updates, not single operation node data.
-        //  need a more generic way to register when to update graph topology
-        // maybe a generic way to register listeners for any node besides the relation data thing.
-
         List<ConstraintContainer> constraints = data.constraints().getChildren();
         for (int i = 0; i < constraints.size(); i++) {
             final int constraintIndex = i;
-            ConstraintContainer container = constraints.get(i);
-            ConstraintStruct constraint = container.get();
+            ConstraintStruct constraint = constraints.get(i).get();
             if (constraint == null) continue;
-
             ConstraintBuilding.ConstraintOperationNodeBuilder<DATA, EVAL> func = evalRegistry.getEvalForConstraint(constraint.getClass());
             if (func == null) continue;
 
@@ -74,12 +68,13 @@ public class ConstraintBuilding {
 
     }
 
-    public static <EVAL extends IConstraintsComponent & IEvaluatedTransformation> void buildChildOfConstraint(IConstraintsComponent data,
-                                                                                                              final int constraintIndex,
-                                                                                                              ComponentBuilder<IConstraintsComponent, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper) {
+    public static <EVAL extends IConstraintsComponent & IEvaluatedTransformation>
+    void buildChildOfConstraint(IConstraintsComponent data,
+                                final int constraintIndex,
+                                ComponentBuilder<IConstraintsComponent, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper) {
         ConstraintStruct constraint = data.constraints().get(constraintIndex).get();
         helper.addOperation((g, d) -> childOfConstraint(g, constraintIndex, d),
-                OperationCodes.CONSTRAINTS,
+                OperationCodes.CONSTRAINTS_EVAL,
                 String.valueOf(constraintIndex),
                 new DataScope(constraint),
                 (g, n) -> ConstraintBuilding.constraintTargetRelation(g, constraint, n),

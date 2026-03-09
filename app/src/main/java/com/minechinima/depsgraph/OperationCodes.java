@@ -6,8 +6,9 @@ public enum OperationCodes implements OperationNode.OperationCode {
     TRANSFORM_PARENT,
     TRANSFORM_EXIT,
     CONSTRAINTS_ENTRY,
+    CONSTRAINTS_EVAL,
     CONSTRAINTS_EXIT,
-    CONSTRAINTS;
+    ;
 
     @Override
     public String getName() {

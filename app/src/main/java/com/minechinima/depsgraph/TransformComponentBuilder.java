@@ -4,6 +4,7 @@ import com.minechinima.depsgraph.builder.ComponentBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
 import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
 import com.minechinima.kernel.Transform;
+import com.minechinima.kernel.TransformBuilding;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.app.object.IEvaluatedTransformation;
 import com.minechinima.model.app.object.ITransformationComponent;
@@ -15,8 +16,8 @@ public class TransformComponentBuilder<DATA extends ITransformationComponent, EV
         extends ComponentBuilder<DATA, EVAL, ITransformationComponent> {
     public TransformComponentBuilder() {
         super(ComponentTypes.TRANSFORM);
-        this.addOperationNodeBuilder(Transform::buildTransformComponent);
-        this.addComponentRelationBuilder(Transform::buildTransformRelations);
+        this.addOperationNodeBuilder(TransformBuilding::buildTransformComponent);
+        this.addComponentRelationBuilder(TransformBuilding::buildTransformRelations);
         this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forDataScope(this.getDataScope(transform), NodeTag.NEEDS_REEVALUATION));
         this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forData(transform.parent(), NodeTag.REBUILD_TREE));
     }
@@ -24,7 +25,7 @@ public class TransformComponentBuilder<DATA extends ITransformationComponent, EV
     @Nullable
     @Override
     public DataScope getDataScope(DATA data) {
-        return new DataScope(Set.of(data.scale(), data.rotation(), data.translation(), data.parent()), Set.of());
+        return new DataScope(data.scale(), data.rotation(), data.translation(), data.parent());
     }
 
     @Override
