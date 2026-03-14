@@ -73,5 +73,6 @@ public interface IData {
      */
     @Contract(pure = true)
     DataOperationBus getDataOperationBus();
+    // TODO dont expose DataOperationBus in IData. EventBus can be wrapped, but DataOperationBus is too specific.
 }
 
