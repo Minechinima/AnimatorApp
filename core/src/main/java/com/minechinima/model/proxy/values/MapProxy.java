@@ -1,13 +1,14 @@
-package com.minechinima.model.proxy;
+package com.minechinima.model.proxy.values;
 
 import com.minechinima.model.api.IData;
 import com.minechinima.model.api.values.IDataMap;
+import com.minechinima.model.proxy.BaseDataTreeProxy;
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
 
 import java.util.UUID;
 
-public class MapProxy<T extends IData> extends BaseDataProxy<IDataMapBackend<T>> implements IDataMap<T> {
+public class MapProxy<T extends IData> extends BaseDataTreeProxy<IDataMapBackend<T>> implements IDataMap<T> {
     @Override
     public int size() {
         return this.backend != null ? this.backend.size() : 0;

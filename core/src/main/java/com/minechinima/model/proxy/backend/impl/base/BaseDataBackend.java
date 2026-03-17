@@ -1,4 +1,4 @@
-package com.minechinima.model.proxy.backend.impl;
+package com.minechinima.model.proxy.backend.impl.base;
 
 import com.minechinima.model.api.IDataTree;
 import com.minechinima.model.events.bus.EventBus;

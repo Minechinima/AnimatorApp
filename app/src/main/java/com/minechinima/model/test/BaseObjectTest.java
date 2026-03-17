@@ -1,7 +1,7 @@
 package com.minechinima.model.test;
 
 import com.minechinima.model.proxy.BaseDataTreeProxy;
-import com.minechinima.model.proxy.ValueProxy;
+import com.minechinima.model.proxy.values.ValueProxy;
 
 /**
  * TODO TO TEST CLASS DECLARATIONS BEFORE PROD

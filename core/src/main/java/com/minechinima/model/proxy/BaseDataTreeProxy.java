@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-public class BaseDataTreeProxy extends BaseDataProxy<IDataTreeBackend> implements IDataTree {
+public class BaseDataTreeProxy<T extends IDataTreeBackend<T>> extends BaseDataProxy<T> implements IDataTree {
     @Override
     public Collection<? extends IData> getChildren() {
         return this.backend.getChildren();

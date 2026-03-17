@@ -1,4 +1,4 @@
-package com.minechinima.model.proxy.backend;
+package com.minechinima.model.proxy.backend.impl;
 
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataBackend;

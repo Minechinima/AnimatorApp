@@ -1,4 +1,4 @@
-package com.minechinima.model.proxy.backend.impl;
+package com.minechinima.model.proxy.backend.impl.database;
 
 import com.minechinima.model.api.IDataTree;
 import com.minechinima.model.base.BaseStructure;
@@ -7,6 +7,8 @@ import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataBackend;
+import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
+import com.minechinima.model.proxy.backend.impl.base.BaseDataBackend;
 import org.jetbrains.annotations.Nullable;
 
 public class DatabaseBackend<D extends BaseStructure, T extends IDataBackend<T>> extends BaseDataBackend<T> {

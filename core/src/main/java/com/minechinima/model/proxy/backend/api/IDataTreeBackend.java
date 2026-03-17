@@ -9,5 +9,5 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.UUID;
 
-public interface IDataTreeBackend extends IDataBackend<IDataTreeBackend>, IDataTree {
+public interface IDataTreeBackend<T extends IDataTreeBackend<T>> extends IDataBackend<T>, IDataTree {
 }

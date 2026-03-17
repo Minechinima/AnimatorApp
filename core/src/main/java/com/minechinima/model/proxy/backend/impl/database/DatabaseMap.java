@@ -1,13 +1,14 @@
-package com.minechinima.model.proxy.backend.impl;
+package com.minechinima.model.proxy.backend.impl.database;
 
 import com.minechinima.model.api.IData;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
+import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
 import com.minechinima.model.values.base.BaseValueMap;
 
 import java.util.UUID;
 
-public class DatabaseMap<T extends IData> extends DatabaseBackend<BaseValueMap<?>, IDataMapBackend<T>> implements IDataMapBackend<T> {
+public class DatabaseMap<T extends IData> extends DatabaseTreeBackend<BaseValueMap<?>, IDataMapBackend<T>> implements IDataMapBackend<T> {
     public DatabaseMap(BaseValueMap<?> database, BasestructureMappingContext context) {
         super(database, context);
     }

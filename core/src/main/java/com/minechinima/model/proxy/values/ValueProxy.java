@@ -1,8 +1,9 @@
-package com.minechinima.model.proxy;
+package com.minechinima.model.proxy.values;
 
 import com.minechinima.animation.IAnimateable;
 import com.minechinima.animation.IAnimationContext;
 import com.minechinima.model.api.values.IDataValue;
+import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataValueBackend;
 import org.jetbrains.annotations.Nullable;
