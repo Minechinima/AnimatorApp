@@ -15,4 +15,5 @@ public interface IDataMap<T extends IData> extends IDataTree {
     boolean containsValue(Object value);
     T get(String key);
     T get(UUID uuid);
+    Set<T> values();
 }

@@ -1,12 +1,12 @@
 package com.minechinima.model.proxy.backend.impl.database;
 
-import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
+import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.values.base.BaseValue;
 import com.minechinima.model.proxy.backend.api.IDataValueBackend;
 import org.jetbrains.annotations.Nullable;
 
 public class DatabaseValue<V> extends DatabaseBackend<BaseValue<V>, IDataValueBackend<V>> implements IDataValueBackend<V> {
-    public DatabaseValue(BaseValue<V> value, BasestructureMappingContext context) {
+    public DatabaseValue(BaseValue<V> value, BasestructureProxyPool context) {
         super(value, context);
     }
 

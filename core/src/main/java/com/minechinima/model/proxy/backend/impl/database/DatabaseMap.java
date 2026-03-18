@@ -3,13 +3,14 @@ package com.minechinima.model.proxy.backend.impl.database;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
-import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
+import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.values.base.BaseValueMap;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class DatabaseMap<T extends IData> extends DatabaseTreeBackend<BaseValueMap<?>, IDataMapBackend<T>> implements IDataMapBackend<T> {
-    public DatabaseMap(BaseValueMap<?> database, BasestructureMappingContext context) {
+    public DatabaseMap(BaseValueMap<?> database, BasestructureProxyPool context) {
         super(database, context);
     }
 
@@ -56,5 +57,10 @@ public class DatabaseMap<T extends IData> extends DatabaseTreeBackend<BaseValueM
     @Override
     public T get(UUID uuid) {
         return null;
+    }
+
+    @Override
+    public Set<T> values() {
+        return Set.of();
     }
 }

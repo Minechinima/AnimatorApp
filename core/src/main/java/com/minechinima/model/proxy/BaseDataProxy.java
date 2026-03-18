@@ -1,5 +1,6 @@
 package com.minechinima.model.proxy;
 
+import com.minechinima.animation.AnimationContextUtils;
 import com.minechinima.animation.IAnimationContext;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.api.IDataTree;
@@ -66,9 +67,5 @@ public abstract class BaseDataProxy<T extends IDataBackend<T>> implements IData 
     @Override
     public DataOperationBus getDataOperationBus() {
         return this.backend.getDataOperationBus();
-    }
-
-    protected IAnimationContext _getAnimationContext() {
-        return null;
     }
 }

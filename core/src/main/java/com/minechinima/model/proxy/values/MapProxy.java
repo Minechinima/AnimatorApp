@@ -6,6 +6,7 @@ import com.minechinima.model.proxy.BaseDataTreeProxy;
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class MapProxy<T extends IData> extends BaseDataTreeProxy<IDataMapBackend<T>> implements IDataMap<T> {
@@ -42,6 +43,11 @@ public class MapProxy<T extends IData> extends BaseDataTreeProxy<IDataMapBackend
     @Override
     public T get(UUID uuid) {
         return null;
+    }
+
+    @Override
+    public Set<T> values() {
+        return this.backend.values();
     }
 
     public void add(T value, BackendLayer layer) {

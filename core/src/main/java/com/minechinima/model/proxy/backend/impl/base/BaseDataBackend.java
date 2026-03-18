@@ -6,7 +6,7 @@ import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.proxy.backend.api.IDataBackend;
 
 /**
- * Linked list
+ * base for all backends, as it contains utility methods and default implementations.
  */
 public abstract class BaseDataBackend<T extends IDataBackend<T>> implements IDataBackend<T> {
     protected T next;

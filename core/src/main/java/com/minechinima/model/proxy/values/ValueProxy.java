@@ -1,5 +1,6 @@
 package com.minechinima.model.proxy.values;
 
+import com.minechinima.animation.AnimationContextUtils;
 import com.minechinima.animation.IAnimateable;
 import com.minechinima.animation.IAnimationContext;
 import com.minechinima.model.api.values.IDataValue;
@@ -31,6 +32,6 @@ public class ValueProxy<V> extends BaseDataProxy<IDataValueBackend<V>> implement
 
     @Override
     public IAnimationContext getAnimationContext() {
-        return null;
+        return AnimationContextUtils.getAnimationContext(this);
     }
 }

@@ -7,15 +7,20 @@ import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataBackend;
-import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
+import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.proxy.backend.impl.base.BaseDataBackend;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Base for all backends that have the {@link BaseStructure} system as their source.
+ * @param <D>
+ * @param <T>
+ */
 public class DatabaseBackend<D extends BaseStructure, T extends IDataBackend<T>> extends BaseDataBackend<T> {
     protected final D database;
-    protected final BasestructureMappingContext context;
+    protected final BasestructureProxyPool context;
 
-    public DatabaseBackend(D database, BasestructureMappingContext context) {
+    public DatabaseBackend(D database, BasestructureProxyPool context) {
         this.database = database;
         this.context = context;
     }

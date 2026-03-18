@@ -1,9 +1,10 @@
 package com.minechinima.model.proxy.backend.impl.database;
 
 import com.minechinima.model.api.IData;
+import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.proxy.backend.api.IDataTreeBackend;
-import com.minechinima.model.proxy.backend.impl.BasestructureMappingContext;
+import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class DatabaseTreeBackend<D extends BaseValueHierarchy, T extends IDataTreeBackend<T>> extends DatabaseBackend<D, T> implements IDataTreeBackend<T> {
-    public DatabaseTreeBackend(D database, BasestructureMappingContext context) {
+    public DatabaseTreeBackend(D database, BasestructureProxyPool context) {
         super(database, context);
     }
 
@@ -24,21 +25,27 @@ public class DatabaseTreeBackend<D extends BaseValueHierarchy, T extends IDataTr
     //TODO
     @Override
     public boolean isDirectChild(IData child) {
-        return false;
+        BaseStructure node = this.context.getNodeForProxy(child);
+        if (node == null) return false;
+        return this.database.isDirectChild(node);
     }
 
     @Override
     public @Nullable IData getChildByValuePath(ValuePath path) {
-        return null;
+        BaseStructure node = this.database.getChildByValuePath(path);
+        if (node == null) return null;
+        return this.context.getProxyForNode(node);
     }
 
     @Override
     public @Nullable IData getChildByUniquePath(ValuePath path) {
-        return null;
+        BaseStructure node = this.database.getChildByUniquePath(path);
+        if (node == null) return null;
+        return this.context.getProxyForNode(node);
     }
 
     @Override
     public boolean isUUIDPresent(UUID uuid) {
-        return false;
+        return this.database.isUUIDPresent(uuid);
     }
 }
