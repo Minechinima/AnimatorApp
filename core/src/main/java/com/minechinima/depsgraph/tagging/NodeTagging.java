@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**
- * Configuration that describes <em>how</em> a dependency-graph {@link Node} should be tagged
+ * Contains objects that describe <em>how</em> a dependency-graph {@link Node} should be tagged
  * when data changes.
  * One config holds listeners and functions that can tag any data with the context of the node of this config.
  * <br><br>
@@ -24,15 +24,15 @@ import java.util.*;
  * need to be mapped at some point to a node to work properly. See public API of {@link NodeTaggingStrategy}
  * @param <T> the type of dependency-graph node this config applies to
  */
-public class NodeTaggingCreator<T extends Node> {
+public class NodeTagging<T extends Node> {
 
-    private final List<TaggingEntry<T>> entries;
+    private final List<TaggingConfig<T>> entries;
 
-    private NodeTaggingCreator(List<TaggingEntry<T>> entries) {
+    private NodeTagging(List<TaggingConfig<T>> entries) {
         this.entries = Collections.unmodifiableList(entries);
     }
 
-    public List<TaggingEntry<T>> getEntries() {
+    public List<TaggingConfig<T>> getEntries() {
         return this.entries;
     }
 
@@ -47,7 +47,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @param <T>   node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTaggingCreator<T> forData(IData data, INodeTag tag) {
+    public static <T extends Node> NodeTagging<T> forData(IData data, INodeTag tag) {
         return forEventConstraints(new DataScope(data), ChangeEvent.class, null, tag);
     }
 
@@ -60,7 +60,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @param <T>   node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTaggingCreator<T> forDataScope(DataScope scope, INodeTag tag) {
+    public static <T extends Node> NodeTagging<T> forDataScope(DataScope scope, INodeTag tag) {
         return forEventConstraints(scope, ChangeEvent.class, null, tag);
     }
 
@@ -77,7 +77,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @param <T>        node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTaggingCreator<T> forEventConstraints(
+    public static <T extends Node> NodeTagging<T> forEventConstraints(
             DataScope scope,
             Class<? extends ChangeEvent> eventType,
             @Nullable SubscribeEvent.Type constraint,
@@ -91,7 +91,7 @@ public class NodeTaggingCreator<T extends Node> {
         return custom(defaultListener, eventType, constraints, scope.getAllData());
     }
 
-    public static <T extends Node> NodeTaggingCreator<T> forEventConstraints(
+    public static <T extends Node> NodeTagging<T> forEventConstraints(
             IData scope,
             Class<? extends ChangeEvent> eventType,
             @Nullable SubscribeEvent.Type constraint,
@@ -111,7 +111,7 @@ public class NodeTaggingCreator<T extends Node> {
      * @param <T>         node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTaggingCreator<T> custom(
+    public static <T extends Node> NodeTagging<T> custom(
             NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
@@ -119,14 +119,14 @@ public class NodeTaggingCreator<T extends Node> {
 
         Class<? extends ChangeEvent> effectiveEventType = eventType != null ? eventType : ChangeEvent.class;
 
-        TaggingEntry<T> entry = new TaggingEntry<>(listener, effectiveEventType, constraints, watchedData);
-        return new NodeTaggingCreator<>(List.of(entry));
+        TaggingConfig<T> entry = new TaggingConfig<>(listener, effectiveEventType, constraints, watchedData);
+        return new NodeTagging<>(List.of(entry));
     }
 
     /**
      * Convenience overload accepting varargs data instead of a set.
      */
-    public static <T extends Node> NodeTaggingCreator<T> custom(
+    public static <T extends Node> NodeTagging<T> custom(
             NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
@@ -141,12 +141,12 @@ public class NodeTaggingCreator<T extends Node> {
      * Merge multiple configs into one.
      */
     @SafeVarargs
-    public static <T extends Node> NodeTaggingCreator<T> merge(NodeTaggingCreator<T>... configs) {
-        List<TaggingEntry<T>> merged = new ArrayList<>();
-        for (NodeTaggingCreator<T> config : configs) {
+    public static <T extends Node> NodeTagging<T> merge(NodeTagging<T>... configs) {
+        List<TaggingConfig<T>> merged = new ArrayList<>();
+        for (NodeTagging<T> config : configs) {
             merged.addAll(config.entries);
         }
-        return new NodeTaggingCreator<>(merged);
+        return new NodeTagging<>(merged);
     }
 
     // ---- Entry record ----
@@ -156,7 +156,7 @@ public class NodeTaggingCreator<T extends Node> {
      *
      * @param <T> the node type
      */
-    public record TaggingEntry<T extends Node>(
+    public record TaggingConfig<T extends Node>(
             NodeTaggingStrategy<T> listener,
             Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,

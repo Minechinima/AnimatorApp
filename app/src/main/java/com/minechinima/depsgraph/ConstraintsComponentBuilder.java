@@ -2,17 +2,12 @@ package com.minechinima.depsgraph;
 
 import com.minechinima.depsgraph.builder.ComponentBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
-import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
+import com.minechinima.depsgraph.tagging.NodeTagging;
 import com.minechinima.kernel.ConstraintBuilding;
 import com.minechinima.kernel.ConstraintEvalRegistry;
-import com.minechinima.kernel.Constraints;
 import com.minechinima.model.app.object.*;
 import com.minechinima.model.events.bus.SubscribeEvent;
 import com.minechinima.model.events.types.ChangeEvent;
-import com.minechinima.model.events.types.changes.ListAddEvent;
-import com.minechinima.model.events.types.changes.ListIndexChangeEvent;
-import com.minechinima.model.events.types.changes.ListRemoveEvent;
-import com.minechinima.model.logging.operations.ListChangeIndex;
 import org.jetbrains.annotations.Nullable;
 
 public class ConstraintsComponentBuilder<DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation>
@@ -26,9 +21,9 @@ public class ConstraintsComponentBuilder<DATA extends IConstraintsComponent, EVA
                 ConstraintBuilding.buildConstraints(obj, constraintEvalRegistry, helper));
         this.addComponentRelationBuilder(ConstraintBuilding::buildConstraintComponentRelation);
         /* for any parameter change in constraints update the entire component */
-        this.addComponentTaggingConfig(component -> NodeTaggingCreator.forData(component.constraints(), NodeTag.NEEDS_REEVALUATION));
+        this.addComponentTaggingConfig(component -> NodeTagging.forData(component.constraints(), NodeTag.NEEDS_REEVALUATION));
         /* changes in the constraint list require rebuilding relations */
-        this.addComponentTaggingConfig(component -> NodeTaggingCreator.forEventConstraints(component.constraints(),
+        this.addComponentTaggingConfig(component -> NodeTagging.forEventConstraints(component.constraints(),
                 ChangeEvent.class, SubscribeEvent.Type.ON_NODE, NodeTag.REBUILD_TREE));
     }
 

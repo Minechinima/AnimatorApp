@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * The logic of the operation is defined in the functional interface {@link EvalFunction} (functional paradigm)
  * @param <EVAL>>
  */
-public class OperationNode<EVAL extends IData> extends Node {
+public class OperationNode<EVAL extends IData> extends Node implements INodeIdentifierProvider {
     private final ComponentNode<?, ?, ?> owner;
     /**
      * Functional programming used here. The only thing that changes

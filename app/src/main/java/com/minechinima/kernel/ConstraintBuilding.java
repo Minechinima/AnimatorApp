@@ -1,9 +1,9 @@
 package com.minechinima.kernel;
 
 import com.minechinima.depsgraph.*;
-import com.minechinima.depsgraph.builder.ComponentBuilder;
+import com.minechinima.depsgraph.builder.OperationNodesBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
-import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
+import com.minechinima.depsgraph.tagging.NodeTagging;
 import com.minechinima.model.app.constraints.ConstraintContainer;
 import com.minechinima.model.app.constraints.ConstraintStruct;
 import com.minechinima.model.app.object.IConstraintsComponent;
@@ -22,7 +22,7 @@ public class ConstraintBuilding {
      * @param helper
      */
     public static <DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation>
-    void buildConstraints(DATA data, ConstraintEvalRegistry evalRegistry, ComponentBuilder<DATA, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper) {
+    void buildConstraints(DATA data, ConstraintEvalRegistry evalRegistry, OperationNodesBuilder helper) {
         List<ConstraintContainer> constraints = data.constraints().getChildren();
         for (int i = 0; i < constraints.size(); i++) {
             final int constraintIndex = i;
@@ -71,18 +71,18 @@ public class ConstraintBuilding {
     public static <EVAL extends IConstraintsComponent & IEvaluatedTransformation>
     void buildChildOfConstraint(IConstraintsComponent data,
                                 final int constraintIndex,
-                                ComponentBuilder<IConstraintsComponent, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper) {
+                                OperationNodesBuilder<?, EVAL, IConstraintsComponent> helper) {
         ConstraintStruct constraint = data.constraints().get(constraintIndex).get();
         helper.addOperation((g, d) -> childOfConstraint(g, constraintIndex, d),
                 OperationCodes.CONSTRAINTS_EVAL,
                 String.valueOf(constraintIndex),
                 new DataScope(constraint),
                 (g, n) -> ConstraintBuilding.constraintTargetRelation(g, constraint, n),
-                NodeTaggingCreator.forData(constraint.target, NodeTag.REBUILD_TREE)).addToChain();
+                NodeTagging.forData(constraint.target, NodeTag.REBUILD_TREE)).addToChain();
     }
 
     @FunctionalInterface
     public interface ConstraintOperationNodeBuilder<DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation> {
-            void buildConstraintOperationNode(DATA data, final int constraintIndex, ComponentBuilder<DATA, EVAL, ITransformationComponent>.OperationNodesBuilderHelper helper);
+            void buildConstraintOperationNode(DATA data, final int constraintIndex, OperationNodesBuilder helper);
     }
 }

@@ -2,6 +2,7 @@ package com.minechinima.depsgraph;
 
 import com.minechinima.depsgraph.tagging.INodeTag;
 import com.minechinima.depsgraph.tagging.NodeTagStore;
+import com.minechinima.depsgraph.tagging.NodeTaggingManager;
 import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ public class DepsGraph {
      * External storage of tagged nodes, to allow for efficient lookup and keeping tagging logic decoupled from the graph topology.
      */
     private final NodeTagStore tagStore = new NodeTagStore();
+    protected final NodeTaggingManager taggingManager = new NodeTaggingManager(this);
 
     private final HashMap<Class<? extends IData>, Set<DataNode<?, ?, ?>>> dataNodesByClass = new HashMap<>();
     //TODO mappings for datascopes and components in efficient way for lookup
@@ -65,6 +67,8 @@ public class DepsGraph {
                 this.operationNodes.remove(opNode);
             }
         }
+
+        this.taggingManager.unregister(node);
     }
 
     /**

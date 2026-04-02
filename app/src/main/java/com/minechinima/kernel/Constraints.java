@@ -1,17 +1,10 @@
 package com.minechinima.kernel;
 
 import com.minechinima.depsgraph.*;
-import com.minechinima.depsgraph.builder.ComponentBuilder;
-import com.minechinima.depsgraph.tagging.NodeTag;
-import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
 import com.minechinima.model.app.constraints.ChildOfConstraint;
 import com.minechinima.model.app.constraints.ConstraintContainer;
-import com.minechinima.model.app.constraints.ConstraintStruct;
 import com.minechinima.model.app.object.IConstraintsComponent;
 import com.minechinima.model.app.object.IEvaluatedTransformation;
-import com.minechinima.model.app.object.ITransformationComponent;
-
-import java.util.List;
 
 public class Constraints {
     public static <T extends IConstraintsComponent & IEvaluatedTransformation> void

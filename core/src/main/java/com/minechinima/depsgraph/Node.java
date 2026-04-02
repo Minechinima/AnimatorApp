@@ -1,6 +1,7 @@
 package com.minechinima.depsgraph;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,6 +29,21 @@ public abstract class Node {
     }
 
     /**
+     * Creates a relation from this node to the given node.
+     * The relations are mapped in the following way: this Exit operation -> to Entry operation.
+     * If this or the other nodes are already operation nodes, the mapping will be directly between the operation nodes,
+     * which allows to have relations between individual operations instead of just between the entry and exit of the nodes.
+     * <br><br>
+     * Assigns a default name that uses the node identifier.
+     * @param to
+     */
+    public <T extends Node & INodeIdentifierProvider> void addFromRelationTo(T to) {
+        Relation relation = this.createRelation(this, to, null);
+        relation.getFrom().addOutRelation(relation);
+        relation.getTo().addInRelation(relation);
+    }
+
+    /**
      * @param to
      * @implNote package-private because tree rebuilding needs to be managed by the engine
      */
@@ -41,8 +57,7 @@ public abstract class Node {
      * Removes all ingoing and outgoing relations of this node and cleans up the opposite side
      * of each relation so no stale references remain.
      *
-     * @implNote Intended for node removal / graph teardown. Iterates over copies of the
-     *           link sets to avoid {@link java.util.ConcurrentModificationException}.
+     * @implNote Intended for node removal / graph teardown.
      *           Package-private because relation management must be controlled by the engine.
      */
     void removeAllRelations() {
@@ -57,23 +72,7 @@ public abstract class Node {
         this.inlinks.clear();
     }
 
-    /**
-     * Creates a relation from this node to the given node.
-     * The relations are mapped in the following way: this Exit operation -> to Entry operation.
-     * If this or the other nodes are already operation nodes, the mapping will be directly between the operation nodes,
-     * which allows to have relations between individual operations instead of just between the entry and exit of the nodes.
-     * <br><br>
-     * Assigns a default name that uses the node identifier.
-     * @param to
-     */
-    public void addFromRelationTo(Node to) {
-        //TODO interface for node to provide identifier
-        Relation relation = this.createRelation(this, to, "relationName");
-        relation.getFrom().addOutRelation(relation);
-        relation.getTo().addInRelation(relation);
-    }
-
-    private Relation createRelation(Node from, Node to, String name) {
+    private Relation createRelation(Node from, Node to, @Nullable String name) {
         OperationNode<?> toEntry = to.getOpNodeForInlink();
         OperationNode<?> fromExit = from.getOpNodeForOutlink();
 
@@ -84,6 +83,8 @@ public abstract class Node {
         if (toEntry == null || fromExit == null) {
             throw new IllegalStateException("Both nodes must have entry and exit operations to build a relation.");
         }
+
+        name = name == null ? fromExit.getIdentifier() + " -> " + toEntry.getIdentifier() : name;
 
         return new Relation(fromExit, toEntry, name);
     }

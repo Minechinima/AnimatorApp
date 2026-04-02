@@ -2,6 +2,7 @@ package com.minechinima.depsgraph.tagging;
 
 import com.minechinima.depsgraph.DepsGraph;
 import com.minechinima.depsgraph.Node;
+import com.minechinima.depsgraph.builder.BufferBuilderCallback;
 import com.minechinima.eventbus.AbstractEventBus;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.events.bus.EventBus;
@@ -27,22 +28,22 @@ public class NodeTaggingManager {
     }
 
     /**
-     * Register all tagging entries from a single {@link TaggingConfigCallback}.
-     * For each {@link NodeTaggingCreator.TaggingEntry} in the config, and for each watched
+     * Register all tagging entries from a single {@link NodeTaggingCallback}.
+     * For each {@link NodeTagging.TaggingConfig} in the config, and for each watched
      * {@link IData}, a programmatic subscriber is created on the respective {@link EventBus}.
      *
      * @param callback the callback binding a node to its tagging config
      * @param <T>      the node type
      */
     @SuppressWarnings("unchecked")
-    public <T extends Node> void register(TaggingConfigCallback<T> callback) {
+    public <T extends Node> void register(NodeTaggingCallback<T> callback) {
         T node = callback.node();
-        NodeTaggingCreator<T> config = callback.config();
+        NodeTagging<T> config = callback.config();
 
         List<SubscriptionRecord> nodeSubscriptions = this.subscriptions
                 .computeIfAbsent(node, k -> new ArrayList<>());
 
-        for (NodeTaggingCreator.TaggingEntry<T> entry : config.getEntries()) {
+        for (NodeTagging.TaggingConfig<T> entry : config.getEntries()) {
             for (IData data : entry.watchedData()) {
                 EventBus bus = data.getEventBus();
 
@@ -67,15 +68,15 @@ public class NodeTaggingManager {
     /**
      * Convenience: register multiple callbacks at once.
      */
-    public void registerAll(Collection<TaggingConfigCallback<?>> callbacks) {
-        for (TaggingConfigCallback<?> callback : callbacks) {
+    public void registerAll(Collection<NodeTaggingCallback<?>> callbacks) {
+        for (NodeTaggingCallback<?> callback : callbacks) {
             this.registerUntyped(callback);
         }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void registerUntyped(TaggingConfigCallback<?> callback) {
-        this.register((TaggingConfigCallback) callback);
+    private void registerUntyped(NodeTaggingCallback<?> callback) {
+        this.register((NodeTaggingCallback) callback);
     }
 
     /**
@@ -108,12 +109,12 @@ public class NodeTaggingManager {
     // ---- Supporting types ----
 
     /**
-     * Binds a concrete node instance to its {@link NodeTaggingCreator}.
-     * Analogous to {@link com.minechinima.depsgraph.builder.ComponentBuilder.RelationBuilderCallback}.
+     * Binds a concrete node instance to its {@link NodeTagging}.
+     * Analogous to {@link BufferBuilderCallback}.
      *
      * @param <T> the node type
      */
-    public record TaggingConfigCallback<T extends Node>(T node, NodeTaggingCreator<T> config) {}
+    public record NodeTaggingCallback<T extends Node>(T node, NodeTagging<T> config) {}
 
     /**
      * Internal record tracking an individual subscription so it can be removed later.

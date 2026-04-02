@@ -1,8 +1,7 @@
 package com.minechinima.depsgraph;
 
 import com.minechinima.depsgraph.builder.DepsGraphBuilderRegistry;
-import com.minechinima.depsgraph.tagging.NodeTaggingManager;
-import com.minechinima.depsgraph.tagging.NodeTaggingManager.TaggingConfigCallback;
+import com.minechinima.depsgraph.tagging.NodeTaggingManager.NodeTaggingCallback;
 import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,12 +18,11 @@ public class DepsGraphDataManager {
     //manage registry and automatically updating graph and tagging
 
     protected final DepsGraph graph;
-    protected NodeTaggingManager taggingManager;
+
     protected final DepsGraphBuilderRegistry builderRegistry;
 
     public DepsGraphDataManager(DepsGraph graph, DepsGraphBuilderRegistry builderRegistry) {
         this.graph = graph;
-        this.taggingManager = new NodeTaggingManager(graph);
         this.builderRegistry = builderRegistry;
     }
 
@@ -34,18 +32,8 @@ public class DepsGraphDataManager {
      *
      * @param callbacks the callbacks binding nodes to their tagging configs
      */
-    public void registerTaggingStrategies(Collection<TaggingConfigCallback<?>> callbacks) {
-        this.taggingManager.registerAll(callbacks);
-    }
+    public void registerTaggingStrategies(Collection<NodeTaggingCallback<?>> callbacks) {
 
-    /**
-     * Tear down and recreate the tagging manager.
-     * Call before rebuilding the graph to prevent stale event-bus subscriptions.
-     */
-    public void resetTagging() {
-        this.taggingManager.unsubscribeAll();
-        this.taggingManager = new NodeTaggingManager(this.graph);
-        this.graph.clearAllTags();
     }
 
     /**
@@ -54,7 +42,6 @@ public class DepsGraphDataManager {
      * @param node the node to unregister
      */
     protected void removeNode(DataNode node) {
-        this.taggingManager.unregister(node);
         this.graph.removeDataNode(node);
     }
 

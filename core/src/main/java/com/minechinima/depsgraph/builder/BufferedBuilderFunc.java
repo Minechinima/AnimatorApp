@@ -3,11 +3,6 @@ package com.minechinima.depsgraph.builder;
 
 import com.minechinima.depsgraph.DepsGraph;
 import com.minechinima.depsgraph.Node;
-import com.minechinima.depsgraph.OperationNode;
-import com.minechinima.model.base.BaseStructure;
-
-import java.util.HashMap;
-import java.util.LinkedList;
 
 /**
  * Strategy for building relations between nodes.
@@ -17,7 +12,7 @@ import java.util.LinkedList;
  * @param <T>
  */
 @FunctionalInterface
-public interface RelationBuilder<T extends Node> {
+public interface BufferedBuilderFunc<T extends Node> {
     //TODO add a helper here to allow creating tagging listeners with relations.
     // TODO remove graph from API, only helper with delegation methods -> restrict access so relation builders cannot be
     //  abused to remove nodes from depsgraph.

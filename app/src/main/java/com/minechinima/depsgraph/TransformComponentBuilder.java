@@ -2,15 +2,11 @@ package com.minechinima.depsgraph;
 
 import com.minechinima.depsgraph.builder.ComponentBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
-import com.minechinima.depsgraph.tagging.NodeTaggingCreator;
-import com.minechinima.kernel.Transform;
+import com.minechinima.depsgraph.tagging.NodeTagging;
 import com.minechinima.kernel.TransformBuilding;
-import com.minechinima.model.api.IData;
 import com.minechinima.model.app.object.IEvaluatedTransformation;
 import com.minechinima.model.app.object.ITransformationComponent;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Set;
 
 public class TransformComponentBuilder<DATA extends ITransformationComponent, EVAL extends IEvaluatedTransformation>
         extends ComponentBuilder<DATA, EVAL, ITransformationComponent> {
@@ -18,8 +14,8 @@ public class TransformComponentBuilder<DATA extends ITransformationComponent, EV
         super(ComponentTypes.TRANSFORM);
         this.addOperationNodeBuilder(TransformBuilding::buildTransformComponent);
         this.addComponentRelationBuilder(TransformBuilding::buildTransformRelations);
-        this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forDataScope(this.getDataScope(transform), NodeTag.NEEDS_REEVALUATION));
-        this.addComponentTaggingConfig(transform -> NodeTaggingCreator.forData(transform.parent(), NodeTag.REBUILD_TREE));
+        this.addComponentTaggingConfig(transform -> NodeTagging.forDataScope(this.getDataScope(transform), NodeTag.NEEDS_REEVALUATION));
+        this.addComponentTaggingConfig(transform -> NodeTagging.forData(transform.parent(), NodeTag.REBUILD_TREE));
     }
 
     @Nullable
