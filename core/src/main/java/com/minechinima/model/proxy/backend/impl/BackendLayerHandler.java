@@ -13,7 +13,7 @@ public class BackendLayerHandler<T extends IDataBackend<T>> {
     }
 
     public T getHandlerForLayer(BackendLayer layer) {
-        return null;
+        return this.layers.get(layer);
     }
 
     public boolean containsBackend(IDataBackend backend) {

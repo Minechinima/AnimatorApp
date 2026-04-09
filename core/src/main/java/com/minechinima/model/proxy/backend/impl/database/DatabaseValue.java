@@ -1,6 +1,5 @@
 package com.minechinima.model.proxy.backend.impl.database;
 
-import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.values.base.BaseValue;
 import com.minechinima.model.proxy.backend.api.IDataValueBackend;
 import org.jetbrains.annotations.Nullable;

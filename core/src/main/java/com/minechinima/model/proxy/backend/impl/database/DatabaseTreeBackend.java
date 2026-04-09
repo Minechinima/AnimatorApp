@@ -4,7 +4,6 @@ import com.minechinima.model.api.IData;
 import com.minechinima.model.base.BaseStructure;
 import com.minechinima.model.base.BaseValueHierarchy;
 import com.minechinima.model.proxy.backend.api.IDataTreeBackend;
-import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.utils.ValuePath;
 import org.jetbrains.annotations.Nullable;
 

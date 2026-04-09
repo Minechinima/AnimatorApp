@@ -5,10 +5,13 @@ import com.minechinima.model.api.values.IDataMap;
 import com.minechinima.model.proxy.BaseDataTreeProxy;
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
+import com.minechinima.model.proxy.schema.RequiresAnnotations;
 
 import java.util.Set;
 import java.util.UUID;
 
+// TODO system that allows objects to provide their own factories, to give them control over deüendency injection.
+@RequiresAnnotations(annotations = {CollectionItemFactory.class})
 public class MapProxy<T extends IData> extends BaseDataTreeProxy<IDataMapBackend<T>> implements IDataMap<T> {
     @Override
     public int size() {

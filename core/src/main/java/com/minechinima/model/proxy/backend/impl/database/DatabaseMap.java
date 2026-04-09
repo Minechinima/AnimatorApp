@@ -3,7 +3,6 @@ package com.minechinima.model.proxy.backend.impl.database;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataMapBackend;
-import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.values.base.BaseValueMap;
 
 import java.util.Set;

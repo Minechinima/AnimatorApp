@@ -7,8 +7,10 @@ import com.minechinima.model.api.values.IDataValue;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.BackendLayer;
 import com.minechinima.model.proxy.backend.api.IDataValueBackend;
+import com.minechinima.model.proxy.schema.RequiresAnnotations;
 import org.jetbrains.annotations.Nullable;
 
+@RequiresAnnotations(annotations = {ValueType.class})
 public class ValueProxy<V> extends BaseDataProxy<IDataValueBackend<V>> implements IDataValue<V>, IAnimateable {
     @Override
     public @Nullable V get() {

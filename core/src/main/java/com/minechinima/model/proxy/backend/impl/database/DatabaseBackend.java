@@ -7,7 +7,6 @@ import com.minechinima.model.events.bus.EventBus;
 import com.minechinima.model.logging.DataOperationBus;
 import com.minechinima.model.proxy.BaseDataProxy;
 import com.minechinima.model.proxy.backend.api.IDataBackend;
-import com.minechinima.model.proxy.BasestructureProxyPool;
 import com.minechinima.model.proxy.backend.impl.base.BaseDataBackend;
 import org.jetbrains.annotations.Nullable;
 
