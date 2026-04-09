@@ -18,7 +18,9 @@ public class BufferBuilderCallback<T extends Node> {
         this.relationBuilder = relationBuilder;
     }
 
-    public void build(DepsGraph graph) {
-        this.relationBuilder.buildRelations(graph, this.node);
+    public BufferedBuilderHelper build(DepsGraph graph) {
+        BufferedBuilderHelper helper = new BufferedBuilderHelper(graph);
+        this.relationBuilder.buildRelations(this.node, helper);
+        return helper;
     }
 }

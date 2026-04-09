@@ -1,6 +1,7 @@
 package com.minechinima.kernel;
 
 import com.minechinima.depsgraph.*;
+import com.minechinima.depsgraph.builder.BufferedBuilderHelper;
 import com.minechinima.depsgraph.builder.OperationNodesBuilder;
 import com.minechinima.depsgraph.tagging.NodeTag;
 import com.minechinima.depsgraph.tagging.NodeTagging;
@@ -51,11 +52,11 @@ public class ConstraintBuilding {
      * Build relation to the constraint target object.
      * Simple default target relation builder
      */
-    public static void constraintTargetRelation(DepsGraph graph,
+    public static void constraintTargetRelation(BufferedBuilderHelper helper,
                                                 ConstraintStruct constraint,
                                                 OperationNode<? extends ITransformationComponent> constraintOperation) {
         if (constraint.target.get() != null) {
-            DataNode node = graph.getDataNodeForData(constraint.target.get());
+            DataNode node = helper.getDataNodeForData(constraint.target.get());
             if (node == null) {
                 return;
             }
@@ -65,7 +66,6 @@ public class ConstraintBuilding {
             }
             transformTarget.addFromRelationTo(constraintOperation, "Constraint relation");
         }
-
     }
 
     public static <EVAL extends IConstraintsComponent & IEvaluatedTransformation>
@@ -77,7 +77,7 @@ public class ConstraintBuilding {
                 OperationCodes.CONSTRAINTS_EVAL,
                 String.valueOf(constraintIndex),
                 new DataScope(constraint),
-                (g, n) -> ConstraintBuilding.constraintTargetRelation(g, constraint, n),
+                (n, h) -> ConstraintBuilding.constraintTargetRelation(h, constraint, n),
                 NodeTagging.forData(constraint.target, NodeTag.REBUILD_TREE)).addToChain();
     }
 
