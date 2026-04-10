@@ -236,6 +236,7 @@ public sealed abstract class BaseValueHierarchy<T extends BaseStructure> extends
         return null;
     }
 
+    // TODO the path collision stuff could be moved to PathUtils where the path collision resolve algorithm is located.
     /**
      * This method goes through all children and distant children of this node and collects those where the relative path
      * to this is not empty and therefore the child is addressable.

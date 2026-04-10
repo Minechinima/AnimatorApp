@@ -1,0 +1,62 @@
+package com.minechinima.model.proxy.values;
+
+import com.minechinima.model.api.IData;
+import com.minechinima.model.api.values.IDataMap;
+import com.minechinima.model.proxy.BaseDataTreeProxy;
+import com.minechinima.model.proxy.backend.api.BackendLayer;
+import com.minechinima.model.proxy.backend.api.IDataMapBackend;
+import com.minechinima.model.proxy.schema.RequiresAnnotations;
+
+import java.util.Set;
+import java.util.UUID;
+
+// TODO system that allows objects to provide their own factories, to give them control over deüendency injection.
+@RequiresAnnotations(annotations = {CollectionItemFactory.class})
+public class MapProxy<T extends IData> extends BaseDataTreeProxy<IDataMapBackend<T>> implements IDataMap<T> {
+    @Override
+    public int size() {
+        return this.backend != null ? this.backend.size() : 0;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public boolean containsKey(String key) {
+        return false;
+    }
+
+    @Override
+    public boolean containsUUID(UUID uuid) {
+        return false;
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return false;
+    }
+
+    @Override
+    public T get(String key) {
+        return null;
+    }
+
+    @Override
+    public T get(UUID uuid) {
+        return null;
+    }
+
+    @Override
+    public Set<T> values() {
+        return this.backend.values();
+    }
+
+    public void add(T value, BackendLayer layer) {
+        IDataMapBackend<T> backend = this.backendLayers.getHandlerForLayer(layer);
+        if (backend != null) {
+            backend.add(value);
+        }
+    }
+}
