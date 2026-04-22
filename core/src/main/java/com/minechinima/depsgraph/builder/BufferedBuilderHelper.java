@@ -10,8 +10,6 @@ import com.minechinima.model.api.IData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 public class BufferedBuilderHelper {
@@ -38,7 +36,7 @@ public class BufferedBuilderHelper {
 
     @Nullable
     public Node getNodeForDataTarget(IData data) {
-        return this.graph.getNodeForDataTarget(data);
+        return this.graph.getLowestNodeForDataTarget(data);
     }
 
     public Set<OperationNode> getOperationNodes() {

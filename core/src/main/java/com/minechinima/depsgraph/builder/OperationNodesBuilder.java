@@ -18,7 +18,7 @@ import java.util.Stack;
  * Might be useful if we want to wrap exceptions of the internal api and log them instead of crashing.
  */
 public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IData> {
-    private final Set<BufferBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
+    private final Set<BufferedBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
     private final Set<NodeTaggingManager.NodeTaggingCallback<OperationNode<EVAL>>> taggingConfigBuffer = new HashSet<>();
     private final ComponentNode<DATA, EVAL, T> componentNode;
 
@@ -37,7 +37,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
         return new HashSet<>(this.taggingConfigBuffer);
     }
 
-    public Set<BufferBuilderCallback<OperationNode<EVAL>>> getRelationBuilderBuffer() {
+    public Set<BufferedBuilderCallback<OperationNode<EVAL>>> getRelationBuilderBuffer() {
         return new HashSet<>(this.relationBuilderBuffer);
     }
 
@@ -75,7 +75,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
                                               @Nullable NodeTagging<OperationNode<EVAL>> taggingConfig) {
         OperationNode<EVAL> node = componentNode.addOperation(func, code, name, scope);
         if (operationNodeRelationBuilder != null) {
-            this.relationBuilderBuffer.add(new BufferBuilderCallback<>(node, operationNodeRelationBuilder));
+            this.relationBuilderBuffer.add(new BufferedBuilderCallback<>(node, operationNodeRelationBuilder));
         }
         if (taggingConfig != null) {
             this.taggingConfigBuffer.add(new NodeTaggingManager.NodeTaggingCallback<>(node, taggingConfig));

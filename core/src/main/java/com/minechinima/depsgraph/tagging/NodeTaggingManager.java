@@ -2,7 +2,7 @@ package com.minechinima.depsgraph.tagging;
 
 import com.minechinima.depsgraph.DepsGraph;
 import com.minechinima.depsgraph.Node;
-import com.minechinima.depsgraph.builder.BufferBuilderCallback;
+import com.minechinima.depsgraph.builder.BufferedBuilderCallback;
 import com.minechinima.eventbus.AbstractEventBus;
 import com.minechinima.model.api.IData;
 import com.minechinima.model.events.bus.EventBus;
@@ -47,18 +47,14 @@ public class NodeTaggingManager {
             for (IData data : entry.watchedData()) {
                 EventBus bus = data.getEventBus();
 
-                // The consumer that will be invoked by the event bus on matching events.
-                // Captures: graph, entry.listener, data (source), node.
                 Consumer<ChangeEvent> consumer = event -> entry.listener().onEvent(this.graph, event, data, node);
 
-                // Convert SubscribeEvent.Type[] to IEventConstraint<EventOrigin>[] for the bus API
                 SubscribeEvent.Type[] constraintTypes = entry.constraints();
 
                 @SuppressWarnings("rawtypes")
                 Class eventType = entry.eventType();
 
-                AbstractEventBus.Subscription subscription = bus.subscribe(
-                        consumer, eventType, constraintTypes);
+                AbstractEventBus.Subscription subscription = bus.subscribe(consumer, eventType, constraintTypes);
 
                 nodeSubscriptions.add(new SubscriptionRecord(bus, subscription));
             }
@@ -106,11 +102,10 @@ public class NodeTaggingManager {
         this.subscriptions.clear();
     }
 
-    // ---- Supporting types ----
 
     /**
      * Binds a concrete node instance to its {@link NodeTagging}.
-     * Analogous to {@link BufferBuilderCallback}.
+     * Analogous to {@link BufferedBuilderCallback}.
      *
      * @param <T> the node type
      */

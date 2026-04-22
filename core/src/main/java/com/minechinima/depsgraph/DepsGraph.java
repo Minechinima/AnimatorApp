@@ -30,7 +30,6 @@ public class DepsGraph {
     //  blender uses it to get targets for animation data to tell the system: when the property is animated - also update the other components
 
     public void addDataNode(DataNode<?, ?, ?> node) {
-        //TODO test datascopes for uniqueness
     }
 
     public void removeDataNode(DataNode<?, ?, ?> node) {
@@ -107,7 +106,17 @@ public class DepsGraph {
      * @return
      */
     @Nullable
-    public Node getNodeForDataTarget(IData data) {
+    public Node getLowestNodeForDataAttribute(IData data) {
+        return null;
+    }
+
+    /**
+     * Returns the datanode that is a distant owner of the data attribute.
+     * @param data
+     * @return
+     */
+    @Nullable
+    public DataNode getDataNodeForDataAttribute(IData data) {
         return null;
     }
 

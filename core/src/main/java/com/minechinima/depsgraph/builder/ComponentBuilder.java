@@ -13,7 +13,7 @@ import java.util.*;
  * Only internal operation relations should be built here, e.g. the entry and exit operations and the relation between them.
  * <br><br>
  * Relations to other nodes should be built in {@link BufferedBuilderFunc}. Important when the dependeny graph is not finished
- * yet and the other nodes are not available. Therefore this builder gets no access to dependency graph.
+ * yet and the other nodes are not available. Only {@link BufferedBuilderFunc} has access to dependency graph to create relations with other nodes.
  * @param <DATA> type of the database value
  * @param <EVAL> type of the copy of the original data, which is used for evaluation and update operations.
  */
@@ -29,13 +29,13 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      */
     private final List<OperationNodesBuildFunc<DATA, EVAL, T>> operationNodesBuilders = new LinkedList<>();
     /**
-     * A set of relation builders for the entire component.
+     * A set of relation builders for the component node. Builder for relations of operation nodes can be created in the operation node builders.
      */
     private final List<BufferedBuilderFunc<ComponentNode<DATA, EVAL, T>>> relationBuilders = new LinkedList<>();
     /**
      * Tagging configurations for the component node itself.
      */
-    private final List<ComponentTaggingCallback<DATA, EVAL, T>> componentTaggingConfigs = new LinkedList<>();
+    private final List<ComponentNodeTaggingBuilder<DATA, EVAL, T>> componentTaggingConfigs = new LinkedList<>();
 
     public ComponentBuilder(ComponentNode.ComponentType key) {
         this.key = key;
@@ -59,7 +59,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * Add a tagging configuration for the component node itself.
      * The tagging will be registered after the graph is fully built.
      */
-    public void addComponentTaggingConfig(ComponentTaggingCallback<DATA, EVAL, T> config) {
+    public void addComponentTaggingConfig(ComponentNodeTaggingBuilder<DATA, EVAL, T> config) {
         this.componentTaggingConfigs.add(config);
     }
 
@@ -71,8 +71,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
             throw new IllegalStateException("Entry and exit operation must be set in addEntryExitOperation.");
         }
 
-        Set<BufferBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders = new HashSet<>();
-        Set<BufferBuilderCallback<ComponentNode<DATA, EVAL, T>>> relationBuilders = new HashSet<>();
+        Set<BufferedBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders = new HashSet<>();
+        Set<BufferedBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders = new HashSet<>();
         Set<NodeTaggingCallback<?>> nodeTaggingCallbacks = new HashSet<>();
 
         for (OperationNodesBuildFunc<DATA, EVAL, T> builder : this.operationNodesBuilders) {
@@ -88,15 +88,15 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
         }
 
         for (BufferedBuilderFunc<ComponentNode<DATA, EVAL, T>> relationBuilder : this.relationBuilders) {
-            relationBuilders.add(new BufferBuilderCallback<>(component, relationBuilder));
+            componentRelationBuilders.add(new BufferedBuilderCallback<>(component, relationBuilder));
         }
 
         /* component-level tagging configs */
-        for (ComponentTaggingCallback<DATA, EVAL, T> callback : this.componentTaggingConfigs) {
+        for (ComponentNodeTaggingBuilder<DATA, EVAL, T> callback : this.componentTaggingConfigs) {
             nodeTaggingCallbacks.add(new NodeTaggingCallback<>(component, callback.createTagging(dataBase)));
         }
 
-        return new BuildResult<>(component, operationRelationBuilders, relationBuilders, nodeTaggingCallbacks);
+        return new BuildResult<>(component, operationRelationBuilders, componentRelationBuilders, nodeTaggingCallbacks);
     }
 
     /**
@@ -112,8 +112,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      */
     public record BuildResult<DATA extends T, EVAL extends T, T extends IData>
             (ComponentNode<DATA, EVAL, T> component,
-             Set<BufferBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders,
-             Set<BufferBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders,
+             Set<BufferedBuilderCallback<OperationNode<EVAL>>> operationRelationBuilders,
+             Set<BufferedBuilderCallback<ComponentNode<DATA, EVAL, T>>> componentRelationBuilders,
              Set<NodeTaggingCallback<?>> nodeTaggingCallbacks) {
 
     }
@@ -126,7 +126,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * @param <T>
      */
     @FunctionalInterface
-    public interface ComponentTaggingCallback<DATA extends T, EVAL extends T, T extends IData> {
+    public interface ComponentNodeTaggingBuilder<DATA extends T, EVAL extends T, T extends IData> {
         NodeTagging<ComponentNode<DATA, EVAL, T>> createTagging(DATA data);
     }
 }

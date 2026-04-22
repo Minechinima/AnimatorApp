@@ -41,8 +41,16 @@ public class DepsGraphDataManager {
      *
      * @param node the node to unregister
      */
-    protected void removeNode(DataNode node) {
+    public void removeNode(DataNode node) {
         this.graph.removeDataNode(node);
+    }
+
+    public <DATA extends T, T extends Object & IData> DataNode<DATA, ?, T> getOrCreateDataNode(DATA data) {
+        DataNode<DATA, ?, T> node = this.graph.getDataNodeForData(data);
+        if (node != null) return node;
+
+        // TODO else get the data node from some kind of pool. This can be useful when creating relations for data that is not in the same scene.
+        return null;
     }
 
     @Nullable
