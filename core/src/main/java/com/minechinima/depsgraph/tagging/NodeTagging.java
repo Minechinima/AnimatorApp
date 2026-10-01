@@ -22,18 +22,10 @@ import java.util.*;
  * </ol>
  * The tagging functions are executed within the context of a node. Meaning the objects created here
  * need to be mapped at some point to a node to work properly. See public API of {@link NodeTaggingStrategy}
- * @param <T> the type of dependency-graph node this config applies to
  */
-public class NodeTagging<T extends Node> {
+public class NodeTagging {
+    private NodeTagging() {
 
-    private final List<TaggingConfig<T>> entries;
-
-    private NodeTagging(List<TaggingConfig<T>> entries) {
-        this.entries = Collections.unmodifiableList(entries);
-    }
-
-    public List<TaggingConfig<T>> getEntries() {
-        return this.entries;
     }
 
     // ---- Level 1: DataScope + Tag ----
@@ -47,7 +39,7 @@ public class NodeTagging<T extends Node> {
      * @param <T>   node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTagging<T> forData(IData data, INodeTag tag) {
+    public static <T extends Node> Config<T> forData(IData data, INodeTag tag) {
         return forEventConstraints(new DataScope(data), ChangeEvent.class, null, tag);
     }
 
@@ -60,7 +52,7 @@ public class NodeTagging<T extends Node> {
      * @param <T>   node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTagging<T> forDataScope(DataScope scope, INodeTag tag) {
+    public static <T extends Node> Config<T> forDataScope(DataScope scope, INodeTag tag) {
         return forEventConstraints(scope, ChangeEvent.class, null, tag);
     }
 
@@ -77,7 +69,7 @@ public class NodeTagging<T extends Node> {
      * @param <T>        node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTagging<T> forEventConstraints(
+    public static <T extends Node> Config<T> forEventConstraints(
             DataScope scope,
             Class<? extends ChangeEvent> eventType,
             @Nullable SubscribeEvent.Type constraint,
@@ -91,7 +83,7 @@ public class NodeTagging<T extends Node> {
         return custom(defaultListener, eventType, constraints, scope.getAllData());
     }
 
-    public static <T extends Node> NodeTagging<T> forEventConstraints(
+    public static <T extends Node> Config<T> forEventConstraints(
             IData scope,
             Class<? extends ChangeEvent> eventType,
             @Nullable SubscribeEvent.Type constraint,
@@ -111,7 +103,7 @@ public class NodeTagging<T extends Node> {
      * @param <T>         node type
      * @return a config with one entry
      */
-    public static <T extends Node> NodeTagging<T> custom(
+    public static <T extends Node> Config<T> custom(
             NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
@@ -119,14 +111,13 @@ public class NodeTagging<T extends Node> {
 
         Class<? extends ChangeEvent> effectiveEventType = eventType != null ? eventType : ChangeEvent.class;
 
-        TaggingConfig<T> entry = new TaggingConfig<>(listener, effectiveEventType, constraints, watchedData);
-        return new NodeTagging<>(List.of(entry));
+        return new Config<>(listener, effectiveEventType, constraints, watchedData);
     }
 
     /**
      * Convenience overload accepting varargs data instead of a set.
      */
-    public static <T extends Node> NodeTagging<T> custom(
+    public static <T extends Node> Config<T> custom(
             NodeTaggingStrategy<T> listener,
             @Nullable Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,
@@ -137,18 +128,6 @@ public class NodeTagging<T extends Node> {
         return custom(listener, eventType, constraints, dataSet);
     }
 
-    /**
-     * Merge multiple configs into one.
-     */
-    @SafeVarargs
-    public static <T extends Node> NodeTagging<T> merge(NodeTagging<T>... configs) {
-        List<TaggingConfig<T>> merged = new ArrayList<>();
-        for (NodeTagging<T> config : configs) {
-            merged.addAll(config.entries);
-        }
-        return new NodeTagging<>(merged);
-    }
-
     // ---- Entry record ----
 
     /**
@@ -156,7 +135,7 @@ public class NodeTagging<T extends Node> {
      *
      * @param <T> the node type
      */
-    public record TaggingConfig<T extends Node>(
+    public record Config<T extends Node>(
             NodeTaggingStrategy<T> listener,
             Class<? extends ChangeEvent> eventType,
             SubscribeEvent.Type[] constraints,

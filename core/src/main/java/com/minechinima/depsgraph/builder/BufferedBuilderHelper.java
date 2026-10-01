@@ -12,16 +12,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Adapter for {@link DepsGraph} methods, so we can control what access a builder has. For example, builders should not be able to
+ * remove nodes.
+ */
 public class BufferedBuilderHelper {
     private final DepsGraph graph;
-    private final Set<NodeTaggingManager.NodeTaggingCallback<?>> taggingConfigBuffer = new HashSet<>();
-
     public BufferedBuilderHelper(DepsGraph graph) {
         this.graph = graph;
-    }
-
-    public <T extends Node> void addNodeTagging(T node, NodeTagging<T> tagging) {
-        this.taggingConfigBuffer.add(new NodeTaggingManager.NodeTaggingCallback<>(node, tagging));
     }
 
     @Nullable
@@ -36,7 +34,7 @@ public class BufferedBuilderHelper {
 
     @Nullable
     public Node getNodeForDataTarget(IData data) {
-        return this.graph.getLowestNodeForDataTarget(data);
+        return this.graph.getLowestNodeForDataAttribute(data);
     }
 
     public Set<OperationNode> getOperationNodes() {

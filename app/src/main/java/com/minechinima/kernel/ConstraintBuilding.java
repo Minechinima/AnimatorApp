@@ -2,7 +2,7 @@ package com.minechinima.kernel;
 
 import com.minechinima.depsgraph.*;
 import com.minechinima.depsgraph.builder.BufferedBuilderHelper;
-import com.minechinima.depsgraph.builder.OperationNodesBuilder;
+import com.minechinima.depsgraph.builder.OperationNodesBuilderHelper;
 import com.minechinima.depsgraph.tagging.NodeTag;
 import com.minechinima.depsgraph.tagging.NodeTagging;
 import com.minechinima.model.app.constraints.ConstraintContainer;
@@ -23,7 +23,7 @@ public class ConstraintBuilding {
      * @param helper
      */
     public static <DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation>
-    void buildConstraints(DATA data, ConstraintEvalRegistry evalRegistry, OperationNodesBuilder helper) {
+    void buildConstraints(DATA data, ConstraintEvalRegistry evalRegistry, OperationNodesBuilderHelper helper) {
         List<ConstraintContainer> constraints = data.constraints().getChildren();
         for (int i = 0; i < constraints.size(); i++) {
             final int constraintIndex = i;
@@ -38,8 +38,8 @@ public class ConstraintBuilding {
         helper.chainToExit();
     }
 
-    public static void buildConstraintComponentRelation(DepsGraph graph,
-                                                        ComponentNode<? extends ITransformationComponent, ? extends IEvaluatedTransformation, ITransformationComponent> componentNode) {
+    public static void buildConstraintComponentRelation(ComponentNode componentNode,
+                                                        BufferedBuilderHelper helper) {
         ComponentNode transformNode = componentNode.getOwner().getComponent(ComponentTypes.TRANSFORM);
         if (transformNode == null) {
             return;
@@ -71,7 +71,7 @@ public class ConstraintBuilding {
     public static <EVAL extends IConstraintsComponent & IEvaluatedTransformation>
     void buildChildOfConstraint(IConstraintsComponent data,
                                 final int constraintIndex,
-                                OperationNodesBuilder<?, EVAL, IConstraintsComponent> helper) {
+                                OperationNodesBuilderHelper<?, EVAL, IConstraintsComponent> helper) {
         ConstraintStruct constraint = data.constraints().get(constraintIndex).get();
         helper.addOperation((g, d) -> childOfConstraint(g, constraintIndex, d),
                 OperationCodes.CONSTRAINTS_EVAL,
@@ -83,6 +83,6 @@ public class ConstraintBuilding {
 
     @FunctionalInterface
     public interface ConstraintOperationNodeBuilder<DATA extends IConstraintsComponent, EVAL extends IConstraintsComponent & IEvaluatedTransformation> {
-            void buildConstraintOperationNode(DATA data, final int constraintIndex, OperationNodesBuilder helper);
+            void buildConstraintOperationNode(DATA data, final int constraintIndex, OperationNodesBuilderHelper helper);
     }
 }

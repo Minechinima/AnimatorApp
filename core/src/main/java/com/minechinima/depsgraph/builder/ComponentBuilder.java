@@ -35,7 +35,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
     /**
      * Tagging configurations for the component node itself.
      */
-    private final List<ComponentNodeTaggingBuilder<DATA, EVAL, T>> componentTaggingConfigs = new LinkedList<>();
+    private final List<TaggingBuilder<DATA, EVAL, T>> componentTaggingConfigs = new LinkedList<>();
 
     public ComponentBuilder(ComponentNode.ComponentType key) {
         this.key = key;
@@ -59,13 +59,13 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * Add a tagging configuration for the component node itself.
      * The tagging will be registered after the graph is fully built.
      */
-    public void addComponentTaggingConfig(ComponentNodeTaggingBuilder<DATA, EVAL, T> config) {
+    public void addComponentTaggingConfig(TaggingBuilder<DATA, EVAL, T> config) {
         this.componentTaggingConfigs.add(config);
     }
 
     public BuildResult<DATA, EVAL, T> buildComponent(final DataNode<DATA, EVAL, T> owner) {
-        final DATA dataBase = owner.getOriginalData();
-        ComponentNode<DATA, EVAL, T> component = new ComponentNode<>(owner, this.key, this.getDataScope(dataBase));
+        final DATA data = owner.getOriginalData();
+        ComponentNode<DATA, EVAL, T> component = new ComponentNode<>(owner, this.key, this.getDataScope(data));
         this.addEntryExitOperation(component);
         if (component.getEntry() == null || component.getExit() == null) {
             throw new IllegalStateException("Entry and exit operation must be set in addEntryExitOperation.");
@@ -81,8 +81,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
              * which could improve parallelity and multithreading.
              * Atm no use case for further flexibility with building operation nodes to create relations between two separate builders.
              */
-            OperationNodesBuilder<DATA, EVAL, T> helper = new OperationNodesBuilder<>(component);
-            builder.addOperationNodes(dataBase, helper);
+            OperationNodesBuilderHelper<DATA, EVAL, T> helper = new OperationNodesBuilderHelper<>(component);
+            builder.addOperationNodes(data, helper);
             operationRelationBuilders.addAll(helper.getRelationBuilderBuffer());
             nodeTaggingCallbacks.addAll(helper.getTaggingConfigBuffer());
         }
@@ -92,8 +92,8 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
         }
 
         /* component-level tagging configs */
-        for (ComponentNodeTaggingBuilder<DATA, EVAL, T> callback : this.componentTaggingConfigs) {
-            nodeTaggingCallbacks.add(new NodeTaggingCallback<>(component, callback.createTagging(dataBase)));
+        for (TaggingBuilder<DATA, EVAL, T> callback : this.componentTaggingConfigs) {
+            nodeTaggingCallbacks.add(new NodeTaggingCallback<>(component, callback.createTagging(data)));
         }
 
         return new BuildResult<>(component, operationRelationBuilders, componentRelationBuilders, nodeTaggingCallbacks);
@@ -126,7 +126,7 @@ public abstract class ComponentBuilder<DATA extends T, EVAL extends T, T extends
      * @param <T>
      */
     @FunctionalInterface
-    public interface ComponentNodeTaggingBuilder<DATA extends T, EVAL extends T, T extends IData> {
-        NodeTagging<ComponentNode<DATA, EVAL, T>> createTagging(DATA data);
+    public interface TaggingBuilder<DATA extends T, EVAL extends T, T extends IData> {
+        NodeTagging.Config<ComponentNode<DATA, EVAL, T>> createTagging(DATA data);
     }
 }

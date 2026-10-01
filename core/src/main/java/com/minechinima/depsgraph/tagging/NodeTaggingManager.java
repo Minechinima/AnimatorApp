@@ -29,7 +29,7 @@ public class NodeTaggingManager {
 
     /**
      * Register all tagging entries from a single {@link NodeTaggingCallback}.
-     * For each {@link NodeTagging.TaggingConfig} in the config, and for each watched
+     * For each {@link NodeTagging.Config} in the config, and for each watched
      * {@link IData}, a programmatic subscriber is created on the respective {@link EventBus}.
      *
      * @param callback the callback binding a node to its tagging config
@@ -38,26 +38,24 @@ public class NodeTaggingManager {
     @SuppressWarnings("unchecked")
     public <T extends Node> void register(NodeTaggingCallback<T> callback) {
         T node = callback.node();
-        NodeTagging<T> config = callback.config();
+        NodeTagging.Config<T> entry = callback.config();
 
         List<SubscriptionRecord> nodeSubscriptions = this.subscriptions
                 .computeIfAbsent(node, k -> new ArrayList<>());
 
-        for (NodeTagging.TaggingConfig<T> entry : config.getEntries()) {
-            for (IData data : entry.watchedData()) {
-                EventBus bus = data.getEventBus();
+        for (IData data : entry.watchedData()) {
+            EventBus bus = data.getEventBus();
 
-                Consumer<ChangeEvent> consumer = event -> entry.listener().onEvent(this.graph, event, data, node);
+            Consumer<ChangeEvent> consumer = event -> entry.listener().onEvent(this.graph, event, data, node);
 
-                SubscribeEvent.Type[] constraintTypes = entry.constraints();
+            SubscribeEvent.Type[] constraintTypes = entry.constraints();
 
-                @SuppressWarnings("rawtypes")
-                Class eventType = entry.eventType();
+            @SuppressWarnings("rawtypes")
+            Class eventType = entry.eventType();
 
-                AbstractEventBus.Subscription subscription = bus.subscribe(consumer, eventType, constraintTypes);
+            AbstractEventBus.Subscription subscription = bus.subscribe(consumer, eventType, constraintTypes);
 
-                nodeSubscriptions.add(new SubscriptionRecord(bus, subscription));
-            }
+            nodeSubscriptions.add(new SubscriptionRecord(bus, subscription));
         }
     }
 
@@ -104,12 +102,12 @@ public class NodeTaggingManager {
 
 
     /**
-     * Binds a concrete node instance to its {@link NodeTagging}.
+     * Binds a concrete node instance to its {@link NodeTagging.Config}.
      * Analogous to {@link BufferedBuilderCallback}.
      *
      * @param <T> the node type
      */
-    public record NodeTaggingCallback<T extends Node>(T node, NodeTagging<T> config) {}
+    public record NodeTaggingCallback<T extends Node>(T node, NodeTagging.Config<T> config) {}
 
     /**
      * Internal record tracking an individual subscription so it can be removed later.

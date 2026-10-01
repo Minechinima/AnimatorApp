@@ -21,7 +21,7 @@ public class BufferedBuilderCallback<T extends Node> {
 
     public BufferedBuilderHelper build(DepsGraph graph) {
         BufferedBuilderHelper helper = new BufferedBuilderHelper(graph);
-        this.relationBuilder.buildRelations(this.node, helper);
+        this.relationBuilder.build(this.node, helper);
         return helper;
     }
 }

@@ -13,18 +13,20 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * Utility class for building operation nodes without needing to access the underlying internal API
+ * Helper object for building operation nodes without needing to access the underlying internal API
  * of the dependency graph node classes.
  * Might be useful if we want to wrap exceptions of the internal api and log them instead of crashing.
+ * <br><br>
+ * This object is passed to the builder function and collects the actual operation node objects.
  */
-public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IData> {
+public class OperationNodesBuilderHelper<DATA extends T, EVAL extends T, T extends IData> {
     private final Set<BufferedBuilderCallback<OperationNode<EVAL>>> relationBuilderBuffer = new HashSet<>();
     private final Set<NodeTaggingManager.NodeTaggingCallback<OperationNode<EVAL>>> taggingConfigBuffer = new HashSet<>();
     private final ComponentNode<DATA, EVAL, T> componentNode;
 
     private Stack<OperationNode<EVAL>> consecutiveChain = new Stack<>();
 
-    public OperationNodesBuilder(ComponentNode<DATA, EVAL, T> componentNode) {
+    public OperationNodesBuilderHelper(ComponentNode<DATA, EVAL, T> componentNode) {
         if (componentNode.getExit() == null || componentNode.getEntry() == null) {
             throw new IllegalArgumentException("Component node must have entry and exit operations before creating OperationNodesAssembler.");
         }
@@ -72,7 +74,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
                                               @Nullable final String name,
                                               @Nullable DataScope scope,
                                               @Nullable BufferedBuilderFunc<OperationNode<EVAL>> operationNodeRelationBuilder,
-                                              @Nullable NodeTagging<OperationNode<EVAL>> taggingConfig) {
+                                              @Nullable NodeTagging.Config<OperationNode<EVAL>> taggingConfig) {
         OperationNode<EVAL> node = componentNode.addOperation(func, code, name, scope);
         if (operationNodeRelationBuilder != null) {
             this.relationBuilderBuffer.add(new BufferedBuilderCallback<>(node, operationNodeRelationBuilder));
@@ -129,7 +131,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
                                               OperationNode.OperationCode code,
                                               @Nullable final String name,
                                               @Nullable DataScope scope,
-                                              @Nullable NodeTagging<OperationNode<EVAL>> taggingConfig) {
+                                              @Nullable NodeTagging.Config<OperationNode<EVAL>> taggingConfig) {
         return this.addOperation(func, code, name, scope, null, taggingConfig);
     }
 
@@ -147,7 +149,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
     }
 
     /**
-     * Helper for creating relations for operation nodes.
+     * Helper for creating relations between the operation nodes that are created with the curent {@link OperationNodesBuilderHelper} object.
      * Has utility functions to easily create a chain of operations.
      * Wraps the internal API for easier access and error handling perhaps.
      */
@@ -168,7 +170,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
          * Only adds to consecutive chain, meaning nodes that were not added to the chain are ignored.
          */
         public RelationBuilderHelper addToChain() {
-            OperationNode<EVAL> last = OperationNodesBuilder.this.consecutiveChain.peek();
+            OperationNode<EVAL> last = OperationNodesBuilderHelper.this.consecutiveChain.peek();
             this.addToChain(null);
             return this;
         }
@@ -181,7 +183,7 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
          * @param name custom name for the relation.
          */
         public RelationBuilderHelper addToChain(String name) {
-            Stack<OperationNode<EVAL>> chain = OperationNodesBuilder.this.consecutiveChain;
+            Stack<OperationNode<EVAL>> chain = OperationNodesBuilderHelper.this.consecutiveChain;
             OperationNode<EVAL> last = chain.peek();
 
             if (name == null) {
@@ -190,28 +192,28 @@ public class OperationNodesBuilder<DATA extends T, EVAL extends T, T extends IDa
                 last.addFromRelationTo(this.added, name);
             }
 
-            OperationNodesBuilder.this.consecutiveChain.push(this.added);
+            OperationNodesBuilderHelper.this.consecutiveChain.push(this.added);
             return this;
         }
 
         public RelationBuilderHelper relationFromEntryToThis(String name) {
-            OperationNodesBuilder.this.getEntry().addFromRelationTo(this.added, name);
+            OperationNodesBuilderHelper.this.getEntry().addFromRelationTo(this.added, name);
             return this;
         }
 
         public RelationBuilderHelper relationFromEntryToThis() {
-            OperationNodesBuilder.this.getEntry().addFromRelationTo(this.added);
+            OperationNodesBuilderHelper.this.getEntry().addFromRelationTo(this.added);
             return this;
         }
 
         public RelationBuilderHelper relationFromThisToExit() {
-            this.added.addFromRelationTo(OperationNodesBuilder.this.getExit());
+            this.added.addFromRelationTo(OperationNodesBuilderHelper.this.getExit());
 
             return this;
         }
 
         public RelationBuilderHelper relationFromThisToExit(String name) {
-            this.added.addFromRelationTo(OperationNodesBuilder.this.getExit(), name);
+            this.added.addFromRelationTo(OperationNodesBuilderHelper.this.getExit(), name);
 
             return this;
         }
