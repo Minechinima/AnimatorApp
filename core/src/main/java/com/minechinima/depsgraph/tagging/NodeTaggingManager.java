@@ -1,0 +1,117 @@
+package com.minechinima.depsgraph.tagging;
+
+import com.minechinima.depsgraph.DepsGraph;
+import com.minechinima.depsgraph.Node;
+import com.minechinima.depsgraph.builder.BufferedBuilderCallback;
+import com.minechinima.eventbus.AbstractEventBus;
+import com.minechinima.model.api.IData;
+import com.minechinima.model.events.bus.EventBus;
+import com.minechinima.model.events.bus.SubscribeEvent;
+import com.minechinima.model.events.types.ChangeEvent;
+
+import java.util.*;
+import java.util.function.Consumer;
+
+/**
+ * Manager for the tagging event listeners.
+ */
+public class NodeTaggingManager {
+    private final DepsGraph graph;
+
+    /**
+     * All subscription tokens grouped by node, so we can unsubscribe per node or in bulk.
+     */
+    private final IdentityHashMap<Node, List<SubscriptionRecord>> subscriptions = new IdentityHashMap<>();
+
+    public NodeTaggingManager(DepsGraph graph) {
+        this.graph = graph;
+    }
+
+    /**
+     * Register all tagging entries from a single {@link NodeTaggingCallback}.
+     * For each {@link NodeTagging.Config} in the config, and for each watched
+     * {@link IData}, a programmatic subscriber is created on the respective {@link EventBus}.
+     *
+     * @param callback the callback binding a node to its tagging config
+     * @param <T>      the node type
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends Node> void register(NodeTaggingCallback<T> callback) {
+        T node = callback.node();
+        NodeTagging.Config<T> entry = callback.config();
+
+        List<SubscriptionRecord> nodeSubscriptions = this.subscriptions
+                .computeIfAbsent(node, k -> new ArrayList<>());
+
+        for (IData data : entry.watchedData()) {
+            EventBus bus = data.getEventBus();
+
+            Consumer<ChangeEvent> consumer = event -> entry.listener().onEvent(this.graph, event, data, node);
+
+            SubscribeEvent.Type[] constraintTypes = entry.constraints();
+
+            @SuppressWarnings("rawtypes")
+            Class eventType = entry.eventType();
+
+            AbstractEventBus.Subscription subscription = bus.subscribe(consumer, eventType, constraintTypes);
+
+            nodeSubscriptions.add(new SubscriptionRecord(bus, subscription));
+        }
+    }
+
+    /**
+     * Convenience: register multiple callbacks at once.
+     */
+    public void registerAll(Collection<NodeTaggingCallback<?>> callbacks) {
+        for (NodeTaggingCallback<?> callback : callbacks) {
+            this.registerUntyped(callback);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void registerUntyped(NodeTaggingCallback<?> callback) {
+        this.register((NodeTaggingCallback) callback);
+    }
+
+    /**
+     * Unsubscribe all listeners for a specific node.
+     *
+     * @param node the node to unregister
+     */
+    public void unregister(Node node) {
+        List<SubscriptionRecord> nodeSubscriptions = this.subscriptions.remove(node);
+        if (nodeSubscriptions != null) {
+            for (SubscriptionRecord record : nodeSubscriptions) {
+                record.bus.unsubscribe(record.subscription);
+            }
+        }
+    }
+
+    /**
+     * Unsubscribe all listeners that were registered through this manager.
+     * Should be called before a graph rebuild to prevent stale references.
+     */
+    public void unsubscribeAll() {
+        for (List<SubscriptionRecord> nodeSubscriptions : this.subscriptions.values()) {
+            for (SubscriptionRecord record : nodeSubscriptions) {
+                record.bus.unsubscribe(record.subscription);
+            }
+        }
+        this.subscriptions.clear();
+    }
+
+
+    /**
+     * Binds a concrete node instance to its {@link NodeTagging.Config}.
+     * Analogous to {@link BufferedBuilderCallback}.
+     *
+     * @param <T> the node type
+     */
+    public record NodeTaggingCallback<T extends Node>(T node, NodeTagging.Config<T> config) {}
+
+    /**
+     * Internal record tracking an individual subscription so it can be removed later.
+     */
+    private record SubscriptionRecord(EventBus bus, AbstractEventBus.Subscription subscription) {}
+}
+

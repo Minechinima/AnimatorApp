@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * General purpose EventBus that supports annotation-based subscriber registration.
@@ -26,6 +27,12 @@ public class AbstractEventBus<E, A extends Annotation> {
      * treated as a single subscriber entry.
      */
     protected final Map<Object, Set<MethodHandler>> subscribers = new IdentityHashMap<>();
+    // TODO combine functional with method handlers
+    /**
+     * Programmatic (functional) subscribers keyed by their {@link Subscription} token.
+     * Each token maps to exactly one {@link FunctionalHandler}.
+     */
+    protected final Map<Subscription, FunctionalHandler> functionalSubscribers = new IdentityHashMap<>();
 
     protected final Class<E> baseEventType;
     protected final Class<A> annotationType;
@@ -98,12 +105,45 @@ public class AbstractEventBus<E, A extends Annotation> {
     }
 
     /**
+     * Programmatically subscribe a functional listener for a specific event type.
+     * No annotation scanning is performed; constraints are evaluated at dispatch time
+     * by subclasses that override or extend dispatching.
+     *
+     * @param listener  the consumer that will receive events
+     * @param eventType the concrete event class to listen for (must be a subtype of E)
+     * @return a {@link Subscription} token that can be passed to {@link #unsubscribe(Subscription)} to remove this listener
+     * @throws IllegalArgumentException if eventType is not a subtype of E
+     */
+    public <T extends E> Subscription subscribe(Consumer<T> listener, Class<T> eventType) {
+        if (!this.baseEventType.isAssignableFrom(eventType)) {
+            throw new IllegalArgumentException("Event type " + eventType.getSimpleName()
+                    + " is not a subtype of " + this.baseEventType.getSimpleName() + ".");
+        }
+
+        @SuppressWarnings("unchecked")
+        FunctionalHandler handler = new FunctionalHandler((Consumer<E>) listener, (Class<? extends E>) eventType);
+        Subscription subscription = new Subscription();
+        this.functionalSubscribers.put(subscription, handler);
+        return subscription;
+    }
+
+    /**
+     * Remove a programmatic subscriber by its subscription token.
+     *
+     * @param subscription the token returned by {@link #subscribe(Consumer, Class)}
+     */
+    public void unsubscribe(Subscription subscription) {
+        this.functionalSubscribers.remove(subscription);
+    }
+
+    /**
      * Dispatch an event to all registered listeners that listen to the event or event superclass.
      * @param event the event to dispatch
      */
     protected final void dispatch(E event) {
         this.subscribers.forEach((subscriber, handlers) ->
                 handlers.forEach(handler -> handler.handle(subscriber, event)));
+        this.functionalSubscribers.forEach((subscription, handler) -> handler.handle(event));
     }
 
     /**
@@ -129,6 +169,34 @@ public class AbstractEventBus<E, A extends Annotation> {
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    /**
+     * Opaque token returned by the programmatic {@link #subscribe(Consumer, Class)} method.
+     * Used to unsubscribe a specific functional listener via {@link #unsubscribe(Subscription)}.
+     */
+    public static final class Subscription {
+        /* identity-based – each instance is unique */
+        Subscription() {}
+    }
+
+    /**
+     * Descriptor for a programmatic (functional) listener, analogous to {@link MethodHandler}
+     * but without reflection or annotations.
+     */
+    protected class FunctionalHandler {
+        protected final Consumer<E> listener;
+        protected final Class<? extends E> eventType;
+
+        FunctionalHandler(Consumer<E> listener, Class<? extends E> eventType) {
+            this.listener = listener;
+            this.eventType = eventType;
+        }
+
+        public void handle(E event) {
+            if (!this.eventType.isAssignableFrom(event.getClass())) return;
+            this.listener.accept(event);
         }
     }
 }

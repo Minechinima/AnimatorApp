@@ -3,9 +3,8 @@ package com.minechinima.model.app.object;
 import com.minechinima.model.api.IBaseObject;
 import com.minechinima.model.api.IDataPointer;
 import com.minechinima.model.api.values.IDataValue;
-import com.minechinima.model.api.values.vectors.IVector3f;
 import com.minechinima.model.app.BBDatabase;
-import com.minechinima.model.logging.datainterfaces.IDMutable;
+import com.minechinima.model.app.constraints.Constraints;
 import com.minechinima.model.values.base.ValueGroup;
 import com.minechinima.model.values.BooleanValue;
 import com.minechinima.model.values.vectors.Vector3fValue;
@@ -49,6 +48,8 @@ public class BaseObject extends ValueGroup implements IBaseObject {
      */
     public final ObjectData data = new ObjectData("data");
 
+    public final Constraints constraints = new Constraints("constraints");
+
     public BaseObject(String id, BBDatabase database) {
         super(id);
         this.parent = new ObjectParentPointer("parent", this, database);
@@ -69,6 +70,7 @@ public class BaseObject extends ValueGroup implements IBaseObject {
         this.addChild("data", this.data);
         this.addChild("viewport_visibility", this.viewportVisibility);
         this.addChild("render_visibility", this.renderVisibility);
+        this.addChild("constraints", this.constraints);
         this.data.set(new CameraType());
     }
 
@@ -84,17 +86,17 @@ public class BaseObject extends ValueGroup implements IBaseObject {
     }
 
     @Override
-    public IVector3f translation() {
+    public Vector3fValue translation() {
         return this.translation;
     }
 
     @Override
-    public IVector3f rotation() {
+    public Vector3fValue rotation() {
         return this.rotation;
     }
 
     @Override
-    public IVector3f scale() {
+    public Vector3fValue scale() {
         return this.scale;
     }
 
